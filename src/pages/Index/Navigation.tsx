@@ -33,16 +33,17 @@ export function BadgeChip({ color, children }: { color: string; children: React.
 
 // ─── NAVBAR ──────────────────────────────────────────────────────────────────
 
-export function Navbar({ active, setActive, onOpenCompare, compareCount }: {
+export function Navbar({ active, setActive, onOpenCompare, compareCount, favoritesCount, onOpenFavorites }: {
   active: string;
   setActive: (s: string) => void;
   onOpenCompare: () => void;
   compareCount: number;
+  favoritesCount: number;
+  onOpenFavorites: () => void;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const links = [
     { id: "catalog", label: "Каталог" },
-    { id: "calculator", label: "Калькулятор" },
     { id: "contacts", label: "Контакты" },
   ];
   return (
@@ -63,6 +64,12 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount }: {
           ))}
         </div>
         <div className="hidden md:flex items-center gap-2">
+          <button onClick={onOpenFavorites}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-sm font-medium transition-all ${favoritesCount > 0 ? "text-red-300 hover:text-red-200 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20" : "text-white/60 hover:text-white hover:bg-white/10"}`}
+            title="Избранное">
+            <Icon name="Heart" size={14} className={favoritesCount > 0 ? "fill-current" : ""} />
+            {favoritesCount > 0 && <span className="text-xs font-bold">{favoritesCount}</span>}
+          </button>
           {compareCount > 0 && (
             <button onClick={onOpenCompare}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium text-white bg-white/10 hover:bg-white/20 transition-all border border-white/20">
@@ -129,9 +136,6 @@ export function HeroSection({ setActive }: { setActive: (s: string) => void }) {
               <Button size="sm" className="bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold h-9 px-5" onClick={() => setActive("catalog")}>
                 <Icon name="Search" size={15} className="mr-1.5" />Найти партнёра
               </Button>
-              <Button size="sm" variant="outline" className="border-white/25 text-white bg-transparent hover:bg-white/10 h-9 px-4" onClick={() => setActive("calculator")}>
-                <Icon name="Calculator" size={15} className="mr-1.5" />Калькулятор
-              </Button>
               <a href="/for-fulfillment">
                 <Button size="sm" variant="outline" className="border-gold-500/40 text-gold-400 bg-transparent hover:bg-gold-500/10 h-9 px-4">
                   <Icon name="Building2" size={15} className="mr-1.5" />Я — фулфилмент
@@ -181,7 +185,7 @@ export function Footer({ setActive }: { setActive: (s: string) => void }) {
             <p className="text-white/50 text-xs font-ibm leading-relaxed">B2B маркетплейс фулфилмент-партнёров для селлеров</p>
           </div>
           {[
-            { title: "Для селлеров", links: [{ label: "Каталог партнёров", id: "catalog" }, { label: "Калькулятор КП", id: "calculator" }, { label: "Контакты", id: "contacts" }] },
+            { title: "Для селлеров", links: [{ label: "Каталог партнёров", id: "catalog" }, { label: "Контакты", id: "contacts" }] },
             { title: "Для фулфилмента", links: [{ label: "Разместить сервис →", id: "", href: "/for-fulfillment" }] as { label: string; id: string; href?: string }[] },
             { title: "Компания", links: [{ label: "О платформе", id: "hero" }, { label: "Контакты", id: "contacts" }] },
           ].map((col) => (
