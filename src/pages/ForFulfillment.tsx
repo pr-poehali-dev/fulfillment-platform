@@ -124,9 +124,13 @@ export default function ForFulfillment() {
             <span className="hidden sm:inline text-white/30 text-sm ml-1">/ Для фулфилмента</span>
           </a>
           <div className="flex items-center gap-3">
-            <a href="/" className="text-sm text-white/60 hover:text-white transition-colors font-ibm flex items-center gap-1.5">
+            <a href="/" className="hidden sm:flex text-sm text-white/60 hover:text-white transition-colors font-ibm items-center gap-1.5">
               <Icon name="ArrowLeft" size={14} />
-              Каталог селлеров
+              Каталог
+            </a>
+            <a href="/admin" className="flex items-center gap-1.5 px-3 py-1.5 bg-gold-500/15 border border-gold-500/30 rounded-lg text-sm font-semibold text-gold-400 hover:bg-gold-500/25 transition-all">
+              <Icon name="LayoutDashboard" size={14} />
+              Войти в кабинет
             </a>
           </div>
         </div>
