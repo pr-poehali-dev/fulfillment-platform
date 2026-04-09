@@ -279,6 +279,7 @@ function Navbar({ active, setActive }: { active: string; setActive: (s: string) 
     { id: "integrations", label: "Интеграции" },
     { id: "reviews", label: "Отзывы" },
     { id: "contacts", label: "Контакты" },
+    { id: "register-ff", label: "Разместить сервис", highlight: true },
   ];
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-navy-950/95 backdrop-blur-md border-b border-white/10">
@@ -292,7 +293,7 @@ function Navbar({ active, setActive }: { active: string; setActive: (s: string) 
         <div className="hidden md:flex items-center gap-0.5">
           {links.map((l) => (
             <button key={l.id} onClick={() => setActive(l.id)}
-              className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${active === l.id ? "bg-gold-500/20 text-gold-400" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
+              className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${'highlight' in l && l.highlight ? "text-gold-400 hover:text-gold-300 hover:bg-gold-500/10" : active === l.id ? "bg-gold-500/20 text-gold-400" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
               {l.label}
             </button>
           ))}
@@ -353,12 +354,15 @@ function HeroSection({ setActive }: { setActive: (s: string) => void }) {
             <p className="text-white/60 text-base font-ibm font-light leading-relaxed mb-5 opacity-0 animate-fade-in delay-200">
               Сравнивайте тарифы, фильтруйте по нужным услугам и выбирайте фулфилмент под ваш товар
             </p>
-            <div className="flex gap-2 opacity-0 animate-fade-in delay-300">
+            <div className="flex flex-wrap gap-2 opacity-0 animate-fade-in delay-300">
               <Button size="sm" className="bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold h-9 px-5" onClick={() => setActive("catalog")}>
                 <Icon name="Search" size={15} className="mr-1.5" />Найти партнёра
               </Button>
               <Button size="sm" variant="outline" className="border-white/25 text-white bg-transparent hover:bg-white/10 h-9 px-4" onClick={() => setActive("calculator")}>
                 <Icon name="Calculator" size={15} className="mr-1.5" />Калькулятор
+              </Button>
+              <Button size="sm" variant="outline" className="border-gold-500/40 text-gold-400 bg-transparent hover:bg-gold-500/10 h-9 px-4" onClick={() => setActive("register-ff")}>
+                <Icon name="PlusCircle" size={15} className="mr-1.5" />Разместить сервис
               </Button>
             </div>
           </div>
@@ -1091,6 +1095,413 @@ function ContactsSection() {
   );
 }
 
+// ─── REGISTER FF SECTION ─────────────────────────────────────────────────────
+
+const STEPS = [
+  { id: 1, title: "Основная информация", icon: "Building2" },
+  { id: 2, title: "Склад и услуги", icon: "Warehouse" },
+  { id: 3, title: "Тарифы", icon: "DollarSign" },
+  { id: 4, title: "Контакты", icon: "Phone" },
+];
+
+function RegisterFFSection() {
+  const [step, setStep] = useState(1);
+  const [done, setDone] = useState(false);
+
+  // Step 1
+  const [companyName, setCompanyName] = useState("");
+  const [legalName, setLegalName] = useState("");
+  const [inn, setInn] = useState("");
+  const [city, setCity] = useState("");
+  const [warehouseArea, setWarehouseArea] = useState("");
+  const [description, setDescription] = useState("");
+
+  // Step 2
+  const [schemes, setSchemes] = useState<string[]>([]);
+  const [features, setFeatures] = useState<string[]>([]);
+  const [packaging, setPackaging] = useState<string[]>([]);
+  const [marketplaces, setMarketplaces] = useState<string[]>([]);
+
+  // Step 3
+  const [storagePrice, setStoragePrice] = useState("");
+  const [assemblyPrice, setAssemblyPrice] = useState("");
+  const [deliveryPrice, setDeliveryPrice] = useState("");
+  const [minVolume, setMinVolume] = useState("");
+  const [hasTrial, setHasTrial] = useState(false);
+
+  // Step 4
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [contactTg, setContactTg] = useState("");
+  const [agree, setAgree] = useState(false);
+
+  const toggle = <T,>(arr: T[], val: T, set: (v: T[]) => void) =>
+    set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
+
+  const canNext = () => {
+    if (step === 1) return companyName.trim() && city.trim() && inn.trim();
+    if (step === 2) return schemes.length > 0 && marketplaces.length > 0;
+    if (step === 3) return storagePrice.trim() && assemblyPrice.trim();
+    if (step === 4) return contactName.trim() && contactEmail.trim() && contactPhone.trim() && agree;
+    return true;
+  };
+
+  const inputCls = "w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/20 placeholder:text-gray-400";
+
+  if (done) {
+    return (
+      <section id="register-ff" className="py-16 bg-navy-gradient text-white">
+        <div className="max-w-2xl mx-auto px-4 text-center">
+          <div className="w-20 h-20 bg-gold-500/20 rounded-full flex items-center justify-center mx-auto mb-5">
+            <Icon name="CheckCircle" size={40} className="text-gold-400" />
+          </div>
+          <h2 className="font-golos font-black text-3xl mb-3">Заявка отправлена!</h2>
+          <p className="text-white/70 font-ibm leading-relaxed mb-6">
+            Мы получили вашу заявку на регистрацию компании <strong className="text-white">{companyName}</strong> в каталоге FulfillHub.<br />
+            Наш менеджер проверит данные и свяжется с вами в течение 24 часов.
+          </p>
+          <div className="bg-white/10 rounded-xl p-5 text-left mb-6 grid grid-cols-2 gap-3">
+            {[
+              { label: "Компания", value: companyName },
+              { label: "Город", value: city },
+              { label: "Площадь склада", value: warehouseArea ? `${warehouseArea} м²` : "—" },
+              { label: "Схемы", value: schemes.join(", ") || "—" },
+              { label: "Маркетплейсы", value: marketplaces.slice(0, 3).join(", ") + (marketplaces.length > 3 ? "..." : "") },
+              { label: "Контакт", value: contactEmail },
+            ].map((row) => (
+              <div key={row.label}>
+                <div className="text-xs text-white/40 font-ibm">{row.label}</div>
+                <div className="text-sm font-semibold text-white font-golos">{row.value}</div>
+              </div>
+            ))}
+          </div>
+          <Button className="bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold font-golos px-8"
+            onClick={() => { setDone(false); setStep(1); setCompanyName(""); setCity(""); setInn(""); setSchemes([]); setMarketplaces([]); }}>
+            Подать ещё одну заявку
+          </Button>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section id="register-ff" className="py-16 bg-gray-50">
+      <div className="max-w-3xl mx-auto px-4">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center gap-2 mb-3 px-4 py-1.5 bg-gold-500/10 rounded-full border border-gold-500/20">
+            <Icon name="Star" size={13} className="text-gold-500" />
+            <span className="text-gold-600 text-xs font-medium font-ibm">Для фулфилмент-операторов</span>
+          </div>
+          <h2 className="font-golos font-black text-3xl md:text-4xl text-navy-900 mb-2">Зарегистрируйте сервис в каталоге</h2>
+          <p className="text-gray-500 font-ibm text-sm">
+            Более 15 000 селлеров ищут партнёров через FulfillHub. Заполните анкету — мы проверим данные и разместим вас бесплатно.
+          </p>
+        </div>
+
+        {/* Stepper */}
+        <div className="flex items-center mb-8">
+          {STEPS.map((s, i) => (
+            <div key={s.id} className="flex items-center flex-1 last:flex-none">
+              <div className="flex flex-col items-center">
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center font-golos font-bold text-sm transition-all ${
+                  step > s.id ? "bg-emerald-500 text-white" :
+                  step === s.id ? "bg-navy-900 text-white shadow-lg shadow-navy-900/25" :
+                  "bg-gray-200 text-gray-400"
+                }`}>
+                  {step > s.id ? <Icon name="Check" size={15} /> : s.id}
+                </div>
+                <div className={`text-xs mt-1 text-center hidden md:block font-ibm ${step === s.id ? "text-navy-900 font-semibold" : "text-gray-400"}`}>
+                  {s.title}
+                </div>
+              </div>
+              {i < STEPS.length - 1 && (
+                <div className={`flex-1 h-0.5 mx-2 mb-4 md:mb-0 transition-all ${step > s.id ? "bg-emerald-400" : "bg-gray-200"}`} />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Form card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 md:p-8">
+          <div className="flex items-center gap-2.5 mb-6 pb-4 border-b border-gray-100">
+            <div className="w-9 h-9 bg-navy-50 rounded-lg flex items-center justify-center">
+              <Icon name={STEPS[step - 1].icon as "Building2"} size={18} className="text-navy-700" />
+            </div>
+            <div>
+              <div className="text-xs text-gray-400 font-ibm">Шаг {step} из {STEPS.length}</div>
+              <div className="font-golos font-bold text-navy-900">{STEPS[step - 1].title}</div>
+            </div>
+          </div>
+
+          {/* STEP 1 */}
+          {step === 1 && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 font-golos block mb-1.5">Название компании <span className="text-red-400">*</span></label>
+                  <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder='ООО "МойФулфилмент"' className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 font-golos block mb-1.5">Юридическое название</label>
+                  <input value={legalName} onChange={(e) => setLegalName(e.target.value)} placeholder='ООО "МойФулфилмент"' className={inputCls} />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 font-golos block mb-1.5">ИНН <span className="text-red-400">*</span></label>
+                  <input value={inn} onChange={(e) => setInn(e.target.value)} placeholder="7712345678" maxLength={12} className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 font-golos block mb-1.5">Город расположения склада <span className="text-red-400">*</span></label>
+                  <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Москва" className={inputCls} />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-600 font-golos block mb-1.5">Площадь склада (м²)</label>
+                <input value={warehouseArea} onChange={(e) => setWarehouseArea(e.target.value)} placeholder="5000" type="number" className={inputCls} />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-600 font-golos block mb-1.5">Описание компании</label>
+                <textarea value={description} onChange={(e) => setDescription(e.target.value)}
+                  rows={3} placeholder="Расскажите о вашем сервисе, опыте работы, специализации..."
+                  className={`${inputCls} resize-none`} />
+                <div className="text-xs text-gray-400 font-ibm mt-1">{description.length}/500 символов</div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 2 */}
+          {step === 2 && (
+            <div className="space-y-5">
+              <div>
+                <label className="text-xs font-semibold text-gray-600 font-golos block mb-2">Схемы работы <span className="text-red-400">*</span></label>
+                <div className="flex flex-wrap gap-2">
+                  {["FBS", "FBO", "DBS", "Экспресс-доставка"].map((s) => (
+                    <button key={s} onClick={() => toggle(schemes, s, setSchemes)}
+                      className={`px-4 py-2 rounded-lg border text-sm font-semibold transition-all font-golos ${schemes.includes(s) ? "bg-navy-900 text-white border-navy-900" : "bg-white text-gray-700 border-gray-200 hover:border-navy-400"}`}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-600 font-golos block mb-2">Поддерживаемые маркетплейсы <span className="text-red-400">*</span></label>
+                <div className="flex flex-wrap gap-2">
+                  {["Wildberries", "Ozon", "Яндекс Маркет", "СберМегаМаркет", "Ali", "Lamoda", "Собственный интернет-магазин"].map((mp) => (
+                    <button key={mp} onClick={() => toggle(marketplaces, mp, setMarketplaces)}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${marketplaces.includes(mp) ? "bg-navy-900 text-white border-navy-900" : "bg-white text-gray-600 border-gray-200 hover:border-navy-400"}`}>
+                      {mp}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-600 font-golos block mb-2">Дополнительные услуги</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {[
+                    { key: "cameras", label: "Видеонаблюдение на складе", icon: "Camera" },
+                    { key: "dangerous", label: "Работа с опасными грузами", icon: "AlertTriangle" },
+                    { key: "returns", label: "Обработка возвратов", icon: "RefreshCw" },
+                    { key: "same_day", label: "Доставка день в день", icon: "Zap" },
+                    { key: "temp_control", label: "Температурный режим", icon: "Thermometer" },
+                    { key: "marking", label: "Маркировка товаров", icon: "Tag" },
+                    { key: "photo", label: "Фотосъёмка товаров", icon: "Camera" },
+                    { key: "assembly", label: "Комплектация наборов", icon: "Boxes" },
+                  ].map((f) => (
+                    <label key={f.key} className="flex items-center gap-2.5 cursor-pointer p-2.5 rounded-lg border border-gray-100 hover:border-navy-200 hover:bg-navy-50/30 transition-all">
+                      <div onClick={() => toggle(features, f.key, setFeatures)}
+                        className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all cursor-pointer ${features.includes(f.key) ? "bg-navy-900 border-navy-900" : "bg-white border-gray-300"}`}>
+                        {features.includes(f.key) && <Icon name="Check" size={10} className="text-white" />}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-sm text-gray-700 font-ibm" onClick={() => toggle(features, f.key, setFeatures)}>
+                        <Icon name={f.icon as "Camera"} size={13} className="text-gray-400" />
+                        {f.label}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-600 font-golos block mb-2">Типы упаковки</label>
+                <div className="flex flex-wrap gap-2">
+                  {["Полиэтилен", "Короб", "Пузырчатая плёнка", "Термоусадка", "Деревянная обрешётка", "Металлический контейнер", "Кастомная упаковка"].map((pk) => (
+                    <button key={pk} onClick={() => toggle(packaging, pk, setPackaging)}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${packaging.includes(pk) ? "bg-navy-900 text-white border-navy-900" : "bg-white text-gray-600 border-gray-200 hover:border-navy-400"}`}>
+                      {pk}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3 */}
+          {step === 3 && (
+            <div className="space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-start gap-2.5">
+                <Icon name="Info" size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-700 font-ibm leading-relaxed">
+                  Укажите стартовые тарифы — они будут видны в каталоге. Точная стоимость согласовывается индивидуально с каждым клиентом.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { label: "Хранение (₽/ед/день)", value: storagePrice, set: setStoragePrice, placeholder: "12", hint: "Например: 12" },
+                  { label: "Сборка заказа (₽/заказ)", value: assemblyPrice, set: setAssemblyPrice, placeholder: "18", hint: "Например: 18" },
+                  { label: "Доставка (₽/заказ)", value: deliveryPrice, set: setDeliveryPrice, placeholder: "85", hint: "Например: 85" },
+                ].map(({ label, value, set, placeholder, hint }) => (
+                  <div key={label}>
+                    <label className="text-xs font-semibold text-gray-600 font-golos block mb-1.5">{label} <span className="text-red-400">*</span></label>
+                    <div className="relative">
+                      <input value={value} onChange={(e) => set(e.target.value)} placeholder={placeholder} type="number"
+                        className={`${inputCls} pr-8`} />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₽</span>
+                    </div>
+                    <div className="text-xs text-gray-400 font-ibm mt-1">{hint}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-600 font-golos block mb-1.5">Минимальный объём (SKU)</label>
+                <input value={minVolume} onChange={(e) => setMinVolume(e.target.value)} placeholder="200"
+                  type="number" className={inputCls} />
+                <div className="text-xs text-gray-400 font-ibm mt-1">Оставьте пустым, если минимума нет</div>
+              </div>
+
+              <label className="flex items-start gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl cursor-pointer">
+                <div onClick={() => setHasTrial(!hasTrial)}
+                  className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 mt-0.5 transition-all cursor-pointer ${hasTrial ? "bg-emerald-600 border-emerald-600" : "bg-white border-gray-300"}`}>
+                  {hasTrial && <Icon name="Check" size={12} className="text-white" />}
+                </div>
+                <div onClick={() => setHasTrial(!hasTrial)}>
+                  <div className="text-sm font-semibold text-emerald-800 font-golos">Предоставляем пробный период</div>
+                  <div className="text-xs text-emerald-600 font-ibm mt-0.5">Новые клиенты смогут протестировать сервис. Это значительно увеличивает конверсию.</div>
+                </div>
+              </label>
+            </div>
+          )}
+
+          {/* STEP 4 */}
+          {step === 4 && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 font-golos block mb-1.5">Контактное лицо <span className="text-red-400">*</span></label>
+                  <input value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="Иван Иванов" className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 font-golos block mb-1.5">Телефон <span className="text-red-400">*</span></label>
+                  <input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="+7 (999) 123-45-67" className={inputCls} />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 font-golos block mb-1.5">Email <span className="text-red-400">*</span></label>
+                  <input value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="ivan@company.ru" type="email" className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 font-golos block mb-1.5">Telegram</label>
+                  <input value={contactTg} onChange={(e) => setContactTg(e.target.value)} placeholder="@username" className={inputCls} />
+                </div>
+              </div>
+
+              {/* Summary */}
+              <div className="bg-navy-50 border border-navy-100 rounded-xl p-4">
+                <div className="text-xs font-semibold text-navy-900 font-golos mb-3 uppercase tracking-wide">Ваша заявка</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { label: "Компания", value: companyName || "—" },
+                    { label: "Город", value: city || "—" },
+                    { label: "Схемы", value: schemes.join(", ") || "—" },
+                    { label: "Маркетплейсы", value: marketplaces.length ? `${marketplaces.length} шт.` : "—" },
+                    { label: "Хранение", value: storagePrice ? `от ${storagePrice} ₽` : "—" },
+                    { label: "Пробный период", value: hasTrial ? "Да ✓" : "Нет" },
+                  ].map((r) => (
+                    <div key={r.label}>
+                      <div className="text-xs text-gray-400 font-ibm">{r.label}</div>
+                      <div className="text-sm font-semibold text-navy-900 font-golos">{r.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <div onClick={() => setAgree(!agree)}
+                  className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 mt-0.5 transition-all cursor-pointer ${agree ? "bg-navy-900 border-navy-900" : "bg-white border-gray-300"}`}>
+                  {agree && <Icon name="Check" size={10} className="text-white" />}
+                </div>
+                <span className="text-xs text-gray-600 font-ibm leading-relaxed" onClick={() => setAgree(!agree)}>
+                  Я согласен с <button className="text-navy-700 underline">условиями размещения</button> и <button className="text-navy-700 underline">политикой конфиденциальности</button> FulfillHub <span className="text-red-400">*</span>
+                </span>
+              </label>
+            </div>
+          )}
+
+          {/* Navigation */}
+          <div className="flex items-center justify-between mt-7 pt-5 border-t border-gray-100">
+            <button
+              onClick={() => setStep((s) => Math.max(1, s - 1))}
+              className={`flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-navy-900 transition-colors ${step === 1 ? "invisible" : ""}`}
+            >
+              <Icon name="ChevronLeft" size={16} />Назад
+            </button>
+
+            <div className="flex items-center gap-1.5">
+              {STEPS.map((s) => (
+                <div key={s.id} className={`rounded-full transition-all ${step === s.id ? "w-6 h-2 bg-navy-900" : step > s.id ? "w-2 h-2 bg-emerald-400" : "w-2 h-2 bg-gray-200"}`} />
+              ))}
+            </div>
+
+            {step < STEPS.length ? (
+              <Button
+                onClick={() => setStep((s) => s + 1)}
+                disabled={!canNext()}
+                className="bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos h-10 px-6 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Далее <Icon name="ChevronRight" size={16} className="ml-1" />
+              </Button>
+            ) : (
+              <Button
+                onClick={() => canNext() && setDone(true)}
+                disabled={!canNext()}
+                className="bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold font-golos h-10 px-6 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Icon name="Send" size={15} className="mr-1.5" />Отправить заявку
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Benefits below */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          {[
+            { icon: "Shield", title: "Бесплатное размещение", desc: "Регистрация в каталоге полностью бесплатна. Берём комиссию только за заключённые сделки." },
+            { icon: "TrendingUp", title: "15 000+ селлеров", desc: "Ваша карточка будет видна тысячам активных продавцов на маркетплейсах." },
+            { icon: "BarChart3", title: "Аналитика заявок", desc: "Отслеживайте статистику просмотров, обращений и конверсию в личном кабинете." },
+          ].map((b) => (
+            <div key={b.title} className="bg-white border border-gray-100 rounded-xl p-4 flex gap-3">
+              <div className="w-9 h-9 bg-navy-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Icon name={b.icon as "Shield"} size={18} className="text-navy-700" />
+              </div>
+              <div>
+                <div className="font-golos font-bold text-navy-900 text-sm mb-0.5">{b.title}</div>
+                <div className="text-xs text-gray-500 font-ibm leading-relaxed">{b.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── FOOTER ──────────────────────────────────────────────────────────────────
 
 function Footer({ setActive }: { setActive: (s: string) => void }) {
@@ -1109,7 +1520,7 @@ function Footer({ setActive }: { setActive: (s: string) => void }) {
           </div>
           {[
             { title: "Платформа", links: [{ label: "Каталог", id: "catalog" }, { label: "Сравнение", id: "compare" }, { label: "Калькулятор", id: "calculator" }, { label: "Отзывы", id: "reviews" }] },
-            { title: "Для бизнеса", links: [{ label: "Для селлеров", id: "lk" }, { label: "Для операторов", id: "lk" }, { label: "Интеграции", id: "integrations" }, { label: "Контакты", id: "contacts" }] },
+            { title: "Для бизнеса", links: [{ label: "Для селлеров", id: "lk" }, { label: "Разместить сервис", id: "register-ff" }, { label: "Интеграции", id: "integrations" }, { label: "Контакты", id: "contacts" }] },
             { title: "Компания", links: [{ label: "О нас", id: "hero" }, { label: "Блог", id: "hero" }, { label: "Партнёрство", id: "contacts" }, { label: "Поддержка", id: "contacts" }] },
           ].map((col) => (
             <div key={col.title}>
@@ -1158,6 +1569,7 @@ export default function Index() {
         <CalculatorSection />
         <IntegrationsSection />
         <ReviewsSection />
+        <RegisterFFSection />
         <LKSection />
         <ContactsSection />
         <Footer setActive={handleSetActive} />
