@@ -1,6 +1,8 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
+import api, { setToken } from "@/lib/api";
+import { toast } from "sonner";
 
 // ─── STEPS ───────────────────────────────────────────────────────────────────
 
@@ -67,6 +69,8 @@ const FAQ = [
 export default function ForFulfillment() {
   const [step, setStep] = useState(1);
   const [done, setDone] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [tempPassword, setTempPassword] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   // Step 1
@@ -128,7 +132,7 @@ export default function ForFulfillment() {
               <Icon name="ArrowLeft" size={14} />
               Каталог
             </a>
-            <a href="/admin" className="flex items-center gap-1.5 px-3 py-1.5 bg-gold-500/15 border border-gold-500/30 rounded-lg text-sm font-semibold text-gold-400 hover:bg-gold-500/25 transition-all">
+            <a href="/auth" className="flex items-center gap-1.5 px-3 py-1.5 bg-gold-500/15 border border-gold-500/30 rounded-lg text-sm font-semibold text-gold-400 hover:bg-gold-500/25 transition-all">
               <Icon name="LayoutDashboard" size={14} />
               Войти в кабинет
             </a>
@@ -544,11 +548,40 @@ export default function ForFulfillment() {
                           </Button>
                         ) : (
                           <Button
-                            onClick={() => canNext() && setDone(true)}
-                            disabled={!canNext()}
+                            onClick={async () => {
+                              if (!canNext() || submitting) return;
+                              setSubmitting(true);
+                              try {
+                                const data = await api.registerFromForm({
+                                  companyName, inn, city, warehouseArea: parseInt(warehouseArea) || 0,
+                                  foundedYear: parseInt(foundedYear) || 0, description,
+                                  schemes, features, packaging, marketplaces,
+                                  storagePrice, assemblyPrice, deliveryPrice, minVolume, hasTrial,
+                                  contactName, contactEmail, contactPhone, contactTg,
+                                });
+                                setToken(data.token);
+                                setTempPassword(data.temp_password || "");
+                                setDone(true);
+                                toast.success("Заявка отправлена и аккаунт создан!");
+                              } catch (err: unknown) {
+                                const e = err as { error?: string; exists?: boolean };
+                                if (e.exists) {
+                                  toast.error("Этот email уже зарегистрирован. Войдите через страницу входа.");
+                                } else {
+                                  toast.error(e.error || "Ошибка при отправке");
+                                }
+                              } finally {
+                                setSubmitting(false);
+                              }
+                            }}
+                            disabled={!canNext() || submitting}
                             className="bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold font-golos h-10 px-6 disabled:opacity-40 disabled:cursor-not-allowed"
                           >
-                            <Icon name="Send" size={15} className="mr-1.5" />Отправить заявку
+                            {submitting ? (
+                              <><Icon name="Loader2" size={15} className="mr-1.5 animate-spin" />Отправка...</>
+                            ) : (
+                              <><Icon name="Send" size={15} className="mr-1.5" />Отправить заявку</>
+                            )}
                           </Button>
                         )}
                       </div>
@@ -579,18 +612,30 @@ export default function ForFulfillment() {
                         </div>
                       ))}
                     </div>
+                    {tempPassword && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 max-w-md mx-auto text-left">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Icon name="Key" size={14} className="text-amber-600" />
+                          <span className="text-xs font-bold text-amber-700 font-golos uppercase">Ваш временный пароль</span>
+                        </div>
+                        <p className="text-xs text-amber-600 font-ibm mb-2">Используйте эти данные для входа в личный кабинет. Сохраните пароль — его можно изменить позже.</p>
+                        <div className="bg-white rounded-lg p-2.5 border border-amber-200">
+                          <div className="text-xs text-gray-500 font-ibm">Email: <strong className="text-navy-900">{contactEmail}</strong></div>
+                          <div className="text-xs text-gray-500 font-ibm">Пароль: <strong className="text-navy-900 font-mono">{tempPassword}</strong></div>
+                        </div>
+                      </div>
+                    )}
                     <div className="flex gap-3 justify-center">
                       <a href="/">
                         <Button variant="outline" className="border-gray-200 text-gray-600 hover:bg-gray-50 font-ibm">
                           Перейти в каталог
                         </Button>
                       </a>
-                      <Button
-                        className="bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos"
-                        onClick={() => { setDone(false); setStep(1); setCompanyName(""); setCity(""); setInn(""); setSchemes([]); setMarketplaces([]); }}
-                      >
-                        Ещё одна заявка
-                      </Button>
+                      <a href="/admin">
+                        <Button className="bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold font-golos">
+                          <Icon name="LayoutDashboard" size={15} className="mr-1.5" />Перейти в кабинет
+                        </Button>
+                      </a>
                     </div>
                   </div>
                 )}

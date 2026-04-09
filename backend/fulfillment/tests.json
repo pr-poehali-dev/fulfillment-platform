@@ -1,0 +1,7 @@
+{"tests": [
+  {"name": "OPTIONS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+  {"name": "Unknown route", "method": "GET", "path": "/?action=unknown", "expectedStatus": 404, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+  {"name": "Profile unauthorized", "method": "GET", "path": "/?action=profile", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+  {"name": "List approved", "method": "GET", "path": "/?action=approved", "expectedStatus": 200, "expectedBody": {"fulfillments": []}, "bodyMatcher": "partial"},
+  {"name": "Send quote missing fields", "method": "POST", "path": "/?action=send-quote", "body": {}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
+]}
