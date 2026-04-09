@@ -118,7 +118,7 @@ export default function ForFulfillment() {
   return (
     <div className="min-h-screen bg-gray-50 font-golos">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-navy-950/97 backdrop-blur-md border-b border-white/10">
+      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-white/10 bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between bg-slate-900">
           <a href="/" className="flex items-center gap-2">
             <div className="w-7 h-7 bg-gold-500 rounded flex items-center justify-center">
