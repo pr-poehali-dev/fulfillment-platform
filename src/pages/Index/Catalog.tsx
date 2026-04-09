@@ -745,7 +745,7 @@ function PartnerCard({ p, inCompare, onCompare, isFavorite, onToggleFavorite, on
             <Icon name="Eye" size={12} className="mr-1" />Подробнее
           </Button>
           <Button size="sm"
-            className="bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold font-golos text-xs h-9"
+            className="bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold font-golos text-xs h-9 shadow-md shadow-gold-500/30 hover:shadow-lg hover:shadow-gold-500/40 transition-all"
             onClick={onRequestQuote}>
             <Icon name="Send" size={12} className="mr-1" />Запросить КП
           </Button>
