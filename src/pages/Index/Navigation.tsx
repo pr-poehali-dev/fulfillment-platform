@@ -116,9 +116,9 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
 
 // ─── HERO (COMPACT) ──────────────────────────────────────────────────────────
 
-export function HeroSection({ setActive: _setActive }: { setActive: (s: string) => void }) {
+export function HeroSection({ setActive }: { setActive: (s: string) => void }) {
   return (
-    <section id="hero" className="relative flex items-center overflow-hidden" style={{ minHeight: "28vh" }}>
+    <section id="hero" className="relative flex items-center overflow-hidden" style={{ minHeight: "38vh" }}>
       <div className="absolute inset-0 bg-navy-gradient" />
       <div className="absolute inset-0 opacity-15"
         style={{
@@ -134,17 +134,27 @@ export function HeroSection({ setActive: _setActive }: { setActive: (s: string) 
         }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 py-6 pt-18 w-full">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 py-8 pt-20 w-full">
         <div className="flex items-center gap-2 mb-2 opacity-0 animate-fade-in">
           <div className="h-px w-8 bg-gold-500" />
           <span className="text-gold-400 text-xs font-medium tracking-widest uppercase font-ibm">B2B Маркетплейс фулфилмента</span>
         </div>
-        <h1 className="font-golos font-black text-2xl md:text-3xl leading-tight text-white mb-1.5 opacity-0 animate-slide-up delay-100">
+        <h1 className="font-golos font-black text-3xl md:text-4xl leading-tight text-white mb-2 opacity-0 animate-slide-up delay-100">
           Найдите <span className="text-gold-gradient">надёжного</span> партнёра
         </h1>
-        <p className="text-white/55 text-sm font-ibm font-light opacity-0 animate-fade-in delay-200">
+        <p className="text-white/60 text-sm font-ibm font-light leading-relaxed mb-4 opacity-0 animate-fade-in delay-200">
           Сравнивайте тарифы, фильтруйте по нужным услугам и выбирайте фулфилмент под ваш товар
         </p>
+        <div className="flex flex-wrap gap-2 opacity-0 animate-fade-in delay-300">
+          <Button size="sm" className="bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold h-9 px-5" onClick={() => setActive("catalog")}>
+            <Icon name="Search" size={15} className="mr-1.5" />Найти партнёра
+          </Button>
+          <a href="/for-fulfillment">
+            <Button size="sm" variant="outline" className="border-gold-500/40 text-gold-400 bg-transparent hover:bg-gold-500/10 h-9 px-4">
+              <Icon name="Building2" size={15} className="mr-1.5" />Добавить фулфилмент
+            </Button>
+          </a>
+        </div>
       </div>
     </section>
   );
