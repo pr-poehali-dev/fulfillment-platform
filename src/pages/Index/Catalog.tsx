@@ -167,7 +167,7 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
             <span className="text-xs text-gray-400 font-ibm whitespace-nowrap">
               {filtered.length} из {PARTNERS.length}
             </span>
-            {filtered.length > 0 && (activeFilterCount > 0 || search || showFavoritesOnly) && (
+            {filtered.length > 0 && (activeFilterCount > 0 || showFavoritesOnly) && (
               <Button size="sm" className="bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold h-8 text-xs"
                 onClick={() => onRequestQuoteMany(filtered)}>
                 <Icon name="Send" size={13} className="mr-1" />
