@@ -22,15 +22,18 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
   loading: boolean;
 }) {
   const PARTNERS = partners;
-  const [search, setSearch] = useState("");
   const [selectedMp, setSelectedMp] = useState<string[]>([]);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [selectedSchemes, setSelectedSchemes] = useState<string[]>([]);
   const [selectedPackaging, setSelectedPackaging] = useState<string[]>([]);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
+  const [cityInput, setCityInput] = useState("");
+  const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
   const [selectedCerts, setSelectedCerts] = useState<string[]>([]);
-  const [maxStorageRate, setMaxStorageRate] = useState<number>(0);
-  const [minWarehouseArea, setMinWarehouseArea] = useState<number>(0);
+  const [storageFrom, setStorageFrom] = useState<string>("");
+  const [storageTo, setStorageTo] = useState<string>("");
+  const [areaFrom, setAreaFrom] = useState<string>("");
+  const [areaTo, setAreaTo] = useState<string>("");
   const [minRating, setMinRating] = useState<number>(0);
   const [maxFoundedYear, setMaxFoundedYear] = useState<number>(0);
   const [sortBy, setSortBy] = useState("rating");
@@ -43,10 +46,26 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
   const uniqueCities = Array.from(new Set(PARTNERS.map((p) => p.location).filter(Boolean))).sort();
   const uniqueCerts = Array.from(new Set(PARTNERS.flatMap((p) => p.certificates || []))).sort();
 
+  const citySuggestions = cityInput.trim()
+    ? uniqueCities.filter((c) => c.toLowerCase().includes(cityInput.toLowerCase()) && !selectedCities.includes(c))
+    : uniqueCities.filter((c) => !selectedCities.includes(c));
+
+  const addCity = (city: string) => {
+    if (!selectedCities.includes(city)) setSelectedCities([...selectedCities, city]);
+    setCityInput("");
+    setCityDropdownOpen(false);
+  };
+
+  const numStorageFrom = parseFloat(storageFrom) || 0;
+  const numStorageTo = parseFloat(storageTo) || 0;
+  const numAreaFrom = parseFloat(areaFrom) || 0;
+  const numAreaTo = parseFloat(areaTo) || 0;
+
   const activeFilterCount =
     selectedMp.length + selectedFeatures.length + selectedSchemes.length + selectedPackaging.length +
     selectedCities.length + selectedCerts.length +
-    (maxStorageRate > 0 ? 1 : 0) + (minWarehouseArea > 0 ? 1 : 0) +
+    (numStorageFrom > 0 || numStorageTo > 0 ? 1 : 0) +
+    (numAreaFrom > 0 || numAreaTo > 0 ? 1 : 0) +
     (minRating > 0 ? 1 : 0) + (maxFoundedYear > 0 ? 1 : 0);
 
   const clearAll = () => {
@@ -55,22 +74,25 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
     setSelectedSchemes([]);
     setSelectedPackaging([]);
     setSelectedCities([]);
+    setCityInput("");
     setSelectedCerts([]);
-    setMaxStorageRate(0);
-    setMinWarehouseArea(0);
+    setStorageFrom("");
+    setStorageTo("");
+    setAreaFrom("");
+    setAreaTo("");
     setMinRating(0);
     setMaxFoundedYear(0);
-    setSearch("");
   };
 
   const filtered = PARTNERS.filter((p) => {
     if (showFavoritesOnly && !isFavorite(p.id)) return false;
-    if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.location.toLowerCase().includes(search.toLowerCase())) return false;
     if (selectedMp.length && !selectedMp.some((mp) => p.tags.includes(mp))) return false;
     if (selectedCities.length && !selectedCities.includes(p.location)) return false;
     if (selectedCerts.length && !selectedCerts.some((c) => (p.certificates || []).includes(c))) return false;
-    if (maxStorageRate > 0 && (p.storageRate || 0) > maxStorageRate) return false;
-    if (minWarehouseArea > 0 && (p.warehouseArea || 0) < minWarehouseArea) return false;
+    if (numStorageFrom > 0 && (p.storageRate || 0) < numStorageFrom) return false;
+    if (numStorageTo > 0 && (p.storageRate || 0) > numStorageTo) return false;
+    if (numAreaFrom > 0 && (p.warehouseArea || 0) < numAreaFrom) return false;
+    if (numAreaTo > 0 && (p.warehouseArea || 0) > numAreaTo) return false;
     if (minRating > 0 && (p.rating || 0) < minRating) return false;
     if (maxFoundedYear > 0 && (p.foundedYear || 0) > maxFoundedYear) return false;
     if (selectedFeatures.length && !selectedFeatures.every((f) => p.features.includes(f))) return false;
@@ -96,18 +118,6 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
       {/* Sticky filter bar */}
       <div className="sticky top-14 z-40 bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center gap-2">
-          {/* Search */}
-          <div className="relative flex-1 min-w-[180px] max-w-xs">
-            <Icon name="Search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Город или название..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white font-ibm focus:outline-none focus:ring-2 focus:ring-navy-900/15"
-            />
-          </div>
-
           {/* Quick MP filters */}
           <div className="hidden lg:flex items-center gap-1.5">
             {MARKETPLACE_FILTERS.map((mp) => (
@@ -253,23 +263,53 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
                 </div>
               </div>
 
-              {/* City filter */}
-              {uniqueCities.length > 0 && (
-                <div>
-                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm flex items-center gap-1">
-                    <Icon name="MapPin" size={11} /> Город
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
-                    {uniqueCities.map((city) => (
-                      <button key={city}
-                        onClick={() => toggleArr(selectedCities, city, setSelectedCities)}
-                        className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all ${selectedCities.includes(city) ? "bg-navy-900 text-white border-navy-900" : "bg-white text-gray-600 border-gray-200 hover:border-navy-400"}`}>
-                        {city}
-                      </button>
-                    ))}
-                  </div>
+              {/* City filter — input with autocomplete */}
+              <div>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm flex items-center gap-1">
+                  <Icon name="MapPin" size={11} /> Город
                 </div>
-              )}
+                <div className="relative">
+                  <div className={`flex flex-wrap items-center gap-1 px-2 py-1.5 bg-white border rounded-lg transition-all min-h-[34px] ${cityDropdownOpen ? "border-navy-400 ring-2 ring-navy-900/10" : "border-gray-200"}`}>
+                    {selectedCities.map((c) => (
+                      <span key={c} className="inline-flex items-center gap-1 bg-navy-900 text-white text-xs px-2 py-0.5 rounded font-ibm">
+                        {c}
+                        <button onClick={() => setSelectedCities(selectedCities.filter((x) => x !== c))}>
+                          <Icon name="X" size={10} />
+                        </button>
+                      </span>
+                    ))}
+                    <input
+                      type="text"
+                      value={cityInput}
+                      onChange={(e) => { setCityInput(e.target.value); setCityDropdownOpen(true); }}
+                      onFocus={() => setCityDropdownOpen(true)}
+                      onBlur={() => setTimeout(() => setCityDropdownOpen(false), 150)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && citySuggestions[0]) { e.preventDefault(); addCity(citySuggestions[0]); }
+                        if (e.key === "Backspace" && !cityInput && selectedCities.length > 0) {
+                          setSelectedCities(selectedCities.slice(0, -1));
+                        }
+                      }}
+                      placeholder={selectedCities.length === 0 ? "Начните вводить..." : ""}
+                      className="flex-1 min-w-[80px] text-xs font-ibm bg-transparent focus:outline-none"
+                    />
+                  </div>
+                  {cityDropdownOpen && citySuggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto">
+                      {citySuggestions.slice(0, 20).map((city) => (
+                        <button
+                          key={city}
+                          onMouseDown={(e) => { e.preventDefault(); addCity(city); }}
+                          className="w-full text-left px-3 py-1.5 text-xs font-ibm text-gray-700 hover:bg-navy-50 flex items-center gap-1.5"
+                        >
+                          <Icon name="MapPin" size={10} className="text-gray-400" />
+                          {city}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
 
               {/* Min rating */}
               <div>
@@ -287,49 +327,71 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
                 </div>
               </div>
 
-              {/* Max storage rate */}
+              {/* Storage rate range */}
               <div>
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm flex items-center justify-between gap-1">
-                  <span className="flex items-center gap-1"><Icon name="Warehouse" size={11} /> Цена хранения</span>
-                  <span className="text-navy-900 font-bold normal-case tracking-normal">
-                    {maxStorageRate > 0 ? `до ${maxStorageRate} ₽` : "любая"}
-                  </span>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm flex items-center gap-1">
+                  <Icon name="Warehouse" size={11} /> Цена хранения (₽/ед/день)
                 </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={30}
-                  step={1}
-                  value={maxStorageRate}
-                  onChange={(e) => setMaxStorageRate(Number(e.target.value))}
-                  className="w-full accent-navy-900"
-                />
-                <div className="flex justify-between text-[10px] text-gray-400 font-ibm mt-0.5">
-                  <span>0 ₽</span>
-                  <span>30 ₽/ед/день</span>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-ibm uppercase">от</span>
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      value={storageFrom}
+                      onChange={(e) => setStorageFrom(e.target.value)}
+                      placeholder="0"
+                      className="w-full pl-8 pr-2 py-1.5 border border-gray-200 rounded-lg text-xs font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/15"
+                    />
+                  </div>
+                  <span className="text-gray-300 text-xs">—</span>
+                  <div className="relative flex-1">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-ibm uppercase">до</span>
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      value={storageTo}
+                      onChange={(e) => setStorageTo(e.target.value)}
+                      placeholder="∞"
+                      className="w-full pl-8 pr-2 py-1.5 border border-gray-200 rounded-lg text-xs font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/15"
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Min warehouse area */}
+              {/* Warehouse area range */}
               <div>
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm flex items-center justify-between gap-1">
-                  <span className="flex items-center gap-1"><Icon name="Maximize" size={11} /> Площадь склада</span>
-                  <span className="text-navy-900 font-bold normal-case tracking-normal">
-                    {minWarehouseArea > 0 ? `от ${minWarehouseArea.toLocaleString("ru-RU")} м²` : "любая"}
-                  </span>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm flex items-center gap-1">
+                  <Icon name="Maximize" size={11} /> Площадь склада (м²)
                 </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={50000}
-                  step={500}
-                  value={minWarehouseArea}
-                  onChange={(e) => setMinWarehouseArea(Number(e.target.value))}
-                  className="w-full accent-navy-900"
-                />
-                <div className="flex justify-between text-[10px] text-gray-400 font-ibm mt-0.5">
-                  <span>0</span>
-                  <span>50 000 м²</span>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-ibm uppercase">от</span>
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      value={areaFrom}
+                      onChange={(e) => setAreaFrom(e.target.value)}
+                      placeholder="0"
+                      className="w-full pl-8 pr-2 py-1.5 border border-gray-200 rounded-lg text-xs font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/15"
+                    />
+                  </div>
+                  <span className="text-gray-300 text-xs">—</span>
+                  <div className="relative flex-1">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-ibm uppercase">до</span>
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      value={areaTo}
+                      onChange={(e) => setAreaTo(e.target.value)}
+                      placeholder="∞"
+                      className="w-full pl-8 pr-2 py-1.5 border border-gray-200 rounded-lg text-xs font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/15"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -401,16 +463,16 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
                     </button>
                   </span>
                 ))}
-                {maxStorageRate > 0 && (
+                {(numStorageFrom > 0 || numStorageTo > 0) && (
                   <span className="inline-flex items-center gap-1 bg-navy-900 text-white text-xs px-2 py-0.5 rounded-full font-ibm">
-                    хранение до {maxStorageRate} ₽
-                    <button onClick={() => setMaxStorageRate(0)}><Icon name="X" size={9} /></button>
+                    хранение {numStorageFrom > 0 ? `от ${numStorageFrom}` : ""}{numStorageFrom > 0 && numStorageTo > 0 ? " " : ""}{numStorageTo > 0 ? `до ${numStorageTo}` : ""} ₽
+                    <button onClick={() => { setStorageFrom(""); setStorageTo(""); }}><Icon name="X" size={9} /></button>
                   </span>
                 )}
-                {minWarehouseArea > 0 && (
+                {(numAreaFrom > 0 || numAreaTo > 0) && (
                   <span className="inline-flex items-center gap-1 bg-navy-900 text-white text-xs px-2 py-0.5 rounded-full font-ibm">
-                    склад от {minWarehouseArea.toLocaleString("ru-RU")} м²
-                    <button onClick={() => setMinWarehouseArea(0)}><Icon name="X" size={9} /></button>
+                    склад {numAreaFrom > 0 ? `от ${numAreaFrom.toLocaleString("ru-RU")}` : ""}{numAreaFrom > 0 && numAreaTo > 0 ? " " : ""}{numAreaTo > 0 ? `до ${numAreaTo.toLocaleString("ru-RU")}` : ""} м²
+                    <button onClick={() => { setAreaFrom(""); setAreaTo(""); }}><Icon name="X" size={9} /></button>
                   </span>
                 )}
                 {minRating > 0 && (
