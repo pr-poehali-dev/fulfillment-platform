@@ -32,6 +32,10 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
   const [selectedCerts, setSelectedCerts] = useState<string[]>([]);
   const [storageFrom, setStorageFrom] = useState<string>("");
   const [storageTo, setStorageTo] = useState<string>("");
+  const [assemblyFrom, setAssemblyFrom] = useState<string>("");
+  const [assemblyTo, setAssemblyTo] = useState<string>("");
+  const [deliveryFrom, setDeliveryFrom] = useState<string>("");
+  const [deliveryTo, setDeliveryTo] = useState<string>("");
   const [areaFrom, setAreaFrom] = useState<string>("");
   const [areaTo, setAreaTo] = useState<string>("");
   const [minRating, setMinRating] = useState<number>(0);
@@ -58,6 +62,10 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
 
   const numStorageFrom = parseFloat(storageFrom) || 0;
   const numStorageTo = parseFloat(storageTo) || 0;
+  const numAssemblyFrom = parseFloat(assemblyFrom) || 0;
+  const numAssemblyTo = parseFloat(assemblyTo) || 0;
+  const numDeliveryFrom = parseFloat(deliveryFrom) || 0;
+  const numDeliveryTo = parseFloat(deliveryTo) || 0;
   const numAreaFrom = parseFloat(areaFrom) || 0;
   const numAreaTo = parseFloat(areaTo) || 0;
 
@@ -65,6 +73,8 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
     selectedMp.length + selectedFeatures.length + selectedSchemes.length + selectedPackaging.length +
     selectedCities.length + selectedCerts.length +
     (numStorageFrom > 0 || numStorageTo > 0 ? 1 : 0) +
+    (numAssemblyFrom > 0 || numAssemblyTo > 0 ? 1 : 0) +
+    (numDeliveryFrom > 0 || numDeliveryTo > 0 ? 1 : 0) +
     (numAreaFrom > 0 || numAreaTo > 0 ? 1 : 0) +
     (minRating > 0 ? 1 : 0) + (maxFoundedYear > 0 ? 1 : 0);
 
@@ -78,6 +88,10 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
     setSelectedCerts([]);
     setStorageFrom("");
     setStorageTo("");
+    setAssemblyFrom("");
+    setAssemblyTo("");
+    setDeliveryFrom("");
+    setDeliveryTo("");
     setAreaFrom("");
     setAreaTo("");
     setMinRating(0);
@@ -91,6 +105,10 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
     if (selectedCerts.length && !selectedCerts.some((c) => (p.certificates || []).includes(c))) return false;
     if (numStorageFrom > 0 && (p.storageRate || 0) < numStorageFrom) return false;
     if (numStorageTo > 0 && (p.storageRate || 0) > numStorageTo) return false;
+    if (numAssemblyFrom > 0 && (p.assemblyRate || 0) < numAssemblyFrom) return false;
+    if (numAssemblyTo > 0 && (p.assemblyRate || 0) > numAssemblyTo) return false;
+    if (numDeliveryFrom > 0 && (p.deliveryRate || 0) < numDeliveryFrom) return false;
+    if (numDeliveryTo > 0 && (p.deliveryRate || 0) > numDeliveryTo) return false;
     if (numAreaFrom > 0 && (p.warehouseArea || 0) < numAreaFrom) return false;
     if (numAreaTo > 0 && (p.warehouseArea || 0) > numAreaTo) return false;
     if (minRating > 0 && (p.rating || 0) < minRating) return false;
@@ -361,6 +379,74 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
                 </div>
               </div>
 
+              {/* Assembly rate range */}
+              <div>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm flex items-center gap-1">
+                  <Icon name="Package" size={11} /> Цена сборки (₽/заказ)
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-ibm uppercase">от</span>
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      value={assemblyFrom}
+                      onChange={(e) => setAssemblyFrom(e.target.value)}
+                      placeholder="0"
+                      className="w-full pl-8 pr-2 py-1.5 border border-gray-200 rounded-lg text-xs font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/15"
+                    />
+                  </div>
+                  <span className="text-gray-300 text-xs">—</span>
+                  <div className="relative flex-1">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-ibm uppercase">до</span>
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      value={assemblyTo}
+                      onChange={(e) => setAssemblyTo(e.target.value)}
+                      placeholder="∞"
+                      className="w-full pl-8 pr-2 py-1.5 border border-gray-200 rounded-lg text-xs font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/15"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Delivery rate range */}
+              <div>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm flex items-center gap-1">
+                  <Icon name="Truck" size={11} /> Цена доставки (₽/заказ)
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-ibm uppercase">от</span>
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      value={deliveryFrom}
+                      onChange={(e) => setDeliveryFrom(e.target.value)}
+                      placeholder="0"
+                      className="w-full pl-8 pr-2 py-1.5 border border-gray-200 rounded-lg text-xs font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/15"
+                    />
+                  </div>
+                  <span className="text-gray-300 text-xs">—</span>
+                  <div className="relative flex-1">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-ibm uppercase">до</span>
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      value={deliveryTo}
+                      onChange={(e) => setDeliveryTo(e.target.value)}
+                      placeholder="∞"
+                      className="w-full pl-8 pr-2 py-1.5 border border-gray-200 rounded-lg text-xs font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/15"
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Warehouse area range */}
               <div>
                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm flex items-center gap-1">
@@ -467,6 +553,18 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
                   <span className="inline-flex items-center gap-1 bg-navy-900 text-white text-xs px-2 py-0.5 rounded-full font-ibm">
                     хранение {numStorageFrom > 0 ? `от ${numStorageFrom}` : ""}{numStorageFrom > 0 && numStorageTo > 0 ? " " : ""}{numStorageTo > 0 ? `до ${numStorageTo}` : ""} ₽
                     <button onClick={() => { setStorageFrom(""); setStorageTo(""); }}><Icon name="X" size={9} /></button>
+                  </span>
+                )}
+                {(numAssemblyFrom > 0 || numAssemblyTo > 0) && (
+                  <span className="inline-flex items-center gap-1 bg-navy-900 text-white text-xs px-2 py-0.5 rounded-full font-ibm">
+                    сборка {numAssemblyFrom > 0 ? `от ${numAssemblyFrom}` : ""}{numAssemblyFrom > 0 && numAssemblyTo > 0 ? " " : ""}{numAssemblyTo > 0 ? `до ${numAssemblyTo}` : ""} ₽
+                    <button onClick={() => { setAssemblyFrom(""); setAssemblyTo(""); }}><Icon name="X" size={9} /></button>
+                  </span>
+                )}
+                {(numDeliveryFrom > 0 || numDeliveryTo > 0) && (
+                  <span className="inline-flex items-center gap-1 bg-navy-900 text-white text-xs px-2 py-0.5 rounded-full font-ibm">
+                    доставка {numDeliveryFrom > 0 ? `от ${numDeliveryFrom}` : ""}{numDeliveryFrom > 0 && numDeliveryTo > 0 ? " " : ""}{numDeliveryTo > 0 ? `до ${numDeliveryTo}` : ""} ₽
+                    <button onClick={() => { setDeliveryFrom(""); setDeliveryTo(""); }}><Icon name="X" size={9} /></button>
                   </span>
                 )}
                 {(numAreaFrom > 0 || numAreaTo > 0) && (
