@@ -33,6 +33,22 @@ export function PartnerDetailModal({ partner, onClose, onRequestQuote, isFavorit
     same_day: "Доставка день в день",
     temp_control: "Температурный режим",
     packaging: "Упаковка",
+    honest_mark: "Маркировка Честный Знак",
+    defect_check: "Проверка на брак",
+    seller_packaging: "Упаковка в пакет продавца",
+    shipment_prep: "Подготовка к отгрузке",
+    barcode_check: "Проверка штрихкода",
+    cargo_receive: "Получение товара карго",
+  };
+
+  const specializationLabels: Record<string, { label: string; icon: string }> = {
+    small_goods: { label: "Мелкие товары", icon: "Boxes" },
+    cosmetics: { label: "Косметика", icon: "Sparkles" },
+    clothing: { label: "Обувь, одежда", icon: "Shirt" },
+    fuel_lubricants: { label: "Горюче-смазочные материалы", icon: "Fuel" },
+    construction: { label: "Строительные материалы", icon: "Hammer" },
+    appliances: { label: "Бытовая техника", icon: "WashingMachine" },
+    electronics: { label: "Электроника", icon: "Cpu" },
   };
 
   return (
@@ -164,7 +180,7 @@ export function PartnerDetailModal({ partner, onClose, onRequestQuote, isFavorit
 
               {/* Features */}
               <section>
-                <h3 className="font-golos font-bold text-navy-900 text-xs uppercase tracking-wide mb-2">Особенности склада</h3>
+                <h3 className="font-golos font-bold text-navy-900 text-xs uppercase tracking-wide mb-2">Дополнительные услуги</h3>
                 <div className="flex flex-wrap gap-2">
                   {partner.features.map((f) => (
                     <span key={f} className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-ibm">
@@ -174,6 +190,24 @@ export function PartnerDetailModal({ partner, onClose, onRequestQuote, isFavorit
                   ))}
                 </div>
               </section>
+
+              {/* Specializations */}
+              {partner.specializations && partner.specializations.length > 0 && (
+                <section>
+                  <h3 className="font-golos font-bold text-navy-900 text-xs uppercase tracking-wide mb-2">Специализация</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {partner.specializations.map((s) => {
+                      const info = specializationLabels[s];
+                      return (
+                        <span key={s} className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gold-50 text-amber-800 border border-amber-200 rounded-lg font-ibm">
+                          <Icon name={(info?.icon as "Boxes") || "Package"} size={11} />
+                          {info?.label || s}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
 
               {/* Packaging */}
               <section>

@@ -2,7 +2,7 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { StarRating, BadgeChip } from "./Navigation";
-import { FEATURE_FILTERS, SCHEME_FILTERS, PACKAGING_FILTERS, MARKETPLACE_FILTERS, type Partner } from "./data";
+import { FEATURE_FILTERS, SCHEME_FILTERS, PACKAGING_FILTERS, MARKETPLACE_FILTERS, SPECIALIZATION_FILTERS, type Partner } from "./data";
 
 // ─── CATALOG WITH ADVANCED FILTERS ───────────────────────────────────────────
 
@@ -30,6 +30,7 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
   const [cityInput, setCityInput] = useState("");
   const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
   const [selectedCerts, setSelectedCerts] = useState<string[]>([]);
+  const [selectedSpecs, setSelectedSpecs] = useState<string[]>([]);
   const [storageFrom, setStorageFrom] = useState<string>("");
   const [storageTo, setStorageTo] = useState<string>("");
   const [assemblyFrom, setAssemblyFrom] = useState<string>("");
@@ -71,7 +72,7 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
 
   const activeFilterCount =
     selectedMp.length + selectedFeatures.length + selectedSchemes.length + selectedPackaging.length +
-    selectedCities.length + selectedCerts.length +
+    selectedCities.length + selectedCerts.length + selectedSpecs.length +
     (numStorageFrom > 0 || numStorageTo > 0 ? 1 : 0) +
     (numAssemblyFrom > 0 || numAssemblyTo > 0 ? 1 : 0) +
     (numDeliveryFrom > 0 || numDeliveryTo > 0 ? 1 : 0) +
@@ -86,6 +87,7 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
     setSelectedCities([]);
     setCityInput("");
     setSelectedCerts([]);
+    setSelectedSpecs([]);
     setStorageFrom("");
     setStorageTo("");
     setAssemblyFrom("");
@@ -103,6 +105,7 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
     if (selectedMp.length && !selectedMp.some((mp) => p.tags.includes(mp))) return false;
     if (selectedCities.length && !selectedCities.includes(p.location)) return false;
     if (selectedCerts.length && !selectedCerts.some((c) => (p.certificates || []).includes(c))) return false;
+    if (selectedSpecs.length && !selectedSpecs.some((s) => (p.specializations || []).includes(s))) return false;
     if (numStorageFrom > 0 && (p.storageRate || 0) < numStorageFrom) return false;
     if (numStorageTo > 0 && (p.storageRate || 0) > numStorageTo) return false;
     if (numAssemblyFrom > 0 && (p.assemblyRate || 0) < numAssemblyFrom) return false;
@@ -243,7 +246,7 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
               {/* Features / services */}
               <div>
                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm">Дополнительные услуги</div>
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 max-h-64 overflow-y-auto pr-1">
                   {FEATURE_FILTERS.map((f) => (
                     <label key={f.key} className="flex items-center gap-2 cursor-pointer group">
                       <div
@@ -251,10 +254,33 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
                         className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all cursor-pointer ${selectedFeatures.includes(f.key) ? "bg-navy-900 border-navy-900" : "bg-white border-gray-300 group-hover:border-navy-400"}`}>
                         {selectedFeatures.includes(f.key) && <Icon name="Check" size={10} className="text-white" />}
                       </div>
-                      <div className="flex items-center gap-1.5 text-sm text-gray-700 font-ibm"
+                      <div className="flex items-center gap-1.5 text-xs text-gray-700 font-ibm"
                         onClick={() => toggleArr(selectedFeatures, f.key, setSelectedFeatures)}>
-                        <Icon name={f.icon as "Camera"} size={13} className="text-gray-400" />
+                        <Icon name={f.icon as "Camera"} size={12} className="text-gray-400 flex-shrink-0" />
                         {f.label}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Specializations */}
+              <div>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm flex items-center gap-1">
+                  <Icon name="Target" size={11} /> Специализация
+                </div>
+                <div className="flex flex-col gap-1.5 max-h-64 overflow-y-auto pr-1">
+                  {SPECIALIZATION_FILTERS.map((s) => (
+                    <label key={s.key} className="flex items-center gap-2 cursor-pointer group">
+                      <div
+                        onClick={() => toggleArr(selectedSpecs, s.key, setSelectedSpecs)}
+                        className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all cursor-pointer ${selectedSpecs.includes(s.key) ? "bg-navy-900 border-navy-900" : "bg-white border-gray-300 group-hover:border-navy-400"}`}>
+                        {selectedSpecs.includes(s.key) && <Icon name="Check" size={10} className="text-white" />}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-gray-700 font-ibm"
+                        onClick={() => toggleArr(selectedSpecs, s.key, setSelectedSpecs)}>
+                        <Icon name={s.icon as "Boxes"} size={12} className="text-gray-400 flex-shrink-0" />
+                        {s.label}
                       </div>
                     </label>
                   ))}
@@ -533,7 +559,13 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
             {activeFilterCount > 0 && (
               <div className="max-w-7xl mx-auto px-4 pb-3 flex flex-wrap items-center gap-1.5">
                 <span className="text-xs text-gray-400 font-ibm">Активные:</span>
-                {[...selectedMp, ...selectedSchemes, ...selectedFeatures.map(f => FEATURE_FILTERS.find(x => x.key === f)?.label || f), ...selectedPackaging, ...selectedCities, ...selectedCerts].map((tag) => (
+                {[
+                  ...selectedMp,
+                  ...selectedSchemes,
+                  ...selectedFeatures.map(f => FEATURE_FILTERS.find(x => x.key === f)?.label || f),
+                  ...selectedSpecs.map(s => SPECIALIZATION_FILTERS.find(x => x.key === s)?.label || s),
+                  ...selectedPackaging, ...selectedCities, ...selectedCerts,
+                ].map((tag) => (
                   <span key={tag} className="inline-flex items-center gap-1 bg-navy-900 text-white text-xs px-2 py-0.5 rounded-full font-ibm">
                     {tag}
                     <button onClick={() => {
@@ -541,6 +573,8 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
                       if (selectedSchemes.includes(tag)) toggleArr(selectedSchemes, tag, setSelectedSchemes);
                       const featureKey = FEATURE_FILTERS.find(f => f.label === tag)?.key;
                       if (featureKey) toggleArr(selectedFeatures, featureKey, setSelectedFeatures);
+                      const specKey = SPECIALIZATION_FILTERS.find(s => s.label === tag)?.key;
+                      if (specKey) toggleArr(selectedSpecs, specKey, setSelectedSpecs);
                       if (selectedPackaging.includes(tag)) toggleArr(selectedPackaging, tag, setSelectedPackaging);
                       if (selectedCities.includes(tag)) toggleArr(selectedCities, tag, setSelectedCities);
                       if (selectedCerts.includes(tag)) toggleArr(selectedCerts, tag, setSelectedCerts);

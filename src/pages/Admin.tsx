@@ -27,6 +27,7 @@ interface Profile {
   features: string[];
   packaging_types: string[];
   marketplaces: string[];
+  specializations: string[];
   storage_price: string;
   assembly_price: string;
   delivery_price: string;
@@ -58,7 +59,7 @@ const EMPTY_PROFILE: Profile = {
   company_name: "", inn: "", city: "", warehouse_area: "", founded_year: "",
   description: "", detailed_description: "",
   contact_name: "", contact_email: "", contact_phone: "", contact_tg: "",
-  work_schemes: [], features: [], packaging_types: [], marketplaces: [],
+  work_schemes: [], features: [], packaging_types: [], marketplaces: [], specializations: [],
   storage_price: "", assembly_price: "", delivery_price: "", min_volume: "",
   has_trial: false, team_size: "", working_hours: "", photos: [],
 };
@@ -71,6 +72,21 @@ const FEATURE_OPTIONS: { key: string; label: string; icon: string }[] = [
   { key: "same_day", label: "Сборка день в день", icon: "Zap" },
   { key: "temp_control", label: "Температурный контроль", icon: "Thermometer" },
   { key: "packaging", label: "Упаковка под ключ", icon: "Package" },
+  { key: "honest_mark", label: "Маркировка Честный Знак", icon: "Tag" },
+  { key: "defect_check", label: "Проверка на брак", icon: "ShieldCheck" },
+  { key: "seller_packaging", label: "Упаковка в пакет продавца", icon: "ShoppingBag" },
+  { key: "shipment_prep", label: "Подготовка к отгрузке", icon: "PackageCheck" },
+  { key: "barcode_check", label: "Проверка штрихкода", icon: "ScanLine" },
+  { key: "cargo_receive", label: "Получение товара карго", icon: "Ship" },
+];
+const SPECIALIZATION_OPTIONS: { key: string; label: string; icon: string }[] = [
+  { key: "small_goods", label: "Мелкие товары", icon: "Boxes" },
+  { key: "cosmetics", label: "Косметика", icon: "Sparkles" },
+  { key: "clothing", label: "Обувь, одежда", icon: "Shirt" },
+  { key: "fuel_lubricants", label: "Горюче-смазочные материалы", icon: "Fuel" },
+  { key: "construction", label: "Строительные материалы", icon: "Hammer" },
+  { key: "appliances", label: "Бытовая техника", icon: "WashingMachine" },
+  { key: "electronics", label: "Электроника", icon: "Cpu" },
 ];
 const MARKETPLACE_OPTIONS = ["Wildberries", "Ozon", "Яндекс Маркет", "СберМегаМаркет", "Lamoda", "AliExpress"];
 
@@ -131,6 +147,7 @@ export default function Admin() {
           features: data.features || [],
           packaging_types: data.packaging_types || [],
           marketplaces: data.marketplaces || [],
+          specializations: data.specializations || [],
           photos: data.photos || [],
           has_trial: !!data.has_trial,
           warehouse_area: data.warehouse_area?.toString() || "",
@@ -504,6 +521,7 @@ function ProfileTab({
         features: profile.features,
         packaging_types: profile.packaging_types,
         marketplaces: profile.marketplaces,
+        specializations: profile.specializations,
         storage_price: profile.storage_price ? Number(profile.storage_price) : null,
         assembly_price: profile.assembly_price ? Number(profile.assembly_price) : null,
         delivery_price: profile.delivery_price ? Number(profile.delivery_price) : null,
@@ -726,6 +744,22 @@ function ProfileTab({
                 }`}>
                 <Icon name={f.icon} size={14} className={profile.features.includes(f.key) ? "text-navy-700" : "text-gray-400"} />
                 <span className="font-medium font-golos text-xs">{f.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Specializations */}
+        <div className="mb-5">
+          <label className="text-xs font-semibold text-gray-600 font-golos block mb-2">Специализация (типы товаров)</label>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {SPECIALIZATION_OPTIONS.map((s) => (
+              <button key={s.key} onClick={() => toggleArr("specializations", s.key)}
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm transition-all text-left ${
+                  (profile.specializations || []).includes(s.key) ? "bg-gold-50 border-gold-300 text-navy-900" : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
+                }`}>
+                <Icon name={s.icon} size={14} className={(profile.specializations || []).includes(s.key) ? "text-gold-600" : "text-gray-400"} />
+                <span className="font-medium font-golos text-xs">{s.label}</span>
               </button>
             ))}
           </div>

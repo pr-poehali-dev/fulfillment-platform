@@ -47,7 +47,7 @@ def handle_get_profile(token):
                 work_schemes, features, packaging_types, marketplaces,
                 storage_price, assembly_price, delivery_price, storage_rate, assembly_rate, delivery_rate,
                 min_volume, has_trial, team_size, working_hours, certificates, services,
-                badge, badge_color, rating, reviews_count, status, moderation_comment
+                badge, badge_color, rating, reviews_count, status, moderation_comment, specializations
             FROM fulfillments WHERE user_id = %d
         """ % user_id)
         row = cur.fetchone()
@@ -59,7 +59,7 @@ def handle_get_profile(token):
                 'work_schemes', 'features', 'packaging_types', 'marketplaces',
                 'storage_price', 'assembly_price', 'delivery_price', 'storage_rate', 'assembly_rate', 'delivery_rate',
                 'min_volume', 'has_trial', 'team_size', 'working_hours', 'certificates', 'services',
-                'badge', 'badge_color', 'rating', 'reviews_count', 'status', 'moderation_comment']
+                'badge', 'badge_color', 'rating', 'reviews_count', 'status', 'moderation_comment', 'specializations']
         profile = {}
         for i, c in enumerate(cols):
             v = row[i]
@@ -85,7 +85,7 @@ def handle_update_profile(body, token):
                     'detailed_description', 'logo', 'contact_name', 'contact_email', 'contact_phone', 'contact_tg',
                     'storage_price', 'assembly_price', 'delivery_price', 'storage_rate', 'assembly_rate', 'delivery_rate',
                     'min_volume', 'has_trial', 'team_size', 'working_hours']
-        array_fields = ['work_schemes', 'features', 'packaging_types', 'marketplaces', 'certificates', 'photos']
+        array_fields = ['work_schemes', 'features', 'packaging_types', 'marketplaces', 'certificates', 'photos', 'specializations']
         json_fields = ['services']
 
         updates = []
@@ -165,7 +165,7 @@ def handle_list_approved():
                 work_schemes, features, packaging_types, marketplaces,
                 storage_price, assembly_price, delivery_price, storage_rate, assembly_rate, delivery_rate,
                 min_volume, team_size, working_hours, certificates, services,
-                badge, badge_color, rating, reviews_count
+                badge, badge_color, rating, reviews_count, specializations
             FROM fulfillments WHERE status = 'approved'
             ORDER BY rating DESC, reviews_count DESC
         """)
@@ -175,7 +175,7 @@ def handle_list_approved():
                 'work_schemes', 'features', 'packaging_types', 'marketplaces',
                 'storage_price', 'assembly_price', 'delivery_price', 'storage_rate', 'assembly_rate', 'delivery_rate',
                 'min_volume', 'team_size', 'working_hours', 'certificates', 'services',
-                'badge', 'badge_color', 'rating', 'reviews_count']
+                'badge', 'badge_color', 'rating', 'reviews_count', 'specializations']
         result = []
         for row in rows:
             item = {}

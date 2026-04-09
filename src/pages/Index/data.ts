@@ -35,6 +35,7 @@ export interface Partner {
   team: number;
   workingHours: string;
   certificates: string[];
+  specializations?: string[];
 }
 
 const WAREHOUSE_1 = "https://cdn.poehali.dev/projects/2ad3c041-f607-4d31-bfee-ec63231b2c3d/files/8256f2c4-241c-42d2-8230-d5bfc2500632.jpg";
@@ -330,6 +331,12 @@ export const FEATURE_FILTERS = [
   { key: "returns", label: "Работа с возвратами", icon: "RefreshCw" },
   { key: "same_day", label: "Доставка день в день", icon: "Zap" },
   { key: "temp_control", label: "Температурный режим", icon: "Thermometer" },
+  { key: "honest_mark", label: "Маркировка Честный Знак", icon: "Tag" },
+  { key: "defect_check", label: "Проверка на брак", icon: "ShieldCheck" },
+  { key: "seller_packaging", label: "Упаковка в пакет продавца", icon: "ShoppingBag" },
+  { key: "shipment_prep", label: "Подготовка к отгрузке", icon: "PackageCheck" },
+  { key: "barcode_check", label: "Проверка штрихкода", icon: "ScanLine" },
+  { key: "cargo_receive", label: "Получение товара карго", icon: "Ship" },
 ];
 
 export const SCHEME_FILTERS = ["FBS", "FBO", "DBS"];
@@ -337,3 +344,14 @@ export const SCHEME_FILTERS = ["FBS", "FBO", "DBS"];
 export const PACKAGING_FILTERS = ["Полиэтилен", "Короб", "Пузырчатая плёнка", "Термоусадка", "Деревянная обрешётка", "Металлический контейнер"];
 
 export const MARKETPLACE_FILTERS = ["Wildberries", "Ozon", "Яндекс Маркет", "СберМегаМаркет", "Ali"];
+
+// Specialization definitions (типы товаров, с которыми работает фулфилмент)
+export const SPECIALIZATION_FILTERS = [
+  { key: "small_goods", label: "Мелкие товары", icon: "Boxes" },
+  { key: "cosmetics", label: "Косметика", icon: "Sparkles" },
+  { key: "clothing", label: "Обувь, одежда", icon: "Shirt" },
+  { key: "fuel_lubricants", label: "Горюче-смазочные материалы", icon: "Fuel" },
+  { key: "construction", label: "Строительные материалы", icon: "Hammer" },
+  { key: "appliances", label: "Бытовая техника", icon: "WashingMachine" },
+  { key: "electronics", label: "Электроника", icon: "Cpu" },
+];

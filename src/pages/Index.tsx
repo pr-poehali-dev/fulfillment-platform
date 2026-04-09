@@ -36,6 +36,7 @@ interface ApiFulfillment {
   badge_color: string;
   rating: number;
   reviews_count: number;
+  specializations?: string[];
 }
 
 function mapToPartner(f: ApiFulfillment): Partner {
@@ -68,6 +69,7 @@ function mapToPartner(f: ApiFulfillment): Partner {
     team: f.team_size || 0,
     workingHours: f.working_hours || "",
     certificates: f.certificates || [],
+    specializations: f.specializations || [],
   };
 }
 
