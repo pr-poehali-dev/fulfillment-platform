@@ -221,8 +221,8 @@ def handle_register_from_form(body):
         pw_hash = hash_password(temp_pw)
 
         cur.execute("""
-            INSERT INTO users (email, password_hash, phone, role)
-            VALUES ('%s', '%s', '%s', 'fulfillment')
+            INSERT INTO users (email, password_hash, phone, role, email_verified)
+            VALUES ('%s', '%s', '%s', 'fulfillment', TRUE)
             RETURNING id
         """ % (email.replace("'", "''"), pw_hash.replace("'", "''"), phone.replace("'", "''")))
         user_id = cur.fetchone()[0]
@@ -282,8 +282,7 @@ def handle_register_from_form(body):
         return resp(201, {
             'token': token,
             'temp_password': temp_pw,
-            'user': {'id': user_id, 'email': email, 'role': 'fulfillment', 'email_verified': False},
-            'email_code_hint': code
+            'user': {'id': user_id, 'email': email, 'role': 'fulfillment', 'email_verified': True},
         })
     except Exception as e:
         conn.rollback()

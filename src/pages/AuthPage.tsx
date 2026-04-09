@@ -38,12 +38,12 @@ export default function AuthPage() {
   const [submitting, setSubmitting] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
-  // Redirect if already logged in
+  // Redirect if already logged in (but not if we're mid-registration on verify step)
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && user && step !== "verify") {
       navigate("/admin", { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, step]);
 
   // Resend cooldown timer
   useEffect(() => {
@@ -109,6 +109,8 @@ export default function AuthPage() {
     }
   };
 
+  const { refresh } = useAuth();
+
   const handleVerify = async () => {
     const code = verifyCode.join("");
     if (code.length !== 6) {
@@ -120,6 +122,7 @@ export default function AuthPage() {
     setSubmitting(true);
     try {
       await api.verifyEmail(code);
+      await refresh();
       navigate("/admin", { replace: true });
     } catch (err: unknown) {
       const e = err as { message?: string; detail?: string };
