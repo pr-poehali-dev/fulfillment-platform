@@ -1,0 +1,551 @@
+import { useState } from "react";
+import Icon from "@/components/ui/icon";
+import { Button } from "@/components/ui/button";
+import { StarRating, BadgeChip } from "./Navigation";
+import { PARTNERS, FEATURE_FILTERS, SCHEME_FILTERS, PACKAGING_FILTERS, MARKETPLACE_FILTERS, type Partner } from "./data";
+
+// ─── CATALOG WITH ADVANCED FILTERS ───────────────────────────────────────────
+
+export function CatalogSection({ setActive, compareList, setCompareList, onOpenCompare }: {
+  setActive: (s: string) => void;
+  compareList: number[];
+  setCompareList: React.Dispatch<React.SetStateAction<number[]>>;
+  onOpenCompare: () => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [selectedMp, setSelectedMp] = useState<string[]>([]);
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [selectedSchemes, setSelectedSchemes] = useState<string[]>([]);
+  const [selectedPackaging, setSelectedPackaging] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState("rating");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const toggleArr = <T,>(arr: T[], val: T, set: (v: T[]) => void) =>
+    set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
+
+  const activeFilterCount =
+    selectedMp.length + selectedFeatures.length + selectedSchemes.length + selectedPackaging.length;
+
+  const clearAll = () => {
+    setSelectedMp([]);
+    setSelectedFeatures([]);
+    setSelectedSchemes([]);
+    setSelectedPackaging([]);
+    setSearch("");
+  };
+
+  const filtered = PARTNERS.filter((p) => {
+    if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.location.toLowerCase().includes(search.toLowerCase())) return false;
+    if (selectedMp.length && !selectedMp.some((mp) => p.tags.includes(mp))) return false;
+    if (selectedFeatures.length && !selectedFeatures.every((f) => p.features.includes(f))) return false;
+    if (selectedSchemes.length && !selectedSchemes.some((s) => p.workSchemes.includes(s))) return false;
+    if (selectedPackaging.length && !selectedPackaging.some((pk) => p.packagingTypes.includes(pk))) return false;
+    return true;
+  }).sort((a, b) => {
+    if (sortBy === "rating") return b.rating - a.rating;
+    if (sortBy === "reviews") return b.reviews - a.reviews;
+    if (sortBy === "price_asc") return a.storageRate - b.storageRate;
+    if (sortBy === "price_desc") return b.storageRate - a.storageRate;
+    return a.name.localeCompare(b.name);
+  });
+
+  const toggleCompare = (id: number) =>
+    setCompareList((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 3 ? [...prev, id] : prev);
+
+  // Hint to keep setActive referenced (preserves prop interface)
+  void setActive;
+
+  return (
+    <section id="catalog" className="bg-white">
+      {/* Sticky filter bar */}
+      <div className="sticky top-14 z-40 bg-white border-b border-gray-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center gap-2">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[180px] max-w-xs">
+            <Icon name="Search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Город или название..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white font-ibm focus:outline-none focus:ring-2 focus:ring-navy-900/15"
+            />
+          </div>
+
+          {/* Quick MP filters */}
+          <div className="hidden lg:flex items-center gap-1.5">
+            {MARKETPLACE_FILTERS.map((mp) => (
+              <button key={mp}
+                onClick={() => toggleArr(selectedMp, mp, setSelectedMp)}
+                className={`text-xs px-2.5 py-1.5 rounded-lg border font-medium transition-all ${selectedMp.includes(mp) ? "bg-navy-900 text-white border-navy-900" : "bg-white text-gray-600 border-gray-200 hover:border-navy-400"}`}>
+                {mp}
+              </button>
+            ))}
+          </div>
+
+          {/* All filters button */}
+          <button
+            onClick={() => setFiltersOpen(!filtersOpen)}
+            className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border font-medium transition-all ${filtersOpen || activeFilterCount > 0 ? "bg-navy-900 text-white border-navy-900" : "border-gray-200 text-gray-600 hover:border-navy-400"}`}
+          >
+            <Icon name="SlidersHorizontal" size={14} />
+            Фильтры
+            {activeFilterCount > 0 && (
+              <span className="bg-gold-500 text-navy-950 text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+
+          {/* Sort */}
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
+            className="text-sm px-2.5 py-1.5 border border-gray-200 rounded-lg bg-white font-ibm focus:outline-none cursor-pointer text-gray-700">
+            <option value="rating">По рейтингу</option>
+            <option value="reviews">По отзывам</option>
+            <option value="price_asc">Дешевле</option>
+            <option value="price_desc">Дороже</option>
+            <option value="name">По названию</option>
+          </select>
+
+          {/* Results count + compare btn */}
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-xs text-gray-400 font-ibm whitespace-nowrap">
+              {filtered.length} из {PARTNERS.length}
+            </span>
+            {compareList.length > 0 && (
+              <Button size="sm" className="bg-navy-900 hover:bg-navy-800 text-white font-semibold h-8 text-xs" onClick={onOpenCompare}>
+                <Icon name="GitCompare" size={13} className="mr-1" />
+                Сравнить {compareList.length}
+                {compareList.length < 3 && <span className="ml-1 opacity-60">/ 3</span>}
+              </Button>
+            )}
+            {activeFilterCount > 0 && (
+              <button onClick={clearAll} className="text-xs text-gray-400 hover:text-red-500 flex items-center gap-0.5 transition-colors">
+                <Icon name="X" size={12} />Сбросить
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Expanded filter panel */}
+        {filtersOpen && (
+          <div className="border-t border-gray-100 bg-gray-50">
+            <div className="max-w-7xl mx-auto px-4 py-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+              {/* Marketplace (mobile) */}
+              <div className="lg:hidden">
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm">Маркетплейс</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {MARKETPLACE_FILTERS.map((mp) => (
+                    <button key={mp}
+                      onClick={() => toggleArr(selectedMp, mp, setSelectedMp)}
+                      className={`text-xs px-2.5 py-1.5 rounded-lg border font-medium transition-all ${selectedMp.includes(mp) ? "bg-navy-900 text-white border-navy-900" : "bg-white text-gray-600 border-gray-200"}`}>
+                      {mp}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Work schemes */}
+              <div>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm">Схема работы</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {SCHEME_FILTERS.map((s) => (
+                    <button key={s}
+                      onClick={() => toggleArr(selectedSchemes, s, setSelectedSchemes)}
+                      className={`text-xs px-3 py-1.5 rounded-lg border font-semibold transition-all ${selectedSchemes.includes(s) ? "bg-navy-900 text-white border-navy-900" : "bg-white text-gray-700 border-gray-200 hover:border-navy-400"}`}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Features / services */}
+              <div>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm">Дополнительные услуги</div>
+                <div className="flex flex-col gap-1.5">
+                  {FEATURE_FILTERS.map((f) => (
+                    <label key={f.key} className="flex items-center gap-2 cursor-pointer group">
+                      <div
+                        onClick={() => toggleArr(selectedFeatures, f.key, setSelectedFeatures)}
+                        className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all cursor-pointer ${selectedFeatures.includes(f.key) ? "bg-navy-900 border-navy-900" : "bg-white border-gray-300 group-hover:border-navy-400"}`}>
+                        {selectedFeatures.includes(f.key) && <Icon name="Check" size={10} className="text-white" />}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-sm text-gray-700 font-ibm"
+                        onClick={() => toggleArr(selectedFeatures, f.key, setSelectedFeatures)}>
+                        <Icon name={f.icon as "Camera"} size={13} className="text-gray-400" />
+                        {f.label}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Packaging */}
+              <div>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm">Тип упаковки</div>
+                <div className="flex flex-col gap-1.5">
+                  {PACKAGING_FILTERS.map((pk) => (
+                    <label key={pk} className="flex items-center gap-2 cursor-pointer group">
+                      <div
+                        onClick={() => toggleArr(selectedPackaging, pk, setSelectedPackaging)}
+                        className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all cursor-pointer ${selectedPackaging.includes(pk) ? "bg-navy-900 border-navy-900" : "bg-white border-gray-300 group-hover:border-navy-400"}`}>
+                        {selectedPackaging.includes(pk) && <Icon name="Check" size={10} className="text-white" />}
+                      </div>
+                      <span className="text-sm text-gray-700 font-ibm"
+                        onClick={() => toggleArr(selectedPackaging, pk, setSelectedPackaging)}>
+                        {pk}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Active filters chips */}
+            {activeFilterCount > 0 && (
+              <div className="max-w-7xl mx-auto px-4 pb-3 flex flex-wrap items-center gap-1.5">
+                <span className="text-xs text-gray-400 font-ibm">Активные:</span>
+                {[...selectedMp, ...selectedSchemes, ...selectedFeatures.map(f => FEATURE_FILTERS.find(x => x.key === f)?.label || f), ...selectedPackaging].map((tag) => (
+                  <span key={tag} className="inline-flex items-center gap-1 bg-navy-900 text-white text-xs px-2 py-0.5 rounded-full font-ibm">
+                    {tag}
+                    <button onClick={() => {
+                      if (selectedMp.includes(tag)) toggleArr(selectedMp, tag, setSelectedMp);
+                      if (selectedSchemes.includes(tag)) toggleArr(selectedSchemes, tag, setSelectedSchemes);
+                      const featureKey = FEATURE_FILTERS.find(f => f.label === tag)?.key;
+                      if (featureKey) toggleArr(selectedFeatures, featureKey, setSelectedFeatures);
+                      if (selectedPackaging.includes(tag)) toggleArr(selectedPackaging, tag, setSelectedPackaging);
+                    }}>
+                      <Icon name="X" size={9} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Partner cards */}
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        {filtered.length === 0 ? (
+          <div className="text-center py-20 text-gray-400 font-ibm">
+            <Icon name="SearchX" size={36} className="mx-auto mb-3 opacity-30" />
+            <p className="text-base">Ничего не найдено</p>
+            <button onClick={clearAll} className="mt-2 text-sm text-navy-700 hover:underline">Сбросить все фильтры</button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filtered.map((p) => (
+              <PartnerCard key={p.id} p={p} inCompare={compareList.includes(p.id)} onCompare={() => toggleCompare(p.id)} />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function PartnerCard({ p, inCompare, onCompare }: { p: Partner; inCompare: boolean; onCompare: () => void }) {
+  const featureIcons: Record<string, { icon: string; label: string; color: string }> = {
+    cameras: { icon: "Camera", label: "Камеры", color: "text-blue-500" },
+    dangerous: { icon: "AlertTriangle", label: "Опасные грузы", color: "text-red-500" },
+    returns: { icon: "RefreshCw", label: "Возвраты", color: "text-emerald-500" },
+    same_day: { icon: "Zap", label: "День в день", color: "text-amber-500" },
+    temp_control: { icon: "Thermometer", label: "Темп. режим", color: "text-cyan-500" },
+    packaging: { icon: "Package", label: "Упаковка", color: "text-purple-500" },
+  };
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl p-4 card-hover shadow-sm flex flex-col">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-2.5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-10 h-10 bg-navy-50 rounded-lg flex items-center justify-center text-xl flex-shrink-0">{p.logo}</div>
+          <div>
+            <div className="font-golos font-bold text-navy-900 text-sm leading-tight">{p.name}</div>
+            <div className="text-xs text-gray-400 font-ibm flex items-center gap-0.5 mt-0.5">
+              <Icon name="MapPin" size={10} />{p.location}
+            </div>
+          </div>
+        </div>
+        <BadgeChip color={p.badgeColor}>{p.badge}</BadgeChip>
+      </div>
+
+      <p className="text-xs text-gray-500 font-ibm leading-relaxed mb-3 flex-1">{p.description}</p>
+
+      {/* Work schemes */}
+      <div className="flex flex-wrap gap-1 mb-2.5">
+        {p.workSchemes.map((s) => (
+          <span key={s} className="text-xs px-2 py-0.5 bg-navy-900 text-white rounded font-ibm font-medium">{s}</span>
+        ))}
+        {p.tags.slice(0, 2).map((t) => (
+          <span key={t} className="text-xs px-2 py-0.5 bg-navy-50 text-navy-700 rounded font-ibm">{t}</span>
+        ))}
+        {p.tags.length > 2 && <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded font-ibm">+{p.tags.length - 2}</span>}
+      </div>
+
+      {/* Feature icons */}
+      <div className="flex flex-wrap gap-2 mb-3">
+        {p.features.map((f) => {
+          const fi = featureIcons[f];
+          if (!fi) return null;
+          return (
+            <div key={f} className="flex items-center gap-1 text-xs text-gray-500 font-ibm" title={fi.label}>
+              <Icon name={fi.icon as "Camera"} size={12} className={fi.color} />
+              <span className="hidden xl:inline">{fi.label}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Rates */}
+      <div className="grid grid-cols-3 gap-1 bg-gray-50 rounded-lg p-2 mb-3">
+        <div className="text-center">
+          <div className="text-xs text-gray-400 font-ibm">Хранение</div>
+          <div className="text-xs font-semibold text-navy-900">{p.storage}</div>
+        </div>
+        <div className="text-center border-x border-gray-200">
+          <div className="text-xs text-gray-400 font-ibm">Сборка</div>
+          <div className="text-xs font-semibold text-navy-900">{p.assembly}</div>
+        </div>
+        <div className="text-center">
+          <div className="text-xs text-gray-400 font-ibm">Доставка</div>
+          <div className="text-xs font-semibold text-navy-900">{p.delivery}</div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+        <div className="flex items-center gap-1.5">
+          <StarRating rating={p.rating} size={12} />
+          <span className="text-sm font-semibold text-navy-900">{p.rating}</span>
+          <span className="text-xs text-gray-400">({p.reviews})</span>
+        </div>
+        <button onClick={onCompare}
+          className={`text-xs px-2.5 py-1 rounded border font-medium transition-all ${inCompare ? "bg-navy-900 text-white border-navy-900" : "border-gray-200 text-gray-500 hover:border-navy-900/50"}`}>
+          {inCompare ? "✓ Добавлен" : "Сравнить"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── COMPARE PAGE (fullscreen overlay) ───────────────────────────────────────
+
+export function ComparePage({ compareList, setCompareList, onClose }: {
+  compareList: number[];
+  setCompareList: React.Dispatch<React.SetStateAction<number[]>>;
+  onClose: () => void;
+}) {
+  const selected = compareList.slice(0, 3).map((id) => PARTNERS.find((p) => p.id === id)!).filter(Boolean);
+
+  const featureDefs = [
+    { key: "cameras", label: "Видеонаблюдение", icon: "Camera", color: "text-blue-500" },
+    { key: "dangerous", label: "Опасные грузы", icon: "AlertTriangle", color: "text-red-500" },
+    { key: "returns", label: "Работа с возвратами", icon: "RefreshCw", color: "text-emerald-500" },
+    { key: "same_day", label: "Доставка день в день", icon: "Zap", color: "text-amber-500" },
+    { key: "temp_control", label: "Температурный режим", icon: "Thermometer", color: "text-cyan-500" },
+    { key: "packaging", label: "Упаковка", icon: "Package", color: "text-purple-500" },
+  ];
+
+  const rows: { label: string; render: (p: Partner) => React.ReactNode }[] = [
+    { label: "Рейтинг", render: (p) => (
+      <div className="flex items-center gap-1.5">
+        <StarRating rating={p.rating} size={13} />
+        <span className="font-golos font-bold text-navy-900">{p.rating}</span>
+        <span className="text-xs text-gray-400">({p.reviews})</span>
+      </div>
+    )},
+    { label: "Город", render: (p) => (
+      <span className="flex items-center gap-1 text-sm font-ibm text-navy-900">
+        <Icon name="MapPin" size={12} className="text-gray-400" />{p.location}
+      </span>
+    )},
+    { label: "Мин. объём", render: (p) => <span className="text-sm font-ibm text-navy-900">{p.minVolume}</span> },
+    { label: "Схемы работы", render: (p) => (
+      <div className="flex flex-wrap gap-1">
+        {p.workSchemes.map((s) => <span key={s} className="text-xs px-2 py-0.5 bg-navy-900 text-white rounded font-ibm font-medium">{s}</span>)}
+      </div>
+    )},
+    { label: "Маркетплейсы", render: (p) => (
+      <div className="flex flex-wrap gap-1">
+        {p.tags.map((t) => <span key={t} className="text-xs px-2 py-0.5 bg-navy-50 text-navy-700 rounded font-ibm">{t}</span>)}
+      </div>
+    )},
+    { label: "Хранение", render: (p) => (
+      <div>
+        <span className="font-golos font-bold text-navy-900">{p.storage}</span>
+      </div>
+    )},
+    { label: "Сборка заказа", render: (p) => (
+      <span className="font-golos font-bold text-navy-900">{p.assembly}</span>
+    )},
+    { label: "Доставка", render: (p) => (
+      <span className="font-golos font-bold text-navy-900">{p.delivery}</span>
+    )},
+    { label: "Упаковка", render: (p) => (
+      <div className="flex flex-wrap gap-1">
+        {p.packagingTypes.map((pk) => <span key={pk} className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded font-ibm">{pk}</span>)}
+      </div>
+    )},
+    { label: "Дополнительные услуги", render: (p) => (
+      <div className="flex flex-col gap-1.5">
+        {featureDefs.map((f) => (
+          <div key={f.key} className={`flex items-center gap-1.5 text-xs font-ibm ${p.features.includes(f.key) ? "text-gray-700" : "text-gray-300"}`}>
+            <Icon name={f.icon as "Camera"} size={12} className={p.features.includes(f.key) ? f.color : "text-gray-300"} />
+            {f.label}
+            {p.features.includes(f.key)
+              ? <Icon name="Check" size={11} className="text-emerald-500 ml-auto" />
+              : <Icon name="Minus" size={11} className="text-gray-300 ml-auto" />}
+          </div>
+        ))}
+      </div>
+    )},
+  ];
+
+  const removePartner = (id: number) => setCompareList((prev) => prev.filter((x) => x !== id));
+
+  // Best values highlight
+  const cheapestStorage = Math.min(...selected.map((p) => p.storageRate));
+  const cheapestAssembly = Math.min(...selected.map((p) => p.assemblyRate));
+  const cheapestDelivery = Math.min(...selected.map((p) => p.deliveryRate));
+  const highestRating = Math.max(...selected.map((p) => p.rating));
+
+  const colCount = selected.length;
+
+  return (
+    <div className="fixed inset-0 z-[60] bg-gray-50 flex flex-col overflow-hidden">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-100 shadow-sm flex-shrink-0">
+        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-3">
+          <div className="flex items-center gap-2 mr-2">
+            <div className="w-7 h-7 bg-gold-500 rounded flex items-center justify-center">
+              <Icon name="Package" size={13} className="text-navy-950" />
+            </div>
+            <span className="font-golos font-bold text-navy-900 hidden sm:inline">FulfillHub</span>
+          </div>
+          <div className="h-5 w-px bg-gray-200" />
+          <Icon name="GitCompare" size={16} className="text-navy-700" />
+          <span className="font-golos font-bold text-navy-900">Сравнение партнёров</span>
+          <span className="text-xs bg-navy-100 text-navy-700 px-2 py-0.5 rounded font-ibm">{selected.length} из 3</span>
+          <button onClick={onClose} className="ml-auto flex items-center gap-1.5 text-sm text-gray-500 hover:text-navy-900 transition-colors font-ibm">
+            <Icon name="X" size={16} />
+            <span className="hidden sm:inline">Закрыть</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-auto">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          {selected.length < 2 ? (
+            <div className="text-center py-24">
+              <div className="w-16 h-16 bg-navy-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Icon name="GitCompare" size={28} className="text-navy-300" />
+              </div>
+              <h3 className="font-golos font-bold text-xl text-navy-900 mb-2">Добавьте минимум 2 партнёра</h3>
+              <p className="text-gray-500 font-ibm text-sm mb-5">Вернитесь в каталог и отметьте партнёров для сравнения</p>
+              <Button className="bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos" onClick={onClose}>
+                <Icon name="ArrowLeft" size={15} className="mr-1.5" />Вернуться в каталог
+              </Button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] border-collapse">
+                {/* Partner headers */}
+                <thead>
+                  <tr>
+                    <th className="text-left p-4 bg-white border border-gray-100 rounded-tl-xl w-44 align-bottom">
+                      <span className="text-xs text-gray-400 font-ibm font-normal uppercase tracking-wide">Параметр</span>
+                    </th>
+                    {selected.map((p, idx) => (
+                      <th key={p.id} className={`p-4 bg-white border border-gray-100 align-top text-left ${idx === selected.length - 1 ? "rounded-tr-xl" : ""}`}>
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-11 h-11 bg-navy-50 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">{p.logo}</div>
+                            <div>
+                              <div className="font-golos font-black text-navy-900 text-base leading-tight">{p.name}</div>
+                              <div className="text-xs text-gray-400 font-ibm flex items-center gap-0.5 mt-0.5">
+                                <Icon name="MapPin" size={10} />{p.location}
+                              </div>
+                            </div>
+                          </div>
+                          <button onClick={() => removePartner(p.id)} className="text-gray-300 hover:text-red-400 transition-colors flex-shrink-0 mt-0.5" title="Убрать из сравнения">
+                            <Icon name="X" size={15} />
+                          </button>
+                        </div>
+                        <BadgeChip color={p.badgeColor}>{p.badge}</BadgeChip>
+                      </th>
+                    ))}
+                    {/* Empty placeholder if < 3 */}
+                    {colCount < 3 && (
+                      <th className="p-4 bg-gray-50/60 border border-dashed border-gray-200 rounded-tr-xl align-middle text-center">
+                        <div className="text-gray-300 font-ibm text-xs">
+                          <Icon name="Plus" size={20} className="mx-auto mb-1 opacity-40" />
+                          Добавить<br />партнёра
+                        </div>
+                      </th>
+                    )}
+                  </tr>
+                </thead>
+
+                {/* Data rows */}
+                <tbody>
+                  {rows.map((row, i) => (
+                    <tr key={row.label} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/40"}>
+                      <td className="p-4 border border-gray-100 text-xs font-semibold text-gray-500 font-ibm uppercase tracking-wide align-top whitespace-nowrap">
+                        {row.label}
+                      </td>
+                      {selected.map((p) => {
+                        // Highlight best prices
+                        const isBestStorage = row.label === "Хранение" && p.storageRate === cheapestStorage;
+                        const isBestAssembly = row.label === "Сборка заказа" && p.assemblyRate === cheapestAssembly;
+                        const isBestDelivery = row.label === "Доставка" && p.deliveryRate === cheapestDelivery;
+                        const isBestRating = row.label === "Рейтинг" && p.rating === highestRating;
+                        const isBest = (isBestStorage || isBestAssembly || isBestDelivery || isBestRating) && selected.length > 1;
+                        return (
+                          <td key={p.id} className={`p-4 border border-gray-100 align-top relative ${isBest ? "bg-emerald-50/60" : ""}`}>
+                            {isBest && (
+                              <span className="absolute top-2 right-2 text-xs bg-emerald-500 text-white px-1.5 py-0.5 rounded font-ibm font-medium">
+                                Лучший
+                              </span>
+                            )}
+                            {row.render(p)}
+                          </td>
+                        );
+                      })}
+                      {colCount < 3 && <td className="p-4 border border-dashed border-gray-200 bg-gray-50/30" />}
+                    </tr>
+                  ))}
+                </tbody>
+
+                {/* CTA row */}
+                <tfoot>
+                  <tr>
+                    <td className="p-4 border border-gray-100 rounded-bl-xl bg-white" />
+                    {selected.map((p, idx) => (
+                      <td key={p.id} className={`p-4 border border-gray-100 bg-white ${idx === selected.length - 1 && colCount === 3 ? "rounded-br-xl" : ""}`}>
+                        <Button className="w-full bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos h-9 text-sm">
+                          <Icon name="Send" size={13} className="mr-1.5" />Запросить КП
+                        </Button>
+                      </td>
+                    ))}
+                    {colCount < 3 && (
+                      <td className="p-4 border border-dashed border-gray-200 bg-gray-50/30 rounded-br-xl">
+                        <button onClick={onClose} className="w-full h-9 rounded-lg border-2 border-dashed border-gray-200 text-xs text-gray-400 font-ibm hover:border-navy-300 hover:text-navy-500 transition-colors">
+                          + Добавить
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
