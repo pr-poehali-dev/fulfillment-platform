@@ -19,7 +19,7 @@ interface AuthCtx {
   fulfillment: Fulfillment | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, phone: string) => Promise<{ email_code_hint?: string }>;
+  register: (email: string, password: string, phone: string) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
 }
@@ -63,7 +63,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(data.token);
     setUser(data.user);
     await refresh();
-    return { email_code_hint: data.email_code_hint };
   };
 
   const logout = () => {

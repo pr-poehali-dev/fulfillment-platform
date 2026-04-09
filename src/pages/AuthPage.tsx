@@ -30,7 +30,6 @@ export default function AuthPage() {
 
   // Verification
   const [verifyCode, setVerifyCode] = useState(["", "", "", "", "", ""]);
-  const [codeHint, setCodeHint] = useState("");
   const codeRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // State
@@ -75,9 +74,6 @@ export default function AuthPage() {
     try {
       const data = await api.register(email.trim(), password, phone.trim());
       setToken(data.token);
-      if (data.email_code_hint) {
-        setCodeHint(data.email_code_hint);
-      }
       setStep("verify");
     } catch (err: unknown) {
       const e = err as { message?: string; detail?: string };
@@ -136,10 +132,7 @@ export default function AuthPage() {
     if (resendCooldown > 0) return;
     setError("");
     try {
-      const data = await api.resendCode();
-      if (data.email_code_hint) {
-        setCodeHint(data.email_code_hint);
-      }
+      await api.resendCode();
       setResendCooldown(60);
     } catch (err: unknown) {
       const e = err as { message?: string; detail?: string };
@@ -186,7 +179,6 @@ export default function AuthPage() {
     setError("");
     setStep("form");
     setVerifyCode(["", "", "", "", "", ""]);
-    setCodeHint("");
   };
 
   // ─── LOADING ────────────────────────────────────────────────────────────────
@@ -239,21 +231,6 @@ export default function AuthPage() {
             {step === "verify" ? (
               /* ─── VERIFICATION STEP ──────────────────────────── */
               <div className="space-y-6">
-                {/* Code hint (temporary for testing) */}
-                {codeHint && (
-                  <div className="bg-gold-500/10 border border-gold-500/30 rounded-lg p-3 flex items-start gap-2">
-                    <Icon name="Info" size={16} className="text-gold-400 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-gold-400 text-xs font-medium mb-0.5">
-                        Тестовый режим
-                      </p>
-                      <p className="text-gold-300 text-sm font-ibm">
-                        Код подтверждения: <span className="font-bold">{codeHint}</span>
-                      </p>
-                    </div>
-                  </div>
-                )}
-
                 {/* Code inputs */}
                 <div>
                   <label className="block text-sm font-medium text-navy-200 mb-3 text-center">

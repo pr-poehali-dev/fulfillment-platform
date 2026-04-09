@@ -119,7 +119,7 @@ export default function Admin() {
 
   // Email verification state
   const [verifyCode, setVerifyCode] = useState(["", "", "", "", "", ""]);
-  const [codeHint, setCodeHint] = useState("");
+
   const [verifySubmitting, setVerifySubmitting] = useState(false);
   const [verifyError, setVerifyError] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -247,7 +247,6 @@ export default function Admin() {
     if (resendCooldown > 0) return;
     try {
       const data = await api.resendCode();
-      if (data.email_code_hint) setCodeHint(data.email_code_hint);
       setResendCooldown(60);
       toast.success("Код отправлен повторно");
     } catch (err: unknown) {
@@ -301,16 +300,6 @@ export default function Admin() {
             </div>
 
             <div className="bg-navy-900 border border-navy-800/60 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-black/30 space-y-6">
-              {codeHint && (
-                <div className="bg-gold-500/10 border border-gold-500/30 rounded-lg p-3 flex items-start gap-2">
-                  <Icon name="Info" size={16} className="text-gold-400 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-gold-400 text-xs font-medium mb-0.5">Тестовый режим</p>
-                    <p className="text-gold-300 text-sm font-ibm">Код: <span className="font-bold">{codeHint}</span></p>
-                  </div>
-                </div>
-              )}
-
               <div>
                 <label className="block text-sm font-medium text-navy-200 mb-3 text-center">Введите 6-значный код</label>
                 <div className="flex gap-2 sm:gap-3 justify-center" onPaste={handleCodePaste}>
