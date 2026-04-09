@@ -65,8 +65,8 @@ def handle_register(body):
         user_id = cur.fetchone()[0]
 
         cur.execute("""
-            INSERT INTO fulfillments (user_id, contact_email, contact_phone)
-            VALUES (%d, '%s', '%s')
+            INSERT INTO fulfillments (user_id, contact_email, contact_phone, status)
+            VALUES (%d, '%s', '%s', 'draft')
         """ % (user_id, email.replace("'", "''"), phone.replace("'", "''")))
 
         code = gen_code()

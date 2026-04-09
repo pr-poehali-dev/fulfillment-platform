@@ -38,6 +38,9 @@ interface FulfillmentItem {
   created_at: string;
   email_verified: boolean;
   user_email: string;
+  lead_price?: number;
+  total_leads?: number;
+  balance?: number;
 }
 
 interface AdminQuote {
@@ -53,6 +56,15 @@ interface AdminQuote {
   created_at: string;
   fulfillment_name: string;
   fulfillment_id: number;
+  lead_price?: number;
+  payment_status?: string;
+}
+
+interface QuoteStats {
+  total_leads: number;
+  total_revenue: number;
+  unpaid_revenue: number;
+  paid_revenue: number;
 }
 
 type Tab = "fulfillments" | "quotes";
@@ -342,9 +354,10 @@ function FulfillmentsTab() {
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Компания</th>
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Город</th>
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Контакт</th>
-                    <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Email верифиц.</th>
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Дата</th>
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Статус</th>
+                    <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Цена лида</th>
+                    <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Лиды</th>
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Действия</th>
                   </tr>
                 </thead>
@@ -364,23 +377,23 @@ function FulfillmentsTab() {
                           <div className="text-gray-700 font-ibm text-xs">{item.contact_email || item.user_email || "---"}</div>
                           <div className="text-gray-400 font-ibm text-xs">{item.contact_phone || "---"}</div>
                         </td>
-                        <td className="px-4 py-3">
-                          {item.email_verified ? (
-                            <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
-                              <Icon name="CheckCircle" size={12} /> Да
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-xs text-gray-400 font-medium">
-                              <Icon name="XCircle" size={12} /> Нет
-                            </span>
-                          )}
-                        </td>
                         <td className="px-4 py-3 text-xs text-gray-400 font-ibm whitespace-nowrap">{formatDate(item.created_at)}</td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${st.bg} ${st.text}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
                             {st.label}
                           </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <LeadPriceEditor
+                            fulfillmentId={item.id}
+                            initialPrice={Number(item.lead_price || 0)}
+                            onSaved={load}
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 font-ibm whitespace-nowrap">
+                          <div className="font-bold text-navy-900">{item.total_leads || 0}</div>
+                          <div className="text-[10px] text-gray-400">Баланс: {Math.round(Number(item.balance || 0))} ₽</div>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1">
@@ -740,6 +753,7 @@ function InfoField({ label, value }: { label: string; value: string | null | und
 
 function QuotesTab() {
   const [quotes, setQuotes] = useState<AdminQuote[]>([]);
+  const [stats, setStats] = useState<QuoteStats>({ total_leads: 0, total_revenue: 0, unpaid_revenue: 0, paid_revenue: 0 });
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
   const [selected, setSelected] = useState<AdminQuote | null>(null);
@@ -748,7 +762,8 @@ function QuotesTab() {
     try {
       setLoading(true);
       const data = await api.adminAllQuotes();
-      setQuotes(data.quotes || data || []);
+      setQuotes(data.quotes || []);
+      if (data.stats) setStats(data.stats);
     } catch (err: unknown) {
       const e = err as { message?: string; detail?: string };
       toast.error(e.message || e.detail || "Не удалось загрузить запросы");
@@ -757,6 +772,17 @@ function QuotesTab() {
       setLoading(false);
     }
   }, []);
+
+  const markPaid = async (quoteId: number) => {
+    try {
+      await api.adminMarkPaid(quoteId);
+      toast.success("Лид отмечен оплаченным");
+      load();
+    } catch (err: unknown) {
+      const e = err as { error?: string };
+      toast.error(e.error || "Не удалось обновить");
+    }
+  };
 
   useEffect(() => { load(); }, [load]);
 
@@ -784,8 +810,42 @@ function QuotesTab() {
     );
   }
 
+  const fmt = (n: number) => Math.round(n || 0).toLocaleString("ru-RU");
+
   return (
     <div>
+      {/* Revenue Stats — Monetization */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        <div className="bg-gradient-to-br from-gold-500 to-amber-600 rounded-xl p-4 shadow-md text-white">
+          <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mb-2">
+            <Icon name="TrendingUp" size={15} />
+          </div>
+          <div className="font-golos font-black text-2xl">{fmt(stats.total_revenue)} ₽</div>
+          <div className="text-xs text-white/80 font-ibm">Общий доход</div>
+        </div>
+        <div className="bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl p-4 shadow-md text-white">
+          <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mb-2">
+            <Icon name="CheckCircle" size={15} />
+          </div>
+          <div className="font-golos font-black text-2xl">{fmt(stats.paid_revenue)} ₽</div>
+          <div className="text-xs text-white/80 font-ibm">Оплачено</div>
+        </div>
+        <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-4 shadow-md text-white">
+          <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mb-2">
+            <Icon name="Clock" size={15} />
+          </div>
+          <div className="font-golos font-black text-2xl">{fmt(stats.unpaid_revenue)} ₽</div>
+          <div className="text-xs text-white/80 font-ibm">К оплате</div>
+        </div>
+        <div className="bg-gradient-to-br from-navy-800 to-navy-950 rounded-xl p-4 shadow-md text-white">
+          <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mb-2">
+            <Icon name="Users" size={15} />
+          </div>
+          <div className="font-golos font-black text-2xl">{stats.total_leads}</div>
+          <div className="text-xs text-white/70 font-ibm">Лидов отправлено</div>
+        </div>
+      </div>
+
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         {[
@@ -841,32 +901,26 @@ function QuotesTab() {
                   <tr className="bg-gray-50 text-left">
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Отправитель</th>
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Контакт</th>
-                    <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Параметры</th>
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Фулфилмент</th>
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Дата</th>
-                    <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Статус</th>
+                    <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Цена лида</th>
+                    <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Оплата</th>
+                    <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Действия</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {filtered.map((q) => {
-                    const qs = QUOTE_STATUS_CFG[q.status] || QUOTE_STATUS_CFG.new;
+                    const isPaid = q.payment_status === "paid";
                     return (
-                      <tr key={q.id} onClick={() => setSelected(q)}
-                        className="hover:bg-gray-50 cursor-pointer transition-colors">
-                        <td className="px-4 py-3">
+                      <tr key={q.id}
+                        className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 cursor-pointer" onClick={() => setSelected(q)}>
                           <div className="font-golos font-bold text-navy-900">{q.sender_name}</div>
                           <div className="text-xs text-gray-400 font-ibm">{q.sender_company}</div>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 cursor-pointer" onClick={() => setSelected(q)}>
                           <div className="text-gray-700 font-ibm text-xs">{q.sender_email}</div>
                           <div className="text-gray-400 font-ibm text-xs">{q.sender_phone}</div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="text-xs text-gray-600 font-ibm">
-                            {q.sku_count > 0 && <span>{q.sku_count.toLocaleString("ru-RU")} SKU</span>}
-                            {q.sku_count > 0 && q.orders_count > 0 && <span> · </span>}
-                            {q.orders_count > 0 && <span>{q.orders_count.toLocaleString("ru-RU")} зак/мес</span>}
-                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-xs font-medium text-navy-700 bg-navy-50 px-2 py-0.5 rounded font-ibm">
@@ -875,10 +929,32 @@ function QuotesTab() {
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-400 font-ibm whitespace-nowrap">{formatDate(q.created_at)}</td>
                         <td className="px-4 py-3">
-                          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${qs.bg} ${qs.text}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${qs.dot}`} />
-                            {qs.label}
-                          </span>
+                          <div className="font-golos font-bold text-navy-900 text-sm">{fmt(q.lead_price || 0)} ₽</div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {isPaid ? (
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-700">
+                              <Icon name="CheckCircle" size={11} />
+                              Оплачено
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-amber-50 text-amber-700">
+                              <Icon name="Clock" size={11} />
+                              К оплате
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {!isPaid && (
+                            <button
+                              onClick={() => markPaid(q.id)}
+                              className="text-xs px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-ibm font-semibold transition-colors"
+                              title="Отметить оплаченным"
+                            >
+                              <Icon name="DollarSign" size={11} className="inline mr-0.5" />
+                              Оплачено
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -1021,6 +1097,78 @@ function AdminQuoteModal({ quote, onClose }: {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── LEAD PRICE EDITOR ──────────────────────────────────────────────────────
+
+function LeadPriceEditor({ fulfillmentId, initialPrice, onSaved }: {
+  fulfillmentId: number;
+  initialPrice: number;
+  onSaved: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(String(initialPrice || 0));
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { setValue(String(initialPrice || 0)); }, [initialPrice]);
+
+  const save = async () => {
+    const price = parseFloat(value) || 0;
+    if (price < 0) return;
+    setSaving(true);
+    try {
+      await api.adminSetLeadPrice(fulfillmentId, price);
+      toast.success("Цена лида обновлена");
+      setEditing(false);
+      onSaved();
+    } catch (err: unknown) {
+      const e = err as { error?: string };
+      toast.error(e.error || "Не удалось сохранить");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!editing) {
+    return (
+      <button
+        onClick={() => setEditing(true)}
+        className="text-left hover:bg-gray-50 rounded px-1.5 py-0.5 transition-colors group"
+        title="Нажмите чтобы изменить"
+      >
+        <div className="font-golos font-bold text-navy-900 text-sm">{Math.round(initialPrice || 0)} ₽</div>
+        <div className="text-[10px] text-gray-400 group-hover:text-navy-500 font-ibm flex items-center gap-0.5">
+          <Icon name="Pencil" size={9} /> изменить
+        </div>
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <input
+        type="number"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && save()}
+        autoFocus
+        className="w-20 px-2 py-1 border border-navy-300 rounded text-xs font-ibm focus:outline-none focus:ring-1 focus:ring-navy-500"
+      />
+      <button
+        onClick={save}
+        disabled={saving}
+        className="p-1 text-emerald-600 hover:bg-emerald-50 rounded"
+      >
+        <Icon name={saving ? "Loader2" : "Check"} size={13} className={saving ? "animate-spin" : ""} />
+      </button>
+      <button
+        onClick={() => { setEditing(false); setValue(String(initialPrice || 0)); }}
+        className="p-1 text-gray-400 hover:bg-gray-100 rounded"
+      >
+        <Icon name="X" size={13} />
+      </button>
     </div>
   );
 }

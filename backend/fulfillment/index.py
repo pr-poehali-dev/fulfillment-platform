@@ -201,19 +201,64 @@ def handle_send_quote(body):
     conn = get_db()
     cur = conn.cursor()
     try:
+        cur.execute("SELECT id, lead_price, status FROM fulfillments WHERE id = %d" % int(fulfillment_id))
+        ff = cur.fetchone()
+        if not ff:
+            return resp(404, {'error': 'Фулфилмент не найден'})
+        if ff[2] != 'approved':
+            return resp(403, {'error': 'Фулфилмент недоступен'})
+        lead_price = float(ff[1] or 0)
+
         company = body.get('company', '').replace("'", "''")
         msg = body.get('message', '').replace("'", "''")
         sku = int(body.get('sku_count', 0) or 0)
         orders = int(body.get('orders_count', 0) or 0)
 
         cur.execute("""
-            INSERT INTO quote_requests (fulfillment_id, sender_name, sender_company, sender_email, sender_phone, sku_count, orders_count, message)
-            VALUES (%d, '%s', '%s', '%s', '%s', %d, %d, '%s')
+            INSERT INTO quote_requests (fulfillment_id, sender_name, sender_company, sender_email, sender_phone, sku_count, orders_count, message, lead_price)
+            VALUES (%d, '%s', '%s', '%s', '%s', %d, %d, '%s', %s)
             RETURNING id
-        """ % (int(fulfillment_id), name.replace("'", "''"), company, email.replace("'", "''"), phone.replace("'", "''"), sku, orders, msg))
+        """ % (int(fulfillment_id), name.replace("'", "''"), company, email.replace("'", "''"), phone.replace("'", "''"), sku, orders, msg, lead_price))
         qid = cur.fetchone()[0]
+
+        cur.execute("""
+            UPDATE fulfillments
+            SET total_leads = COALESCE(total_leads, 0) + 1,
+                balance = COALESCE(balance, 0) - %s
+            WHERE id = %d
+        """ % (lead_price, int(fulfillment_id)))
+
         conn.commit()
-        return resp(201, {'ok': True, 'id': qid})
+        return resp(201, {'ok': True, 'id': qid, 'lead_price': lead_price})
+    except Exception as e:
+        conn.rollback()
+        return resp(500, {'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+def handle_submit_for_moderation(token):
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user:
+            return resp(401, {'error': 'Не авторизован'})
+        user_id = user[0]
+
+        cur.execute("""
+            SELECT company_name, city, description, contact_email, contact_phone
+            FROM fulfillments WHERE user_id = %d
+        """ % user_id)
+        row = cur.fetchone()
+        if not row:
+            return resp(404, {'error': 'Профиль не найден'})
+        if not row[0] or not row[1] or not row[2] or not row[3] or not row[4]:
+            return resp(400, {'error': 'Заполните обязательные поля: название, город, описание, email, телефон'})
+
+        cur.execute("UPDATE fulfillments SET status = 'pending', updated_at = NOW() WHERE user_id = %d" % user_id)
+        conn.commit()
+        return resp(200, {'ok': True, 'status': 'pending'})
     except Exception as e:
         conn.rollback()
         return resp(500, {'error': str(e)})
@@ -288,13 +333,19 @@ def handle_admin_list(token, params):
 
         cur.execute("""
             SELECT f.id, f.company_name, f.city, f.contact_email, f.contact_phone, f.status, f.created_at,
-                   u.email, u.email_verified
+                   u.email, u.email_verified, f.lead_price, f.total_leads, f.balance
             FROM fulfillments f JOIN users u ON u.id = f.user_id
             %s ORDER BY f.created_at DESC
         """ % where)
         rows = cur.fetchall()
-        cols = ['id', 'company_name', 'city', 'contact_email', 'contact_phone', 'status', 'created_at', 'user_email', 'email_verified']
-        return resp(200, {'fulfillments': [dict(zip(cols, r)) for r in rows]})
+        cols = ['id', 'company_name', 'city', 'contact_email', 'contact_phone', 'status', 'created_at', 'user_email', 'email_verified', 'lead_price', 'total_leads', 'balance']
+        result = []
+        for r in rows:
+            item = dict(zip(cols, r))
+            for k in ('lead_price', 'balance'):
+                item[k] = float(item[k] or 0)
+            result.append(item)
+        return resp(200, {'fulfillments': result})
     finally:
         cur.close()
         conn.close()
@@ -334,15 +385,74 @@ def handle_admin_all_quotes(token):
         cur.execute("""
             SELECT q.id, q.sender_name, q.sender_company, q.sender_email, q.sender_phone,
                 q.sku_count, q.orders_count, q.message, q.status, q.created_at,
-                f.company_name as fulfillment_name
+                f.company_name as fulfillment_name, q.lead_price, q.payment_status
             FROM quote_requests q
             JOIN fulfillments f ON f.id = q.fulfillment_id
             ORDER BY q.created_at DESC
         """)
         rows = cur.fetchall()
         cols = ['id', 'sender_name', 'sender_company', 'sender_email', 'sender_phone',
-                'sku_count', 'orders_count', 'message', 'status', 'created_at', 'fulfillment_name']
-        return resp(200, {'quotes': [dict(zip(cols, r)) for r in rows]})
+                'sku_count', 'orders_count', 'message', 'status', 'created_at', 'fulfillment_name', 'lead_price', 'payment_status']
+        result = []
+        total_revenue = 0
+        unpaid_revenue = 0
+        for r in rows:
+            item = dict(zip(cols, r))
+            item['lead_price'] = float(item['lead_price'] or 0)
+            total_revenue += item['lead_price']
+            if item['payment_status'] == 'unpaid':
+                unpaid_revenue += item['lead_price']
+            result.append(item)
+        return resp(200, {
+            'quotes': result,
+            'stats': {
+                'total_leads': len(result),
+                'total_revenue': total_revenue,
+                'unpaid_revenue': unpaid_revenue,
+                'paid_revenue': total_revenue - unpaid_revenue,
+            }
+        })
+    finally:
+        cur.close()
+        conn.close()
+
+def handle_admin_set_lead_price(body, token):
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user or user[2] != 'admin':
+            return resp(403, {'error': 'Доступ запрещён'})
+        fid = body.get('fulfillment_id')
+        price = float(body.get('lead_price', 0) or 0)
+        if not fid or price < 0:
+            return resp(400, {'error': 'fulfillment_id и lead_price обязательны'})
+        cur.execute("UPDATE fulfillments SET lead_price = %s WHERE id = %d" % (price, int(fid)))
+        conn.commit()
+        return resp(200, {'ok': True})
+    finally:
+        cur.close()
+        conn.close()
+
+def handle_admin_mark_paid(body, token):
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user or user[2] != 'admin':
+            return resp(403, {'error': 'Доступ запрещён'})
+        qid = body.get('quote_id')
+        if not qid:
+            return resp(400, {'error': 'quote_id обязателен'})
+        cur.execute("""
+            UPDATE quote_requests SET payment_status = 'paid' WHERE id = %d
+            RETURNING fulfillment_id, lead_price
+        """ % int(qid))
+        row = cur.fetchone()
+        if row:
+            cur.execute("UPDATE fulfillments SET balance = COALESCE(balance, 0) + %s WHERE id = %d" % (float(row[1] or 0), int(row[0])))
+        conn.commit()
+        return resp(200, {'ok': True})
     finally:
         cur.close()
         conn.close()
@@ -385,11 +495,17 @@ def handler(event, context):
             return handle_update_profile(body, token)
         if action == 'upload-photo':
             return handle_upload_photo(body, token)
+        if action == 'submit-for-moderation':
+            return handle_submit_for_moderation(token)
         if action == 'send-quote':
             return handle_send_quote(body)
         if action == 'update-quote-status':
             return handle_update_quote_status(body, token)
         if action == 'admin-moderate':
             return handle_admin_moderate(body, token)
+        if action == 'admin-set-lead-price':
+            return handle_admin_set_lead_price(body, token)
+        if action == 'admin-mark-paid':
+            return handle_admin_mark_paid(body, token)
 
     return resp(404, {'error': 'Неизвестный маршрут'})

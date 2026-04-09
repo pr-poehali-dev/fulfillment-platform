@@ -523,6 +523,20 @@ function ProfileTab({
     }
   };
 
+  const handleSubmitForModeration = async () => {
+    setSaving(true);
+    try {
+      await api.submitForModeration();
+      toast.success("Профиль отправлен на модерацию. Ответ в течение 24 часов.");
+      onReload();
+    } catch (err: unknown) {
+      const e = err as { error?: string; message?: string };
+      toast.error(e.error || e.message || "Не удалось отправить на модерацию");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -844,7 +858,7 @@ function ProfileTab({
 
       {/* Save button */}
       <div className="sticky bottom-0 bg-gray-50/90 backdrop-blur-sm py-4 -mx-4 md:-mx-6 px-4 md:px-6 border-t border-gray-100">
-        <div className="flex items-center gap-3 max-w-4xl">
+        <div className="flex flex-wrap items-center gap-3 max-w-4xl">
           <Button
             onClick={handleSave}
             disabled={saving}
@@ -857,7 +871,28 @@ function ProfileTab({
             )}
             {saving ? "Сохранение..." : "Сохранить профиль"}
           </Button>
-          <span className="text-xs text-gray-400 font-ibm">После сохранения профиль будет отправлен на модерацию</span>
+          {(profileStatus === "draft" || profileStatus === "rejected") && (
+            <Button
+              onClick={handleSubmitForModeration}
+              disabled={saving}
+              className="bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold font-golos text-sm h-11 px-8"
+            >
+              <Icon name="Send" size={16} className="mr-2" />
+              Отправить на модерацию
+            </Button>
+          )}
+          {profileStatus === "pending" && (
+            <span className="text-xs text-amber-700 font-ibm flex items-center gap-1.5">
+              <Icon name="Clock" size={13} />
+              Профиль на модерации
+            </span>
+          )}
+          {profileStatus === "approved" && (
+            <span className="text-xs text-emerald-700 font-ibm flex items-center gap-1.5">
+              <Icon name="CheckCircle" size={13} />
+              Профиль опубликован
+            </span>
+          )}
         </div>
       </div>
     </div>

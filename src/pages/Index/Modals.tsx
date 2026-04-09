@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { StarRating, BadgeChip } from "./Navigation";
 import type { Partner } from "./data";
+import api from "@/lib/api";
 
 // ─── PARTNER DETAIL MODAL ────────────────────────────────────────────────────
 
@@ -263,6 +264,8 @@ export function RequestQuoteModal({ partners, onClose }: {
   const [orders, setOrders] = useState("");
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -274,7 +277,38 @@ export function RequestQuoteModal({ partners, onClose }: {
     };
   }, [onClose]);
 
-  const canSubmit = name.trim() && email.trim() && phone.trim();
+  const canSubmit = name.trim() && email.trim() && phone.trim() && !submitting;
+
+  const handleSubmit = async () => {
+    if (!canSubmit) return;
+    setSubmitting(true);
+    setError("");
+    try {
+      const payload = {
+        name: name.trim(),
+        company: company.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        sku_count: parseInt(sku) || 0,
+        orders_count: parseInt(orders) || 0,
+        message: message.trim(),
+      };
+      const results = await Promise.allSettled(
+        partners.map((p) => api.sendQuote({ ...payload, fulfillment_id: p.id }))
+      );
+      const failed = results.filter((r) => r.status === "rejected").length;
+      if (failed === partners.length) {
+        setError("Не удалось отправить запросы. Попробуйте позже.");
+        setSubmitting(false);
+        return;
+      }
+      setSent(true);
+    } catch {
+      setError("Ошибка сети. Проверьте подключение.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const inputCls = "w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/20";
 
@@ -388,6 +422,13 @@ export function RequestQuoteModal({ partners, onClose }: {
                   rows={3} placeholder="Опишите особенности товара, маркетплейсы, требования..."
                   className={`${inputCls} resize-none`} />
               </div>
+
+              {error && (
+                <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg p-3">
+                  <Icon name="AlertCircle" size={14} className="text-red-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-xs text-red-700 font-ibm">{error}</span>
+                </div>
+              )}
             </div>
 
             {/* Footer */}
@@ -396,12 +437,15 @@ export function RequestQuoteModal({ partners, onClose }: {
                 Нажимая «Отправить», вы соглашаетесь с политикой обработки данных
               </div>
               <Button
-                onClick={() => canSubmit && setSent(true)}
+                onClick={handleSubmit}
                 disabled={!canSubmit}
                 className="bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos h-10 px-6 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <Icon name="Send" size={14} className="mr-1.5" />
-                Отправить
+                {submitting ? (
+                  <><Icon name="Loader2" size={14} className="mr-1.5 animate-spin" />Отправка...</>
+                ) : (
+                  <><Icon name="Send" size={14} className="mr-1.5" />Отправить</>
+                )}
               </Button>
             </div>
           </>

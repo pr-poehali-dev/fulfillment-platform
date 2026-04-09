@@ -2,11 +2,11 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { StarRating, BadgeChip } from "./Navigation";
-import { PARTNERS, FEATURE_FILTERS, SCHEME_FILTERS, PACKAGING_FILTERS, MARKETPLACE_FILTERS, type Partner } from "./data";
+import { FEATURE_FILTERS, SCHEME_FILTERS, PACKAGING_FILTERS, MARKETPLACE_FILTERS, type Partner } from "./data";
 
 // ─── CATALOG WITH ADVANCED FILTERS ───────────────────────────────────────────
 
-export function CatalogSection({ setActive, compareList, setCompareList, onOpenCompare, onOpenDetail, onRequestQuote, onRequestQuoteMany, isFavorite, onToggleFavorite, showFavoritesOnly, onToggleFavoritesFilter }: {
+export function CatalogSection({ setActive, compareList, setCompareList, onOpenCompare, onOpenDetail, onRequestQuote, onRequestQuoteMany, isFavorite, onToggleFavorite, showFavoritesOnly, onToggleFavoritesFilter, partners, loading }: {
   setActive: (s: string) => void;
   compareList: number[];
   setCompareList: React.Dispatch<React.SetStateAction<number[]>>;
@@ -18,7 +18,10 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
   onToggleFavorite: (id: number) => void;
   showFavoritesOnly: boolean;
   onToggleFavoritesFilter: () => void;
+  partners: Partner[];
+  loading: boolean;
 }) {
+  const PARTNERS = partners;
   const [search, setSearch] = useState("");
   const [selectedMp, setSelectedMp] = useState<string[]>([]);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
@@ -253,7 +256,21 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
 
       {/* Partner cards */}
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-20 text-gray-400 font-ibm">
+            <Icon name="Loader2" size={36} className="mx-auto mb-3 animate-spin text-navy-300" />
+            <p className="text-base">Загружаем каталог партнёров...</p>
+          </div>
+        ) : PARTNERS.length === 0 ? (
+          <div className="text-center py-20">
+            <Icon name="Building2" size={40} className="mx-auto mb-3 text-gray-300" />
+            <p className="font-golos font-bold text-navy-900 text-lg mb-1">Пока нет одобренных фулфилментов</p>
+            <p className="text-gray-500 font-ibm text-sm mb-4">Мы ведём модерацию новых партнёров. Загляните позже!</p>
+            <a href="/for-fulfillment" className="inline-flex items-center gap-1.5 text-sm text-gold-600 hover:text-gold-700 font-semibold font-ibm">
+              Разместить свой фулфилмент <Icon name="ArrowRight" size={13} />
+            </a>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="text-center py-20 text-gray-400 font-ibm">
             <Icon name="SearchX" size={36} className="mx-auto mb-3 opacity-30" />
             <p className="text-base">Ничего не найдено</p>
@@ -403,12 +420,13 @@ function PartnerCard({ p, inCompare, onCompare, isFavorite, onToggleFavorite, on
 
 // ─── COMPARE PAGE (fullscreen overlay) ───────────────────────────────────────
 
-export function ComparePage({ compareList, setCompareList, onClose }: {
+export function ComparePage({ compareList, setCompareList, onClose, partners }: {
   compareList: number[];
   setCompareList: React.Dispatch<React.SetStateAction<number[]>>;
   onClose: () => void;
+  partners: Partner[];
 }) {
-  const selected = compareList.slice(0, 3).map((id) => PARTNERS.find((p) => p.id === id)!).filter(Boolean);
+  const selected = compareList.slice(0, 3).map((id) => partners.find((p) => p.id === id)!).filter(Boolean);
 
   const featureDefs = [
     { key: "cameras", label: "Видеонаблюдение", icon: "Camera", color: "text-blue-500" },

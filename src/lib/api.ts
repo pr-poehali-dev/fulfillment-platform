@@ -63,6 +63,9 @@ export const api = {
   uploadPhoto: (data: string, contentType: string) =>
     request("fulfillment", "upload-photo", { method: "POST", body: { data, content_type: contentType } }),
 
+  submitForModeration: () =>
+    request("fulfillment", "submit-for-moderation", { method: "POST" }),
+
   // Public
   listApproved: () =>
     request("fulfillment", "approved"),
@@ -86,6 +89,12 @@ export const api = {
 
   adminAllQuotes: () =>
     request("fulfillment", "admin-quotes"),
+
+  adminSetLeadPrice: (fulfillmentId: number, leadPrice: number) =>
+    request("fulfillment", "admin-set-lead-price", { method: "POST", body: { fulfillment_id: fulfillmentId, lead_price: leadPrice } }),
+
+  adminMarkPaid: (quoteId: number) =>
+    request("fulfillment", "admin-mark-paid", { method: "POST", body: { quote_id: quoteId } }),
 };
 
 export default api;
