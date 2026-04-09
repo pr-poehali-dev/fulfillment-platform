@@ -42,10 +42,6 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
   onOpenFavorites: () => void;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const links = [
-    { id: "catalog", label: "Каталог" },
-    { id: "contacts", label: "Контакты" },
-  ];
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-navy-950/95 backdrop-blur-md border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-14">
@@ -55,14 +51,6 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
           </div>
           <span className="font-golos font-bold text-white text-base tracking-tight">FulfillHub</span>
         </button>
-        <div className="hidden md:flex items-center gap-0.5">
-          {links.map((l) => (
-            <button key={l.id} onClick={() => setActive(l.id)}
-              className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${'highlight' in l && l.highlight ? "text-gold-400 hover:text-gold-300 hover:bg-gold-500/10" : active === l.id ? "bg-gold-500/20 text-gold-400" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
-              {l.label}
-            </button>
-          ))}
-        </div>
         <div className="hidden md:flex items-center gap-2">
           <button onClick={onOpenFavorites}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-sm font-medium transition-all ${favoritesCount > 0 ? "text-red-300 hover:text-red-200 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20" : "text-white/60 hover:text-white hover:bg-white/10"}`}
@@ -81,6 +69,10 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
           <a href="/for-fulfillment" className="px-3 py-1.5 text-sm font-medium text-gold-400 hover:text-gold-300 hover:bg-gold-500/10 rounded transition-all">
             Разместить сервис
           </a>
+          <a href="/auth" className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gold-500 hover:bg-gold-400 text-navy-950 rounded-lg text-sm font-bold font-golos transition-all">
+            <Icon name="LogIn" size={14} />
+            Вход / Регистрация
+          </a>
         </div>
         <button className="md:hidden text-white" onClick={() => setMobileOpen(!mobileOpen)}>
           <Icon name={mobileOpen ? "X" : "Menu"} size={20} />
@@ -88,10 +80,10 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
       </div>
       {mobileOpen && (
         <div className="md:hidden bg-navy-950 border-t border-white/10 px-4 py-3 flex flex-col gap-1">
-          {links.map((l) => (
-            <button key={l.id} onClick={() => { setActive(l.id); setMobileOpen(false); }}
-              className="text-left px-3 py-2 rounded text-sm text-white/80 hover:bg-white/10">{l.label}</button>
-          ))}
+          <a href="/for-fulfillment" className="px-3 py-2 rounded text-sm text-gold-400 hover:bg-gold-500/10">Разместить сервис</a>
+          <a href="/auth" className="px-3 py-2 rounded text-sm text-white font-bold hover:bg-white/10 flex items-center gap-1.5">
+            <Icon name="LogIn" size={14} />Вход / Регистрация
+          </a>
         </div>
       )}
     </nav>
