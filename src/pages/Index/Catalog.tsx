@@ -27,20 +27,39 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [selectedSchemes, setSelectedSchemes] = useState<string[]>([]);
   const [selectedPackaging, setSelectedPackaging] = useState<string[]>([]);
+  const [selectedCities, setSelectedCities] = useState<string[]>([]);
+  const [selectedCerts, setSelectedCerts] = useState<string[]>([]);
+  const [maxStorageRate, setMaxStorageRate] = useState<number>(0);
+  const [minWarehouseArea, setMinWarehouseArea] = useState<number>(0);
+  const [minRating, setMinRating] = useState<number>(0);
+  const [maxFoundedYear, setMaxFoundedYear] = useState<number>(0);
   const [sortBy, setSortBy] = useState("rating");
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(true);
 
   const toggleArr = <T,>(arr: T[], val: T, set: (v: T[]) => void) =>
     set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
 
+  // Уникальные города и сертификаты из профилей
+  const uniqueCities = Array.from(new Set(PARTNERS.map((p) => p.location).filter(Boolean))).sort();
+  const uniqueCerts = Array.from(new Set(PARTNERS.flatMap((p) => p.certificates || []))).sort();
+
   const activeFilterCount =
-    selectedMp.length + selectedFeatures.length + selectedSchemes.length + selectedPackaging.length;
+    selectedMp.length + selectedFeatures.length + selectedSchemes.length + selectedPackaging.length +
+    selectedCities.length + selectedCerts.length +
+    (maxStorageRate > 0 ? 1 : 0) + (minWarehouseArea > 0 ? 1 : 0) +
+    (minRating > 0 ? 1 : 0) + (maxFoundedYear > 0 ? 1 : 0);
 
   const clearAll = () => {
     setSelectedMp([]);
     setSelectedFeatures([]);
     setSelectedSchemes([]);
     setSelectedPackaging([]);
+    setSelectedCities([]);
+    setSelectedCerts([]);
+    setMaxStorageRate(0);
+    setMinWarehouseArea(0);
+    setMinRating(0);
+    setMaxFoundedYear(0);
     setSearch("");
   };
 
@@ -48,6 +67,12 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
     if (showFavoritesOnly && !isFavorite(p.id)) return false;
     if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.location.toLowerCase().includes(search.toLowerCase())) return false;
     if (selectedMp.length && !selectedMp.some((mp) => p.tags.includes(mp))) return false;
+    if (selectedCities.length && !selectedCities.includes(p.location)) return false;
+    if (selectedCerts.length && !selectedCerts.some((c) => (p.certificates || []).includes(c))) return false;
+    if (maxStorageRate > 0 && (p.storageRate || 0) > maxStorageRate) return false;
+    if (minWarehouseArea > 0 && (p.warehouseArea || 0) < minWarehouseArea) return false;
+    if (minRating > 0 && (p.rating || 0) < minRating) return false;
+    if (maxFoundedYear > 0 && (p.foundedYear || 0) > maxFoundedYear) return false;
     if (selectedFeatures.length && !selectedFeatures.every((f) => p.features.includes(f))) return false;
     if (selectedSchemes.length && !selectedSchemes.some((s) => p.workSchemes.includes(s))) return false;
     if (selectedPackaging.length && !selectedPackaging.some((pk) => p.packagingTypes.includes(pk))) return false;
@@ -228,13 +253,139 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
                 </div>
               </div>
 
+              {/* City filter */}
+              {uniqueCities.length > 0 && (
+                <div>
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm flex items-center gap-1">
+                    <Icon name="MapPin" size={11} /> Город
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                    {uniqueCities.map((city) => (
+                      <button key={city}
+                        onClick={() => toggleArr(selectedCities, city, setSelectedCities)}
+                        className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all ${selectedCities.includes(city) ? "bg-navy-900 text-white border-navy-900" : "bg-white text-gray-600 border-gray-200 hover:border-navy-400"}`}>
+                        {city}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Min rating */}
+              <div>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm flex items-center gap-1">
+                  <Icon name="Star" size={11} /> Мин. рейтинг
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {[0, 4, 4.5, 4.8].map((r) => (
+                    <button key={r}
+                      onClick={() => setMinRating(r)}
+                      className={`text-xs px-2.5 py-1.5 rounded-lg border font-semibold transition-all ${minRating === r ? "bg-gold-500 text-navy-950 border-gold-500" : "bg-white text-gray-600 border-gray-200 hover:border-gold-400"}`}>
+                      {r === 0 ? "Любой" : `от ${r}`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Max storage rate */}
+              <div>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm flex items-center justify-between gap-1">
+                  <span className="flex items-center gap-1"><Icon name="Warehouse" size={11} /> Цена хранения</span>
+                  <span className="text-navy-900 font-bold normal-case tracking-normal">
+                    {maxStorageRate > 0 ? `до ${maxStorageRate} ₽` : "любая"}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={30}
+                  step={1}
+                  value={maxStorageRate}
+                  onChange={(e) => setMaxStorageRate(Number(e.target.value))}
+                  className="w-full accent-navy-900"
+                />
+                <div className="flex justify-between text-[10px] text-gray-400 font-ibm mt-0.5">
+                  <span>0 ₽</span>
+                  <span>30 ₽/ед/день</span>
+                </div>
+              </div>
+
+              {/* Min warehouse area */}
+              <div>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm flex items-center justify-between gap-1">
+                  <span className="flex items-center gap-1"><Icon name="Maximize" size={11} /> Площадь склада</span>
+                  <span className="text-navy-900 font-bold normal-case tracking-normal">
+                    {minWarehouseArea > 0 ? `от ${minWarehouseArea.toLocaleString("ru-RU")} м²` : "любая"}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={50000}
+                  step={500}
+                  value={minWarehouseArea}
+                  onChange={(e) => setMinWarehouseArea(Number(e.target.value))}
+                  className="w-full accent-navy-900"
+                />
+                <div className="flex justify-between text-[10px] text-gray-400 font-ibm mt-0.5">
+                  <span>0</span>
+                  <span>50 000 м²</span>
+                </div>
+              </div>
+
+              {/* Founded year */}
+              <div>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm flex items-center gap-1">
+                  <Icon name="Calendar" size={11} /> Опыт работы
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { year: 0, label: "Любой" },
+                    { year: new Date().getFullYear() - 1, label: "1+ год" },
+                    { year: new Date().getFullYear() - 3, label: "3+ года" },
+                    { year: new Date().getFullYear() - 5, label: "5+ лет" },
+                    { year: new Date().getFullYear() - 10, label: "10+ лет" },
+                  ].map((o) => (
+                    <button key={o.year}
+                      onClick={() => setMaxFoundedYear(o.year)}
+                      className={`text-xs px-2.5 py-1.5 rounded-lg border font-medium transition-all ${maxFoundedYear === o.year ? "bg-navy-900 text-white border-navy-900" : "bg-white text-gray-600 border-gray-200 hover:border-navy-400"}`}>
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Certificates */}
+              {uniqueCerts.length > 0 && (
+                <div>
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-ibm flex items-center gap-1">
+                    <Icon name="Award" size={11} /> Сертификаты
+                  </div>
+                  <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto">
+                    {uniqueCerts.map((c) => (
+                      <label key={c} className="flex items-center gap-2 cursor-pointer group">
+                        <div
+                          onClick={() => toggleArr(selectedCerts, c, setSelectedCerts)}
+                          className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all cursor-pointer ${selectedCerts.includes(c) ? "bg-navy-900 border-navy-900" : "bg-white border-gray-300 group-hover:border-navy-400"}`}>
+                          {selectedCerts.includes(c) && <Icon name="Check" size={10} className="text-white" />}
+                        </div>
+                        <span className="text-sm text-gray-700 font-ibm"
+                          onClick={() => toggleArr(selectedCerts, c, setSelectedCerts)}>
+                          {c}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
             </div>
 
             {/* Active filters chips */}
             {activeFilterCount > 0 && (
               <div className="max-w-7xl mx-auto px-4 pb-3 flex flex-wrap items-center gap-1.5">
                 <span className="text-xs text-gray-400 font-ibm">Активные:</span>
-                {[...selectedMp, ...selectedSchemes, ...selectedFeatures.map(f => FEATURE_FILTERS.find(x => x.key === f)?.label || f), ...selectedPackaging].map((tag) => (
+                {[...selectedMp, ...selectedSchemes, ...selectedFeatures.map(f => FEATURE_FILTERS.find(x => x.key === f)?.label || f), ...selectedPackaging, ...selectedCities, ...selectedCerts].map((tag) => (
                   <span key={tag} className="inline-flex items-center gap-1 bg-navy-900 text-white text-xs px-2 py-0.5 rounded-full font-ibm">
                     {tag}
                     <button onClick={() => {
@@ -243,11 +394,37 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
                       const featureKey = FEATURE_FILTERS.find(f => f.label === tag)?.key;
                       if (featureKey) toggleArr(selectedFeatures, featureKey, setSelectedFeatures);
                       if (selectedPackaging.includes(tag)) toggleArr(selectedPackaging, tag, setSelectedPackaging);
+                      if (selectedCities.includes(tag)) toggleArr(selectedCities, tag, setSelectedCities);
+                      if (selectedCerts.includes(tag)) toggleArr(selectedCerts, tag, setSelectedCerts);
                     }}>
                       <Icon name="X" size={9} />
                     </button>
                   </span>
                 ))}
+                {maxStorageRate > 0 && (
+                  <span className="inline-flex items-center gap-1 bg-navy-900 text-white text-xs px-2 py-0.5 rounded-full font-ibm">
+                    хранение до {maxStorageRate} ₽
+                    <button onClick={() => setMaxStorageRate(0)}><Icon name="X" size={9} /></button>
+                  </span>
+                )}
+                {minWarehouseArea > 0 && (
+                  <span className="inline-flex items-center gap-1 bg-navy-900 text-white text-xs px-2 py-0.5 rounded-full font-ibm">
+                    склад от {minWarehouseArea.toLocaleString("ru-RU")} м²
+                    <button onClick={() => setMinWarehouseArea(0)}><Icon name="X" size={9} /></button>
+                  </span>
+                )}
+                {minRating > 0 && (
+                  <span className="inline-flex items-center gap-1 bg-navy-900 text-white text-xs px-2 py-0.5 rounded-full font-ibm">
+                    рейтинг от {minRating}
+                    <button onClick={() => setMinRating(0)}><Icon name="X" size={9} /></button>
+                  </span>
+                )}
+                {maxFoundedYear > 0 && (
+                  <span className="inline-flex items-center gap-1 bg-navy-900 text-white text-xs px-2 py-0.5 rounded-full font-ibm">
+                    опыт от {new Date().getFullYear() - maxFoundedYear} лет
+                    <button onClick={() => setMaxFoundedYear(0)}><Icon name="X" size={9} /></button>
+                  </span>
+                )}
               </div>
             )}
           </div>
