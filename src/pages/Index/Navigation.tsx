@@ -116,9 +116,9 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
 
 // ─── HERO (COMPACT) ──────────────────────────────────────────────────────────
 
-export function HeroSection({ setActive }: { setActive: (s: string) => void }) {
+export function HeroSection({ setActive: _setActive }: { setActive: (s: string) => void }) {
   return (
-    <section id="hero" className="relative flex items-center overflow-hidden" style={{ minHeight: "38vh" }}>
+    <section id="hero" className="relative flex items-center overflow-hidden" style={{ minHeight: "28vh" }}>
       <div className="absolute inset-0 bg-navy-gradient" />
       <div className="absolute inset-0 opacity-15"
         style={{
@@ -134,51 +134,17 @@ export function HeroSection({ setActive }: { setActive: (s: string) => void }) {
         }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 py-8 pt-20 w-full">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
-          {/* Left: text */}
-          <div className="max-w-xl">
-            <div className="flex items-center gap-2 mb-3 opacity-0 animate-fade-in">
-              <div className="h-px w-8 bg-gold-500" />
-              <span className="text-gold-400 text-xs font-medium tracking-widest uppercase font-ibm">B2B Маркетплейс фулфилмента</span>
-            </div>
-            <h1 className="font-golos font-black text-3xl md:text-4xl leading-tight text-white mb-2 opacity-0 animate-slide-up delay-100">
-              Найдите <span className="text-gold-gradient">надёжного</span> партнёра
-            </h1>
-            <p className="text-white/60 text-sm font-ibm font-light leading-relaxed mb-4 opacity-0 animate-fade-in delay-200">
-              Сравнивайте тарифы, фильтруйте по нужным услугам и выбирайте фулфилмент под ваш товар
-            </p>
-            <div className="flex flex-wrap gap-2 opacity-0 animate-fade-in delay-300">
-              <Button size="sm" className="bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold h-9 px-5" onClick={() => setActive("catalog")}>
-                <Icon name="Search" size={15} className="mr-1.5" />Найти партнёра
-              </Button>
-              <a href="/for-fulfillment">
-                <Button size="sm" variant="outline" className="border-gold-500/40 text-gold-400 bg-transparent hover:bg-gold-500/10 h-9 px-4">
-                  <Icon name="Building2" size={15} className="mr-1.5" />Я — фулфилмент
-                </Button>
-              </a>
-            </div>
-          </div>
-
-          {/* Right: stats */}
-          <div className="flex md:flex-col gap-4 md:gap-3 opacity-0 animate-fade-in delay-400">
-            {[
-              { value: "200+", label: "Операторов", icon: "Building2" },
-              { value: "15 000+", label: "Селлеров", icon: "Users" },
-              { value: "98%", label: "Успешных сделок", icon: "TrendingUp" },
-            ].map((s) => (
-              <div key={s.value} className="flex items-center gap-3 bg-white/10 backdrop-blur rounded-xl px-4 py-3 border border-white/10">
-                <div className="w-8 h-8 bg-gold-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Icon name={s.icon as "Users"} size={15} className="text-gold-400" />
-                </div>
-                <div>
-                  <div className="text-xl font-golos font-black text-gold-gradient leading-none">{s.value}</div>
-                  <div className="text-white/50 text-xs font-ibm">{s.label}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+      <div className="relative z-10 max-w-7xl mx-auto px-4 py-6 pt-18 w-full">
+        <div className="flex items-center gap-2 mb-2 opacity-0 animate-fade-in">
+          <div className="h-px w-8 bg-gold-500" />
+          <span className="text-gold-400 text-xs font-medium tracking-widest uppercase font-ibm">B2B Маркетплейс фулфилмента</span>
         </div>
+        <h1 className="font-golos font-black text-2xl md:text-3xl leading-tight text-white mb-1.5 opacity-0 animate-slide-up delay-100">
+          Найдите <span className="text-gold-gradient">надёжного</span> партнёра
+        </h1>
+        <p className="text-white/55 text-sm font-ibm font-light opacity-0 animate-fade-in delay-200">
+          Сравнивайте тарифы, фильтруйте по нужным услугам и выбирайте фулфилмент под ваш товар
+        </p>
       </div>
     </section>
   );
