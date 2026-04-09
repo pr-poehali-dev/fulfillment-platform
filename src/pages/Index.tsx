@@ -209,20 +209,7 @@ const PARTNERS: Partner[] = [
   },
 ];
 
-const REVIEWS = [
-  { id: 1, author: "Алексей Морозов", company: "BrandStore", avatar: "АМ", partner: "LogiMaster", rating: 5, text: "Работаем уже 2 года. Процент брака почти нулевой, скорость обработки отличная. Камеры на складе — можно смотреть онлайн!", date: "Март 2026" },
-  { id: 2, author: "Мария Иванова", company: "FashionLine", avatar: "МИ", partner: "FulFast", rating: 5, text: "Перешли от другого оператора — разница колоссальная. Заказы уходят в день поступления, менеджер всегда на связи.", date: "Апрель 2026" },
-  { id: 3, author: "Дмитрий Соколов", company: "TechGoods", avatar: "ДС", partner: "StorePro", rating: 5, text: "Для нас важна была API-интеграция с нашей CRM. Всё сделали за 3 дня. Теперь весь учёт автоматический.", date: "Февраль 2026" },
-];
 
-const INTEGRATIONS = [
-  { name: "Wildberries API", icon: "🟣", status: "Активно", desc: "Полная интеграция: заказы, остатки, аналитика" },
-  { name: "Ozon API", icon: "🔵", status: "Активно", desc: "Автосинхронизация каталога и статусов" },
-  { name: "Яндекс Маркет", icon: "🟡", status: "Активно", desc: "FBS и FBY схемы работы" },
-  { name: "1С Предприятие", icon: "🔴", status: "Активно", desc: "Двусторонняя синхронизация данных" },
-  { name: "МойСклад", icon: "🟢", status: "Активно", desc: "Управление складскими остатками" },
-  { name: "REST API", icon: "⚙️", status: "Документация", desc: "Полное API для разработчиков" },
-];
 
 // Feature definitions
 const FEATURE_FILTERS = [
@@ -280,10 +267,7 @@ function Navbar({ active, setActive, onOpenCompare, compareCount }: {
   const links = [
     { id: "catalog", label: "Каталог" },
     { id: "calculator", label: "Калькулятор" },
-    { id: "integrations", label: "Интеграции" },
-    { id: "reviews", label: "Отзывы" },
     { id: "contacts", label: "Контакты" },
-    { id: "register-ff", label: "Разместить сервис", highlight: true },
   ];
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-navy-950/95 backdrop-blur-md border-b border-white/10">
@@ -311,10 +295,9 @@ function Navbar({ active, setActive, onOpenCompare, compareCount }: {
               <span className="bg-gold-500 text-navy-950 text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold leading-none">{compareCount}</span>
             </button>
           )}
-          <button onClick={() => setActive("lk")} className="px-3 py-1.5 text-sm text-white/70 hover:text-white">Войти</button>
-          <Button size="sm" className="bg-gold-500 hover:bg-gold-400 text-navy-950 font-semibold text-sm h-8" onClick={() => setActive("lk")}>
-            Регистрация
-          </Button>
+          <a href="/for-fulfillment" className="px-3 py-1.5 text-sm font-medium text-gold-400 hover:text-gold-300 hover:bg-gold-500/10 rounded transition-all">
+            Разместить сервис
+          </a>
         </div>
         <button className="md:hidden text-white" onClick={() => setMobileOpen(!mobileOpen)}>
           <Icon name={mobileOpen ? "X" : "Menu"} size={20} />
@@ -373,9 +356,11 @@ function HeroSection({ setActive }: { setActive: (s: string) => void }) {
               <Button size="sm" variant="outline" className="border-white/25 text-white bg-transparent hover:bg-white/10 h-9 px-4" onClick={() => setActive("calculator")}>
                 <Icon name="Calculator" size={15} className="mr-1.5" />Калькулятор
               </Button>
-              <Button size="sm" variant="outline" className="border-gold-500/40 text-gold-400 bg-transparent hover:bg-gold-500/10 h-9 px-4" onClick={() => setActive("register-ff")}>
-                <Icon name="PlusCircle" size={15} className="mr-1.5" />Разместить сервис
-              </Button>
+              <a href="/for-fulfillment">
+                <Button size="sm" variant="outline" className="border-gold-500/40 text-gold-400 bg-transparent hover:bg-gold-500/10 h-9 px-4">
+                  <Icon name="Building2" size={15} className="mr-1.5" />Я — фулфилмент
+                </Button>
+              </a>
             </div>
           </div>
 
@@ -1300,156 +1285,6 @@ function CalculatorSection() {
   );
 }
 
-// ─── INTEGRATIONS ────────────────────────────────────────────────────────────
-
-function IntegrationsSection() {
-  return (
-    <section id="integrations" className="py-16 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-px w-8 bg-gold-500" />
-            <span className="text-gold-600 text-xs font-medium tracking-widest uppercase font-ibm">Технологии</span>
-          </div>
-          <h2 className="font-golos font-black text-3xl text-navy-900">Интеграции и API</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          {INTEGRATIONS.map((int) => (
-            <div key={int.name} className="bg-white border border-gray-100 rounded-xl p-4 card-hover shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-xl">{int.icon}</span>
-                  <span className="font-golos font-bold text-navy-900 text-sm">{int.name}</span>
-                </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${int.status === "Активно" ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700"}`}>{int.status}</span>
-              </div>
-              <p className="text-xs text-gray-500 font-ibm">{int.desc}</p>
-            </div>
-          ))}
-        </div>
-        <div className="bg-navy-gradient rounded-2xl p-7 text-white">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            <div>
-              <div className="flex items-center gap-2 mb-3"><Icon name="Code2" size={18} className="text-gold-400" /><span className="text-gold-400 text-sm font-ibm">REST API</span></div>
-              <h3 className="font-golos font-black text-2xl mb-2">Открытый API для разработчиков</h3>
-              <p className="text-white/70 font-ibm text-sm leading-relaxed mb-4">OpenAPI 3.0. Управляйте заказами, остатками и аналитикой через HTTP запросы.</p>
-              <div className="flex gap-2">
-                <Button size="sm" className="bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold">Получить токен</Button>
-                <Button size="sm" variant="outline" className="border-white/30 text-white bg-transparent hover:bg-white/10">Документация</Button>
-              </div>
-            </div>
-            <div className="bg-black/30 rounded-xl p-4 font-mono text-xs overflow-x-auto">
-              <div className="text-green-400 mb-1">// GET /api/v1/partners</div>
-              <div className="text-white/60">{"{ \"status\": \"ok\", \"data\": ["}</div>
-              <div className="text-white/60 ml-4">{"{ \"id\": 1, \"name\": "}<span className="text-gold-400">"LogiMaster"</span>{","}</div>
-              <div className="text-white/60 ml-6">{"\"rating\": "}<span className="text-gold-400">4.9</span>{", \"schemes\": ["}<span className="text-gold-400">"FBS","FBO"</span>{"] }"}</div>
-              <div className="text-white/60">{"} ]}"}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── REVIEWS ─────────────────────────────────────────────────────────────────
-
-function ReviewsSection() {
-  return (
-    <section id="reviews" className="py-16 bg-white">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-px w-8 bg-gold-500" />
-            <span className="text-gold-600 text-xs font-medium tracking-widest uppercase font-ibm">Отзывы</span>
-          </div>
-          <h2 className="font-golos font-black text-3xl text-navy-900">Что говорят селлеры</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          {REVIEWS.map((r) => (
-            <div key={r.id} className="bg-gray-50 border border-gray-100 rounded-xl p-5 card-hover">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 bg-navy-900 text-white rounded-full flex items-center justify-center font-golos font-bold text-xs">{r.avatar}</div>
-                  <div>
-                    <div className="font-golos font-bold text-navy-900 text-sm">{r.author}</div>
-                    <div className="text-xs text-gray-400 font-ibm">{r.company}</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <StarRating rating={r.rating} size={11} />
-                  <div className="text-xs text-gray-400 font-ibm mt-0.5">{r.date}</div>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 font-ibm leading-relaxed mb-2">"{r.text}"</p>
-              <div className="flex items-center gap-1 text-xs text-gray-400 font-ibm">
-                <Icon name="Building2" size={10} />Партнёр: <span className="text-navy-700 font-medium">{r.partner}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="bg-navy-50 border border-navy-100 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-3">
-          <div>
-            <h3 className="font-golos font-bold text-lg text-navy-900">Работаете с фулфилмент партнёром?</h3>
-            <p className="text-gray-500 font-ibm text-sm">Оставьте отзыв и помогите другим селлерам</p>
-          </div>
-          <Button className="bg-navy-900 hover:bg-navy-800 text-white font-semibold whitespace-nowrap">
-            <Icon name="PenLine" size={15} className="mr-2" />Написать отзыв
-          </Button>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── LK ──────────────────────────────────────────────────────────────────────
-
-function LKSection() {
-  const [tab, setTab] = useState<"seller" | "ff">("seller");
-  return (
-    <section id="lk" className="py-16 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-px w-8 bg-gold-500" />
-            <span className="text-gold-600 text-xs font-medium tracking-widest uppercase font-ibm">Личный кабинет</span>
-          </div>
-          <h2 className="font-golos font-black text-3xl text-navy-900">Войти в систему</h2>
-        </div>
-        <div className="max-w-md">
-          <div className="flex bg-white border border-gray-200 rounded-xl p-1 mb-5">
-            {(["seller", "ff"] as const).map((t) => (
-              <button key={t} onClick={() => setTab(t)}
-                className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all font-golos ${tab === t ? "bg-navy-900 text-white" : "text-gray-500 hover:text-navy-900"}`}>
-                {t === "seller" ? "Я — Селлер" : "Я — Фулфилмент"}
-              </button>
-            ))}
-          </div>
-          <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-9 h-9 bg-navy-50 rounded-lg flex items-center justify-center">
-                <Icon name={tab === "seller" ? "ShoppingBag" : "Warehouse"} size={18} className="text-navy-900" />
-              </div>
-              <div>
-                <div className="font-golos font-bold text-navy-900 text-sm">{tab === "seller" ? "Кабинет селлера" : "Кабинет оператора"}</div>
-                <div className="text-xs text-gray-400 font-ibm">{tab === "seller" ? "Заказы, партнёры, аналитика" : "Тарифы, заявки, API"}</div>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <input type="email" placeholder="Email" className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-ibm focus:outline-none focus:ring-2 focus:ring-navy-900/20" />
-              <input type="password" placeholder="Пароль" className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-ibm focus:outline-none focus:ring-2 focus:ring-navy-900/20" />
-              <Button className="w-full bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos h-10">Войти</Button>
-              <div className="text-center text-sm text-gray-400 font-ibm">
-                Нет аккаунта? <button className="text-navy-700 font-semibold hover:underline">Зарегистрироваться</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // ─── CONTACTS ────────────────────────────────────────────────────────────────
 
 function ContactsSection() {
@@ -1500,16 +1335,13 @@ function ContactsSection() {
   );
 }
 
-// ─── REGISTER FF SECTION ─────────────────────────────────────────────────────
+// ─── FOOTER ──────────────────────────────────────────────────────────────────
 
-const STEPS = [
-  { id: 1, title: "Основная информация", icon: "Building2" },
-  { id: 2, title: "Склад и услуги", icon: "Warehouse" },
-  { id: 3, title: "Тарифы", icon: "DollarSign" },
-  { id: 4, title: "Контакты", icon: "Phone" },
-];
+function RegisterFFSectionRemoved() { // stub – see /for-fulfillment
+  return null;
+}
 
-function RegisterFFSection() {
+function RegisterFFSection_FULL_REMOVED() {
   const [step, setStep] = useState(1);
   const [done, setDone] = useState(false);
 
@@ -1924,15 +1756,17 @@ function Footer({ setActive }: { setActive: (s: string) => void }) {
             <p className="text-white/50 text-xs font-ibm leading-relaxed">B2B маркетплейс фулфилмент-партнёров для селлеров</p>
           </div>
           {[
-            { title: "Платформа", links: [{ label: "Каталог", id: "catalog" }, { label: "Калькулятор", id: "calculator" }, { label: "Интеграции", id: "integrations" }, { label: "Отзывы", id: "reviews" }] },
-            { title: "Для бизнеса", links: [{ label: "Для селлеров", id: "lk" }, { label: "Разместить сервис", id: "register-ff" }, { label: "Интеграции", id: "integrations" }, { label: "Контакты", id: "contacts" }] },
-            { title: "Компания", links: [{ label: "О нас", id: "hero" }, { label: "Блог", id: "hero" }, { label: "Партнёрство", id: "contacts" }, { label: "Поддержка", id: "contacts" }] },
+            { title: "Для селлеров", links: [{ label: "Каталог партнёров", id: "catalog" }, { label: "Калькулятор КП", id: "calculator" }, { label: "Контакты", id: "contacts" }] },
+            { title: "Для фулфилмента", links: [{ label: "Разместить сервис →", id: "", href: "/for-fulfillment" }] as { label: string; id: string; href?: string }[] },
+            { title: "Компания", links: [{ label: "О платформе", id: "hero" }, { label: "Контакты", id: "contacts" }] },
           ].map((col) => (
             <div key={col.title}>
               <div className="font-golos font-bold text-xs mb-2.5 text-white/70 uppercase tracking-wide">{col.title}</div>
               <div className="space-y-1.5">
                 {col.links.map((l) => (
-                  <button key={l.label} onClick={() => setActive(l.id)} className="block text-xs text-white/45 hover:text-white/75 transition-colors font-ibm">{l.label}</button>
+                  l.href
+                    ? <a key={l.label} href={l.href} className="block text-xs text-gold-400/70 hover:text-gold-300 transition-colors font-ibm">{l.label}</a>
+                    : <button key={l.label} onClick={() => setActive(l.id)} className="block text-xs text-white/45 hover:text-white/75 transition-colors font-ibm">{l.label}</button>
                 ))}
               </div>
             </div>
@@ -1982,10 +1816,6 @@ export default function Index() {
           onOpenCompare={() => setCompareOpen(true)}
         />
         <CalculatorSection />
-        <IntegrationsSection />
-        <ReviewsSection />
-        <RegisterFFSection />
-        <LKSection />
         <ContactsSection />
         <Footer setActive={handleSetActive} />
       </div>
