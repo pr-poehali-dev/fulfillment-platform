@@ -118,7 +118,7 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
 
 export function HeroSection({ setActive }: { setActive: (s: string) => void }) {
   return (
-    <section id="hero" className="relative flex items-center overflow-hidden" style={{ minHeight: "52vh" }}>
+    <section id="hero" className="relative flex items-center overflow-hidden" style={{ minHeight: "38vh" }}>
       <div className="absolute inset-0 bg-navy-gradient" />
       <div className="absolute inset-0 opacity-15"
         style={{
@@ -134,7 +134,7 @@ export function HeroSection({ setActive }: { setActive: (s: string) => void }) {
         }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 py-16 pt-24 w-full">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 py-8 pt-20 w-full">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
           {/* Left: text */}
           <div className="max-w-xl">
@@ -142,10 +142,10 @@ export function HeroSection({ setActive }: { setActive: (s: string) => void }) {
               <div className="h-px w-8 bg-gold-500" />
               <span className="text-gold-400 text-xs font-medium tracking-widest uppercase font-ibm">B2B Маркетплейс фулфилмента</span>
             </div>
-            <h1 className="font-golos font-black text-4xl md:text-5xl leading-tight text-white mb-3 opacity-0 animate-slide-up delay-100">
+            <h1 className="font-golos font-black text-3xl md:text-4xl leading-tight text-white mb-2 opacity-0 animate-slide-up delay-100">
               Найдите <span className="text-gold-gradient">надёжного</span> партнёра
             </h1>
-            <p className="text-white/60 text-base font-ibm font-light leading-relaxed mb-5 opacity-0 animate-fade-in delay-200">
+            <p className="text-white/60 text-sm font-ibm font-light leading-relaxed mb-4 opacity-0 animate-fade-in delay-200">
               Сравнивайте тарифы, фильтруйте по нужным услугам и выбирайте фулфилмент под ваш товар
             </p>
             <div className="flex flex-wrap gap-2 opacity-0 animate-fade-in delay-300">
