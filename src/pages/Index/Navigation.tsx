@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -42,6 +43,10 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
   onOpenFavorites: () => void;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, fulfillment, loading: authLoading } = useAuth();
+  const isLoggedIn = !authLoading && !!user;
+  const displayName = fulfillment?.company_name || user?.email?.split("@")[0] || "";
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-navy-950/95 backdrop-blur-md border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-14">
@@ -69,10 +74,20 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
           <a href="/for-fulfillment" className="px-3 py-1.5 text-sm font-medium text-gold-400 hover:text-gold-300 hover:bg-gold-500/10 rounded transition-all">
             Разместить сервис
           </a>
-          <a href="/auth" className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gold-500 hover:bg-gold-400 text-navy-950 rounded-lg text-sm font-bold font-golos transition-all">
-            <Icon name="LogIn" size={14} />
-            Вход / Регистрация
-          </a>
+          {isLoggedIn ? (
+            <a href="/admin" className="flex items-center gap-2 px-3.5 py-1.5 bg-white/10 hover:bg-white/15 border border-white/15 rounded-lg text-sm font-medium text-white transition-all">
+              <div className="w-6 h-6 bg-gold-500 rounded-full flex items-center justify-center text-navy-950 text-xs font-black font-golos">
+                {displayName.charAt(0).toUpperCase()}
+              </div>
+              <span className="max-w-[120px] truncate">{displayName}</span>
+              <Icon name="ChevronRight" size={13} className="text-white/40" />
+            </a>
+          ) : (
+            <a href="/auth" className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gold-500 hover:bg-gold-400 text-navy-950 rounded-lg text-sm font-bold font-golos transition-all">
+              <Icon name="LogIn" size={14} />
+              Вход / Регистрация
+            </a>
+          )}
         </div>
         <button className="md:hidden text-white" onClick={() => setMobileOpen(!mobileOpen)}>
           <Icon name={mobileOpen ? "X" : "Menu"} size={20} />
@@ -81,9 +96,18 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
       {mobileOpen && (
         <div className="md:hidden bg-navy-950 border-t border-white/10 px-4 py-3 flex flex-col gap-1">
           <a href="/for-fulfillment" className="px-3 py-2 rounded text-sm text-gold-400 hover:bg-gold-500/10">Разместить сервис</a>
-          <a href="/auth" className="px-3 py-2 rounded text-sm text-white font-bold hover:bg-white/10 flex items-center gap-1.5">
-            <Icon name="LogIn" size={14} />Вход / Регистрация
-          </a>
+          {isLoggedIn ? (
+            <a href="/admin" className="px-3 py-2 rounded text-sm text-white font-bold hover:bg-white/10 flex items-center gap-2">
+              <div className="w-5 h-5 bg-gold-500 rounded-full flex items-center justify-center text-navy-950 text-[10px] font-black font-golos">
+                {displayName.charAt(0).toUpperCase()}
+              </div>
+              <span className="truncate">{displayName}</span>
+            </a>
+          ) : (
+            <a href="/auth" className="px-3 py-2 rounded text-sm text-white font-bold hover:bg-white/10 flex items-center gap-1.5">
+              <Icon name="LogIn" size={14} />Вход / Регистрация
+            </a>
+          )}
         </div>
       )}
     </nav>
