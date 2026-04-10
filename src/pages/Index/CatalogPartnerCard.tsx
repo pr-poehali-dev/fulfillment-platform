@@ -51,7 +51,8 @@ export default function PartnerCard({ p, inCompare, onCompare, isFavorite, onTog
           <div>
             <div className="font-golos font-black text-white text-sm leading-tight drop-shadow">{p.name}</div>
             <div className="text-[10px] text-white/90 font-ibm flex items-center gap-0.5 drop-shadow">
-              <Icon name="MapPin" size={9} />{p.location}
+              <Icon name="MapPin" size={9} />
+              {p.address ? p.address : p.location}
             </div>
           </div>
         </div>
