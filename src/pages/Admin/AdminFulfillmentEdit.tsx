@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
@@ -191,11 +191,67 @@ export default function AdminFulfillmentEdit({ fulfillment, onBack, onSaved }: A
   const [submitting, setSubmitting] = useState(false);
   const [closing, setClosing] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef(form);
+  const isDirtyRef = useRef(false);
+
+  // Отслеживаем изменения формы
+  useEffect(() => {
+    formRef.current = form;
+    isDirtyRef.current = true;
+  }, [form]);
 
   const st = STATUS_CFG[form.status] || STATUS_CFG.draft;
   const readiness = useReadinessCheck(form);
   const inputCls = "w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/20";
+
+  const buildPayload = (f: Fulfillment) => ({
+    id: f.id,
+    company_name: f.company_name,
+    city: f.city,
+    warehouse_area: f.warehouse_area ? Number(f.warehouse_area) : null,
+    founded_year: f.founded_year ? Number(f.founded_year) : null,
+    description: f.description,
+    detailed_description: f.detailed_description,
+    work_schemes: f.work_schemes,
+    features: f.features,
+    packaging_types: f.packaging_types,
+    marketplaces: f.marketplaces,
+    specializations: f.specializations,
+    storage_price: f.storage_price ? Number(f.storage_price) : null,
+    assembly_price: f.assembly_price ? Number(f.assembly_price) : null,
+    delivery_price: f.delivery_price ? Number(f.delivery_price) : null,
+    min_volume: f.min_volume ? Number(f.min_volume) : null,
+    has_trial: f.has_trial,
+    team_size: f.team_size ? Number(f.team_size) : null,
+    working_hours: f.working_hours,
+    photos: f.photos,
+  });
+
+  const autoSave = useCallback(async () => {
+    // Только черновики, только если были изменения
+    if (!isDirtyRef.current) return;
+    if (formRef.current.status !== "draft" && formRef.current.status !== "rejected") return;
+    isDirtyRef.current = false;
+    setAutoSaveStatus("saving");
+    try {
+      await api.updateFulfillment(buildPayload(formRef.current));
+      setAutoSaveStatus("saved");
+      setLastSavedAt(new Date());
+      onSaved({ ...formRef.current });
+    } catch {
+      setAutoSaveStatus("error");
+      isDirtyRef.current = true; // вернём флаг чтобы повторить при следующем тике
+    }
+  }, [onSaved]);
+
+  // Таймер автосохранения каждые 30 секунд
+  useEffect(() => {
+    const interval = setInterval(autoSave, 30_000);
+    return () => clearInterval(interval);
+  }, [autoSave]);
 
   const set = (key: keyof Fulfillment, val: unknown) => setForm((f) => ({ ...f, [key]: val }));
 
@@ -206,34 +262,17 @@ export default function AdminFulfillmentEdit({ fulfillment, onBack, onSaved }: A
 
   const handleSave = async () => {
     setSaving(true);
+    isDirtyRef.current = false;
     try {
-      await api.updateFulfillment({
-        id: form.id,
-        company_name: form.company_name,
-        city: form.city,
-        warehouse_area: form.warehouse_area ? Number(form.warehouse_area) : null,
-        founded_year: form.founded_year ? Number(form.founded_year) : null,
-        description: form.description,
-        detailed_description: form.detailed_description,
-        work_schemes: form.work_schemes,
-        features: form.features,
-        packaging_types: form.packaging_types,
-        marketplaces: form.marketplaces,
-        specializations: form.specializations,
-        storage_price: form.storage_price ? Number(form.storage_price) : null,
-        assembly_price: form.assembly_price ? Number(form.assembly_price) : null,
-        delivery_price: form.delivery_price ? Number(form.delivery_price) : null,
-        min_volume: form.min_volume ? Number(form.min_volume) : null,
-        has_trial: form.has_trial,
-        team_size: form.team_size ? Number(form.team_size) : null,
-        working_hours: form.working_hours,
-        photos: form.photos,
-      });
+      await api.updateFulfillment(buildPayload(form));
       toast.success("Изменения сохранены");
+      setAutoSaveStatus("saved");
+      setLastSavedAt(new Date());
       onSaved({ ...form });
     } catch (err: unknown) {
       const e = err as { message?: string; detail?: string };
       toast.error(e.message || e.detail || "Не удалось сохранить");
+      isDirtyRef.current = true;
     } finally {
       setSaving(false);
     }
@@ -316,6 +355,21 @@ export default function AdminFulfillmentEdit({ fulfillment, onBack, onSaved }: A
           Назад к списку
         </button>
         <div className="flex-1" />
+        {/* Индикатор автосохранения */}
+        {(form.status === "draft" || form.status === "rejected") && autoSaveStatus !== "idle" && (
+          <span className={`inline-flex items-center gap-1.5 text-xs font-ibm ${
+            autoSaveStatus === "saving" ? "text-gray-400" :
+            autoSaveStatus === "saved" ? "text-emerald-600" :
+            "text-red-500"
+          }`}>
+            {autoSaveStatus === "saving" && <Icon name="Loader2" size={12} className="animate-spin" />}
+            {autoSaveStatus === "saved" && <Icon name="Check" size={12} />}
+            {autoSaveStatus === "error" && <Icon name="AlertCircle" size={12} />}
+            {autoSaveStatus === "saving" && "Сохранение..."}
+            {autoSaveStatus === "saved" && lastSavedAt && `Сохранено в ${lastSavedAt.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}`}
+            {autoSaveStatus === "error" && "Не сохранено"}
+          </span>
+        )}
         <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${st.bg} ${st.text}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
           {st.label}
