@@ -4,6 +4,7 @@ import RegistrationForm from "./ForFulfillment/RegistrationForm";
 import FormSidebar from "./ForFulfillment/FormSidebar";
 import FormFaq from "./ForFulfillment/FormFaq";
 import QuickContactSheet from "./ForFulfillment/QuickContactSheet";
+import Icon from "@/components/ui/icon";
 
 export default function ForFulfillment() {
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -13,14 +14,21 @@ export default function ForFulfillment() {
       <section className="py-12">
         <div className="max-w-5xl mx-auto px-4">
           {/* Кнопка «не хочу заполнять» */}
-          <div className="flex justify-center mb-6">
+          <div className="bg-gradient-to-r from-gold-500/10 via-gold-400/15 to-gold-500/10 border border-gold-400/30 rounded-2xl p-5 mb-8 flex flex-col sm:flex-row items-center gap-4">
+            <div className="flex-1 text-center sm:text-left">
+              <div className="font-golos font-black text-navy-900 text-base mb-1">
+                Не хочешь заполнять форму?
+              </div>
+              <div className="text-sm text-gray-500 font-ibm">
+                Оставь контакты — мы сами всё заполним и передадим доступ в кабинет
+              </div>
+            </div>
             <button
               onClick={() => setSheetOpen(true)}
-              className="flex items-center gap-2 text-sm text-gray-400 hover:text-navy-700 font-ibm border border-gray-200 hover:border-navy-300 bg-white rounded-xl px-4 py-2.5 transition-all shadow-sm"
+              className="flex items-center gap-2 px-6 py-3 bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold font-golos rounded-xl transition-all shadow-md hover:shadow-lg whitespace-nowrap text-sm"
             >
-              <span>Не хочу заполнять форму</span>
-              <span className="text-gray-300">→</span>
-              <span className="text-navy-600 font-semibold">Свяжитесь со мной</span>
+              <Icon name="Phone" size={15} />
+              Свяжитесь со мной
             </button>
           </div>
 
