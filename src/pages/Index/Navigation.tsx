@@ -2,6 +2,7 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import AuthModal from "@/components/AuthModal";
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -43,6 +44,7 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
   onOpenFavorites: () => void;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const { user, fulfillment, loading: authLoading } = useAuth();
   const isLoggedIn = !authLoading && !!user;
   const isSeller = user?.role === "seller";
@@ -50,6 +52,7 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
   const displayName = fulfillment?.company_name || user?.email?.split("@")[0] || "";
 
   return (
+    <>
     <nav className="fixed top-0 left-0 right-0 z-50 bg-navy-950/95 backdrop-blur-md border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-14">
         <button onClick={() => setActive("hero")} className="flex items-center gap-2">
@@ -85,10 +88,10 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
               <Icon name="ChevronRight" size={13} className="text-white/40" />
             </a>
           ) : (
-            <a href="/auth" className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gold-500 hover:bg-gold-400 text-navy-950 rounded-lg text-sm font-bold font-golos transition-all">
+            <button onClick={() => setAuthOpen(true)} className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gold-500 hover:bg-gold-400 text-navy-950 rounded-lg text-sm font-bold font-golos transition-all">
               <Icon name="LogIn" size={14} />
               Вход / Регистрация
-            </a>
+            </button>
           )}
         </div>
         <button className="md:hidden text-white" onClick={() => setMobileOpen(!mobileOpen)}>
@@ -106,13 +109,16 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
               <span className="truncate">{displayName}</span>
             </a>
           ) : (
-            <a href="/auth" className="px-3 py-2 rounded text-sm text-white font-bold hover:bg-white/10 flex items-center gap-1.5">
+            <button onClick={() => { setMobileOpen(false); setAuthOpen(true); }} className="px-3 py-2 rounded text-sm text-white font-bold hover:bg-white/10 flex items-center gap-1.5 w-full text-left">
               <Icon name="LogIn" size={14} />Вход / Регистрация
-            </a>
+            </button>
           )}
         </div>
       )}
     </nav>
+
+    <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
+    </>
   );
 }
 
