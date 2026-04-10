@@ -15,7 +15,7 @@ interface AuthModalProps {
 }
 
 const inputCls =
-  "w-full px-3.5 py-2.5 rounded-lg border border-navy-700 bg-navy-800 text-white text-sm font-ibm placeholder:text-navy-400 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400/20 transition-all";
+  "w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-900 text-sm font-ibm placeholder:text-gray-400 focus:outline-none focus:border-navy-500 focus:ring-2 focus:ring-navy-500/10 transition-all";
 
 export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthModalProps) {
   const navigate = useNavigate();
@@ -24,34 +24,30 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
   const [tab, setTab]   = useState<Tab>(defaultTab);
   const [step, setStep] = useState<Step>("form");
 
-  const [email,       setEmail]       = useState("");
-  const [password,    setPassword]    = useState("");
-  const [phone,       setPhone]       = useState("");
-  const [showPw,      setShowPw]      = useState(false);
-  const [verifyCode,  setVerifyCode]  = useState(["", "", "", "", "", ""]);
-  const [error,       setError]       = useState("");
-  const [submitting,  setSubmitting]  = useState(false);
-  const [resendCD,    setResendCD]    = useState(0);
+  const [email,      setEmail]      = useState("");
+  const [password,   setPassword]   = useState("");
+  const [phone,      setPhone]      = useState("");
+  const [showPw,     setShowPw]     = useState(false);
+  const [verifyCode, setVerifyCode] = useState(["", "", "", "", "", ""]);
+  const [error,      setError]      = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [resendCD,   setResendCD]   = useState(0);
 
   const codeRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // redirect after login
   useEffect(() => {
     if (!loading && user && open && step !== "verify") {
       onClose();
-      const dest = user.role === "seller" ? "/seller" : "/admin";
-      navigate(dest, { replace: true });
+      navigate(user.role === "seller" ? "/seller" : "/admin", { replace: true });
     }
   }, [user, loading, open, step, onClose, navigate]);
 
-  // resend cooldown
   useEffect(() => {
     if (resendCD <= 0) return;
     const t = setTimeout(() => setResendCD((c) => c - 1), 1000);
     return () => clearTimeout(t);
   }, [resendCD]);
 
-  // close on ESC
   useEffect(() => {
     if (!open) return;
     const fn = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -64,47 +60,35 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
     setEmail(""); setPassword(""); setPhone(""); setShowPw(false);
     setVerifyCode(["", "", "", "", "", ""]); setError(""); setStep("form");
   };
-
   const switchTab = (t: Tab) => { setTab(t); setError(""); setStep("form"); };
-
   const close = () => { reset(); onClose(); };
 
-  // ─── Handlers ────────────────────────────────────────────────────────────────
-
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+    e.preventDefault(); setError("");
     if (!email.trim() || !password) { setError("Заполните все поля"); return; }
     setSubmitting(true);
     try {
       const data = await api.login(email.trim(), password);
-      setToken(data.token);
-      await refresh();
+      setToken(data.token); await refresh();
     } catch (err: unknown) {
       const e = err as { message?: string; detail?: string };
       setError(e.message || e.detail || "Неверный email или пароль");
-    } finally {
-      setSubmitting(false);
-    }
+    } finally { setSubmitting(false); }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    if (!email.trim())   { setError("Введите email"); return; }
+    e.preventDefault(); setError("");
+    if (!email.trim())       { setError("Введите email"); return; }
     if (password.length < 6) { setError("Пароль — минимум 6 символов"); return; }
-    if (!phone.trim())   { setError("Введите номер телефона"); return; }
+    if (!phone.trim())       { setError("Введите номер телефона"); return; }
     setSubmitting(true);
     try {
       const data = await api.register(email.trim(), password, phone.trim());
-      setToken(data.token);
-      setStep("verify");
+      setToken(data.token); setStep("verify");
     } catch (err: unknown) {
       const e = err as { message?: string; detail?: string };
       setError(e.message || e.detail || "Ошибка регистрации");
-    } finally {
-      setSubmitting(false);
-    }
+    } finally { setSubmitting(false); }
   };
 
   const handleVerify = async () => {
@@ -112,16 +96,12 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
     if (code.length !== 6) { setError("Введите 6-значный код"); return; }
     setError(""); setSubmitting(true);
     try {
-      await api.verifyEmail(code);
-      await refresh();
-      close();
-      navigate("/admin", { replace: true });
+      await api.verifyEmail(code); await refresh();
+      close(); navigate("/admin", { replace: true });
     } catch (err: unknown) {
       const e = err as { message?: string; detail?: string };
       setError(e.message || e.detail || "Неверный код");
-    } finally {
-      setSubmitting(false);
-    }
+    } finally { setSubmitting(false); }
   };
 
   const handleResend = async () => {
@@ -157,27 +137,30 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-navy-950/60 backdrop-blur-sm"
       onClick={close}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm bg-navy-950 border border-navy-800 rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden animate-scale-in"
       >
-        {/* Header */}
-        <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-navy-800">
-          <div className="w-8 h-8 bg-gold-500 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Icon name="Package" size={15} className="text-navy-950" />
+        {/* ── Header ── */}
+        <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-gray-100">
+          <div className="w-9 h-9 bg-navy-900 rounded-xl flex items-center justify-center flex-shrink-0">
+            <Icon name="Package" size={16} className="text-gold-400" />
           </div>
           <div className="flex-1">
-            <div className="font-golos font-black text-white text-sm leading-none">
+            <div className="font-golos font-black text-navy-950 text-sm leading-none">
               {step === "verify" ? "Подтверждение email" : "Личный кабинет"}
             </div>
-            <div className="text-[11px] text-navy-400 font-ibm mt-0.5">
+            <div className="text-[11px] text-gray-400 font-ibm mt-0.5">
               {step === "verify" ? `Код отправлен на ${email}` : "FulfillHub"}
             </div>
           </div>
-          <button onClick={close} className="w-7 h-7 rounded-lg bg-navy-800 hover:bg-navy-700 flex items-center justify-center text-navy-400 hover:text-white transition-colors">
+          <button
+            onClick={close}
+            className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+          >
             <Icon name="X" size={14} />
           </button>
         </div>
@@ -186,7 +169,10 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
           {step === "verify" ? (
             /* ── VERIFY ── */
             <div className="space-y-4">
-              <p className="text-xs text-navy-300 font-ibm text-center">Введите 6-значный код из письма</p>
+              <p className="text-xs text-gray-500 font-ibm text-center">
+                Введите 6-значный код из письма
+              </p>
+
               <div className="flex gap-2 justify-center" onPaste={handleCodePaste}>
                 {verifyCode.map((digit, i) => (
                   <input key={i}
@@ -195,20 +181,36 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
                     value={digit}
                     onChange={(e) => handleCodeInput(i, e.target.value)}
                     onKeyDown={(e) => handleCodeKeyDown(i, e)}
-                    className="w-11 h-11 text-center text-lg font-bold border border-navy-700 rounded-lg bg-navy-800 text-white focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400/20 transition-all"
+                    className="w-11 h-12 text-center text-lg font-bold border border-gray-200 rounded-xl bg-gray-50 text-navy-950 focus:outline-none focus:border-navy-500 focus:ring-2 focus:ring-navy-500/10 transition-all"
                     placeholder="·"
                   />
                 ))}
               </div>
-              {error && <p className="text-red-400 text-xs text-center font-ibm">{error}</p>}
-              <Button onClick={handleVerify} disabled={submitting || verifyCode.join("").length !== 6}
-                className="w-full bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold font-golos disabled:opacity-40">
-                {submitting ? <><Icon name="Loader2" size={14} className="mr-1.5 animate-spin" />Проверка...</> : "Подтвердить"}
+
+              {error && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                  <Icon name="AlertCircle" size={13} className="text-red-400 flex-shrink-0" />
+                  <p className="text-red-500 text-xs font-ibm">{error}</p>
+                </div>
+              )}
+
+              <Button
+                onClick={handleVerify}
+                disabled={submitting || verifyCode.join("").length !== 6}
+                className="w-full bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos rounded-xl h-10 disabled:opacity-40"
+              >
+                {submitting
+                  ? <><Icon name="Loader2" size={14} className="mr-1.5 animate-spin" />Проверка...</>
+                  : "Подтвердить"}
               </Button>
-              <p className="text-center text-xs text-navy-400 font-ibm">
+
+              <p className="text-center text-xs text-gray-400 font-ibm">
                 Не пришёл код?{" "}
-                <button onClick={handleResend} disabled={resendCD > 0}
-                  className="text-gold-400 hover:text-gold-300 disabled:text-navy-500 transition-colors">
+                <button
+                  onClick={handleResend}
+                  disabled={resendCD > 0}
+                  className="text-navy-600 hover:text-navy-800 font-semibold disabled:text-gray-300 transition-colors"
+                >
                   {resendCD > 0 ? `Повторить через ${resendCD}с` : "Отправить ещё раз"}
                 </button>
               </p>
@@ -217,96 +219,131 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
             /* ── FORM ── */
             <div className="space-y-4">
               {/* Tab switcher */}
-              <div className="flex bg-navy-900 rounded-xl p-1">
+              <div className="flex bg-gray-100 rounded-xl p-1">
                 {(["login", "register"] as Tab[]).map((t) => (
                   <button key={t} onClick={() => switchTab(t)}
                     className={`flex-1 py-1.5 text-xs font-bold font-golos rounded-lg transition-all ${
-                      tab === t ? "bg-navy-700 text-white shadow-sm" : "text-navy-400 hover:text-navy-200"
+                      tab === t
+                        ? "bg-white text-navy-900 shadow-sm"
+                        : "text-gray-400 hover:text-gray-600"
                     }`}>
                     {t === "login" ? "Войти" : "Регистрация"}
                   </button>
                 ))}
               </div>
 
-              {/* Telegram button */}
+              {/* Telegram */}
               <button
                 disabled
-                className="w-full flex items-center justify-center gap-2.5 py-2.5 rounded-xl border border-[#2AABEE]/30 bg-[#2AABEE]/10 text-[#2AABEE] text-sm font-bold font-golos opacity-60 cursor-not-allowed"
                 title="Скоро будет доступно"
+                className="w-full flex items-center justify-center gap-2.5 py-2.5 rounded-xl border border-[#2AABEE]/40 bg-[#2AABEE]/5 text-[#1d96d4] text-sm font-bold font-golos opacity-50 cursor-not-allowed"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.88 13.674l-2.967-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.835.885h-.52z"/>
                 </svg>
                 Войти через Telegram
-                <span className="text-[10px] font-normal opacity-70 font-ibm">(скоро)</span>
+                <span className="text-[10px] font-normal text-gray-400 font-ibm">(скоро)</span>
               </button>
 
               {/* Divider */}
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-navy-800" />
-                <span className="text-[11px] text-navy-500 font-ibm">или через email</span>
-                <div className="flex-1 h-px bg-navy-800" />
+                <div className="flex-1 h-px bg-gray-100" />
+                <span className="text-[11px] text-gray-400 font-ibm">или через email</span>
+                <div className="flex-1 h-px bg-gray-100" />
               </div>
 
-              {/* Form */}
+              {/* Login form */}
               {tab === "login" ? (
                 <form onSubmit={handleLogin} className="space-y-3">
                   <div>
-                    <label className="text-[11px] font-semibold text-navy-300 font-golos block mb-1">Email</label>
+                    <label className="text-[11px] font-semibold text-gray-500 font-golos block mb-1">
+                      Email
+                    </label>
                     <input value={email} onChange={(e) => setEmail(e.target.value)}
                       type="email" placeholder="you@company.ru" className={inputCls} autoFocus />
                   </div>
                   <div>
-                    <label className="text-[11px] font-semibold text-navy-300 font-golos block mb-1">Пароль</label>
+                    <label className="text-[11px] font-semibold text-gray-500 font-golos block mb-1">
+                      Пароль
+                    </label>
                     <div className="relative">
                       <input value={password} onChange={(e) => setPassword(e.target.value)}
-                        type={showPw ? "text" : "password"} placeholder="••••••••" className={`${inputCls} pr-10`} />
+                        type={showPw ? "text" : "password"} placeholder="••••••••"
+                        className={`${inputCls} pr-10`} />
                       <button type="button" onClick={() => setShowPw(!showPw)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-navy-400 hover:text-navy-200 transition-colors">
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
                         <Icon name={showPw ? "EyeOff" : "Eye"} size={15} />
                       </button>
                     </div>
                   </div>
-                  {error && <p className="text-red-400 text-xs font-ibm">{error}</p>}
+
+                  {error && (
+                    <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                      <Icon name="AlertCircle" size={13} className="text-red-400 flex-shrink-0" />
+                      <p className="text-red-500 text-xs font-ibm">{error}</p>
+                    </div>
+                  )}
+
                   <Button type="submit" disabled={submitting}
-                    className="w-full bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold font-golos mt-1 disabled:opacity-40">
-                    {submitting ? <><Icon name="Loader2" size={14} className="mr-1.5 animate-spin" />Вход...</> : "Войти"}
+                    className="w-full bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos rounded-xl h-10 mt-1 disabled:opacity-40">
+                    {submitting
+                      ? <><Icon name="Loader2" size={14} className="mr-1.5 animate-spin" />Вход...</>
+                      : "Войти"}
                   </Button>
                 </form>
               ) : (
+                /* Register form */
                 <form onSubmit={handleRegister} className="space-y-3">
                   <div>
-                    <label className="text-[11px] font-semibold text-navy-300 font-golos block mb-1">Email</label>
+                    <label className="text-[11px] font-semibold text-gray-500 font-golos block mb-1">
+                      Email
+                    </label>
                     <input value={email} onChange={(e) => setEmail(e.target.value)}
                       type="email" placeholder="you@company.ru" className={inputCls} autoFocus />
                   </div>
                   <div>
-                    <label className="text-[11px] font-semibold text-navy-300 font-golos block mb-1">Телефон</label>
+                    <label className="text-[11px] font-semibold text-gray-500 font-golos block mb-1">
+                      Телефон
+                    </label>
                     <input value={phone} onChange={(e) => setPhone(e.target.value)}
                       type="tel" placeholder="+7 (999) 000-00-00" className={inputCls} />
                   </div>
                   <div>
-                    <label className="text-[11px] font-semibold text-navy-300 font-golos block mb-1">Пароль</label>
+                    <label className="text-[11px] font-semibold text-gray-500 font-golos block mb-1">
+                      Пароль
+                    </label>
                     <div className="relative">
                       <input value={password} onChange={(e) => setPassword(e.target.value)}
-                        type={showPw ? "text" : "password"} placeholder="Минимум 6 символов" className={`${inputCls} pr-10`} />
+                        type={showPw ? "text" : "password"} placeholder="Минимум 6 символов"
+                        className={`${inputCls} pr-10`} />
                       <button type="button" onClick={() => setShowPw(!showPw)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-navy-400 hover:text-navy-200 transition-colors">
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
                         <Icon name={showPw ? "EyeOff" : "Eye"} size={15} />
                       </button>
                     </div>
                   </div>
-                  {error && <p className="text-red-400 text-xs font-ibm">{error}</p>}
+
+                  {error && (
+                    <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                      <Icon name="AlertCircle" size={13} className="text-red-400 flex-shrink-0" />
+                      <p className="text-red-500 text-xs font-ibm">{error}</p>
+                    </div>
+                  )}
+
                   <Button type="submit" disabled={submitting}
-                    className="w-full bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold font-golos mt-1 disabled:opacity-40">
-                    {submitting ? <><Icon name="Loader2" size={14} className="mr-1.5 animate-spin" />Создание...</> : "Создать аккаунт"}
+                    className="w-full bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos rounded-xl h-10 mt-1 disabled:opacity-40">
+                    {submitting
+                      ? <><Icon name="Loader2" size={14} className="mr-1.5 animate-spin" />Создание...</>
+                      : "Создать аккаунт"}
                   </Button>
                 </form>
               )}
 
-              <p className="text-[11px] text-navy-500 font-ibm text-center leading-relaxed">
+              <p className="text-[11px] text-gray-400 font-ibm text-center leading-relaxed">
                 Нажимая кнопку, вы соглашаетесь с{" "}
-                <span className="text-navy-400 underline cursor-pointer">политикой конфиденциальности</span>
+                <span className="text-gray-500 underline cursor-pointer hover:text-navy-600 transition-colors">
+                  политикой конфиденциальности
+                </span>
               </p>
             </div>
           )}
