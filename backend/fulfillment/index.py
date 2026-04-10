@@ -166,7 +166,7 @@ def handle_list_approved():
                 storage_price, assembly_price, delivery_price, storage_rate, assembly_rate, delivery_rate,
                 min_volume, team_size, working_hours, certificates, services,
                 badge, badge_color, rating, reviews_count, specializations
-            FROM fulfillments WHERE status = 'approved'
+            FROM fulfillments WHERE status IN ('approved', 'active')
             ORDER BY rating DESC, reviews_count DESC
         """)
         rows = cur.fetchall()
