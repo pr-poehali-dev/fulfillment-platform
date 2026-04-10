@@ -56,6 +56,9 @@ export const api = {
   telegramAuth: (data: Record<string, string | number>) =>
     request("auth", "telegram", { method: "POST", body: data }),
 
+  linkEmail: (email: string, password: string) =>
+    request("auth", "link-email", { method: "POST", body: { email, password } }),
+
   // ─── Owner profile ───────────────────────────────────────────────────────
   getOwnerProfile: () =>
     request("fulfillment", "owner-profile"),

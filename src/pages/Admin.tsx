@@ -278,7 +278,11 @@ export default function Admin() {
           )}
 
           {tab === "settings" && (
-            <AdminSettingsTab user={user} onLogout={() => { logout(); navigate("/auth"); }} />
+            <AdminSettingsTab
+              user={user}
+              onLogout={() => { logout(); navigate("/auth"); }}
+              onEmailLinked={() => refresh()}
+            />
           )}
 
           {tab === "support" && (

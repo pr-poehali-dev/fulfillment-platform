@@ -488,6 +488,69 @@ def handle_telegram_auth(body):
         conn.close()
 
 
+def handle_link_email(body, token):
+    """Привязка email и пароля к аккаунту, созданному через Telegram"""
+    if not token:
+        return resp(401, {'error': 'Не авторизован'})
+
+    email    = body.get('email', '').strip().lower()
+    password = body.get('password', '')
+
+    if not email:
+        return resp(400, {'error': 'Введите email'})
+    if len(password) < 6:
+        return resp(400, {'error': 'Пароль — минимум 6 символов'})
+
+    conn = get_db()
+    cur  = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user:
+            return resp(401, {'error': 'Сессия устарела, войдите снова'})
+        user_id = user[0]
+
+        # Нельзя привязать email, который уже занят другим пользователем
+        cur.execute("SELECT id FROM users WHERE email = '%s' AND id != %d" % (email.replace("'", "''"), user_id))
+        if cur.fetchone():
+            return resp(409, {'error': 'Этот email уже используется другим аккаунтом'})
+
+        # Проверяем, что у текущего пользователя ещё нет реального email (только tg_xxx@telegram.local)
+        cur.execute("SELECT email, password_hash FROM users WHERE id = %d" % user_id)
+        row = cur.fetchone()
+        if not row:
+            return resp(404, {'error': 'Пользователь не найден'})
+
+        current_email, current_pw_hash = row[0], row[1]
+        if current_pw_hash:  # уже есть пароль — обновляем email и пароль
+            pass  # разрешаем обновление
+        
+        pw_hash = hash_password(password)
+        cur.execute("""
+            UPDATE users SET email = '%s', password_hash = '%s', email_verified = TRUE
+            WHERE id = %d
+        """ % (email.replace("'", "''"), pw_hash.replace("'", "''"), user_id))
+
+        # Обновляем contact_email в профиле если там был фейковый
+        if current_email.endswith('@telegram.local'):
+            cur.execute("""
+                UPDATE owner_profiles SET contact_email = '%s'
+                WHERE user_id = %d AND (contact_email = '' OR contact_email LIKE '%%telegram.local')
+            """ % (email.replace("'", "''"), user_id))
+            cur.execute("""
+                UPDATE fulfillments SET contact_email = '%s'
+                WHERE user_id = %d AND (contact_email = '' OR contact_email LIKE '%%telegram.local')
+            """ % (email.replace("'", "''"), user_id))
+
+        conn.commit()
+        return resp(200, {'ok': True, 'email': email})
+    except Exception as e:
+        conn.rollback()
+        return resp(500, {'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+
 def handler(event, context):
     """Аутентификация: регистрация, вход, подтверждение email, сессии"""
     if event.get('httpMethod') == 'OPTIONS':
@@ -521,6 +584,8 @@ def handler(event, context):
             return handle_register_from_form(body)
         if path == 'telegram':
             return handle_telegram_auth(body)
+        if path == 'link-email':
+            return handle_link_email(body, token)
 
     if method == 'GET':
         if path == 'me':
