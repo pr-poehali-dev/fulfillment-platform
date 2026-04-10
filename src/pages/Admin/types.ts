@@ -20,6 +20,7 @@ export interface Fulfillment {
   id: number;
   company_name: string;
   city: string;
+  address: string;
   warehouse_area: string;
   founded_year: string;
   description: string;
@@ -54,7 +55,7 @@ export interface Fulfillment {
 }
 
 export const EMPTY_FULFILLMENT: Omit<Fulfillment, "id" | "created_at" | "updated_at"> = {
-  company_name: "", city: "", warehouse_area: "", founded_year: "",
+  company_name: "", city: "", address: "", warehouse_area: "", founded_year: "",
   description: "", detailed_description: "", logo: "", photos: [],
   work_schemes: [], features: [], packaging_types: [], marketplaces: [], specializations: [],
   storage_price: "", assembly_price: "", delivery_price: "",

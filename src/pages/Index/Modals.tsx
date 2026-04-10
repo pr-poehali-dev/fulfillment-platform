@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { StarRating, BadgeChip } from "./Navigation";
 import type { Partner } from "./data";
 import api from "@/lib/api";
+import YandexMap from "@/components/YandexMap";
 
 // ─── PARTNER DETAIL MODAL ────────────────────────────────────────────────────
 
@@ -220,16 +221,30 @@ export function PartnerDetailModal({ partner, onClose, onRequestQuote, isFavorit
               </section>
 
               {/* Certificates */}
-              <section>
-                <h3 className="font-golos font-bold text-navy-900 text-xs uppercase tracking-wide mb-2">Сертификаты и документы</h3>
-                <div className="flex flex-wrap gap-2">
-                  {partner.certificates.map((c) => (
-                    <span key={c} className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg font-ibm">
-                      <Icon name="Award" size={11} />{c}
-                    </span>
-                  ))}
-                </div>
-              </section>
+              {partner.certificates.length > 0 && (
+                <section>
+                  <h3 className="font-golos font-bold text-navy-900 text-xs uppercase tracking-wide mb-2">Сертификаты и документы</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {partner.certificates.map((c) => (
+                      <span key={c} className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg font-ibm">
+                        <Icon name="Award" size={11} />{c}
+                      </span>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Map */}
+              {partner.address && (
+                <section>
+                  <h3 className="font-golos font-bold text-navy-900 text-xs uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                    <Icon name="MapPin" size={13} className="text-navy-700" />
+                    Адрес склада
+                  </h3>
+                  <p className="text-sm text-gray-600 font-ibm mb-3">{partner.address}</p>
+                  <YandexMap address={partner.address} className="w-full h-56 rounded-xl overflow-hidden" />
+                </section>
+              )}
             </div>
 
             {/* Sidebar pricing */}

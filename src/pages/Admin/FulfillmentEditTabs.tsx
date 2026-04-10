@@ -102,6 +102,12 @@ export default function FulfillmentEditTabs({
                 <label className="text-xs font-semibold text-gray-600 font-golos block mb-1">Город</label>
                 <input value={form.city} onChange={(e) => set("city", e.target.value)} className={inputCls} placeholder="Москва" />
               </div>
+              <div className="md:col-span-2">
+                <label className="text-xs font-semibold text-gray-600 font-golos block mb-1">
+                  Адрес склада <span className="text-gray-400 font-normal">(отображается на карте)</span>
+                </label>
+                <input value={form.address || ""} onChange={(e) => set("address", e.target.value)} className={inputCls} placeholder="Москва, ул. Складская, д. 12, стр. 3" />
+              </div>
               <div>
                 <label className="text-xs font-semibold text-gray-600 font-golos block mb-1">Год основания</label>
                 <input value={form.founded_year} onChange={(e) => set("founded_year", e.target.value)} type="number" className={inputCls} placeholder="2018" />

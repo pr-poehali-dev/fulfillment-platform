@@ -37,6 +37,7 @@ interface ApiFulfillment {
   rating: number;
   reviews_count: number;
   specializations?: string[];
+  address?: string;
 }
 
 function mapToPartner(f: ApiFulfillment): Partner {
@@ -70,6 +71,7 @@ function mapToPartner(f: ApiFulfillment): Partner {
     workingHours: f.working_hours || "",
     certificates: f.certificates || [],
     specializations: f.specializations || [],
+    address: f.address || "",
   };
 }
 

@@ -35,6 +35,7 @@ export interface Partner {
   workingHours: string;
   certificates: string[];
   specializations?: string[];
+  address?: string;
 }
 
 export const PARTNERS: Partner[] = [];

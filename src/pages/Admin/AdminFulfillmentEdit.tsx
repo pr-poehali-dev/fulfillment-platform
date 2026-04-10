@@ -38,6 +38,7 @@ export default function AdminFulfillmentEdit({ fulfillment, onBack, onSaved }: A
     id: f.id,
     company_name: f.company_name,
     city: f.city,
+    address: f.address || "",
     warehouse_area: f.warehouse_area ? Number(f.warehouse_area) : null,
     founded_year: f.founded_year ? Number(f.founded_year) : null,
     description: f.description,

@@ -1,0 +1,1 @@
+ALTER TABLE fulfillments ADD COLUMN IF NOT EXISTS address TEXT DEFAULT '';

@@ -111,7 +111,7 @@ def handle_update_owner_profile(body, token):
 # ─── MULTI-FULFILLMENT ───────────────────────────────────────────────────────
 
 FULFILLMENT_COLS = [
-    'id', 'company_name', 'inn', 'city', 'warehouse_area', 'founded_year', 'description',
+    'id', 'company_name', 'inn', 'city', 'address', 'warehouse_area', 'founded_year', 'description',
     'detailed_description', 'logo', 'photos', 'work_schemes', 'features', 'packaging_types',
     'marketplaces', 'storage_price', 'assembly_price', 'delivery_price',
     'storage_rate', 'assembly_rate', 'delivery_rate',
@@ -217,7 +217,7 @@ def handle_update_fulfillment(body, token):
         if not existing:
             return resp(404, {'error': 'Фулфилмент не найден'})
 
-        allowed = ['company_name', 'city', 'warehouse_area', 'founded_year', 'description',
+        allowed = ['company_name', 'city', 'address', 'warehouse_area', 'founded_year', 'description',
                     'detailed_description', 'logo',
                     'storage_price', 'assembly_price', 'delivery_price', 'storage_rate', 'assembly_rate', 'delivery_rate',
                     'min_volume', 'has_trial', 'team_size', 'working_hours']
@@ -437,7 +437,7 @@ def handle_list_approved():
     cur = conn.cursor()
     try:
         cur.execute("""
-            SELECT id, company_name, city, warehouse_area, founded_year, description,
+            SELECT id, company_name, city, address, warehouse_area, founded_year, description,
                 detailed_description, logo, photos, contact_name,
                 work_schemes, features, packaging_types, marketplaces,
                 storage_price, assembly_price, delivery_price, storage_rate, assembly_rate, delivery_rate,
@@ -447,7 +447,7 @@ def handle_list_approved():
             ORDER BY rating DESC, reviews_count DESC
         """)
         rows = cur.fetchall()
-        cols = ['id', 'company_name', 'city', 'warehouse_area', 'founded_year', 'description',
+        cols = ['id', 'company_name', 'city', 'address', 'warehouse_area', 'founded_year', 'description',
                 'detailed_description', 'logo', 'photos', 'contact_name',
                 'work_schemes', 'features', 'packaging_types', 'marketplaces',
                 'storage_price', 'assembly_price', 'delivery_price', 'storage_rate', 'assembly_rate', 'delivery_rate',
