@@ -33,11 +33,13 @@ def send_email(to: str, subject: str, html: str):
 
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
-    msg['From'] = 'FulfillHub <%s>' % user
+    msg['From'] = 'FulfillHub <noreply@fulfillhub.ru>'
     msg['To'] = to
     msg.attach(MIMEText(html, 'html', 'utf-8'))
 
-    with smtplib.SMTP_SSL('smtp.mail.ru', 465) as s:
+    with smtplib.SMTP('mail.hosting.reg.ru', 587) as s:
+        s.ehlo()
+        s.starttls()
         s.login(user, password)
         s.sendmail(user, to, msg.as_string())
 
