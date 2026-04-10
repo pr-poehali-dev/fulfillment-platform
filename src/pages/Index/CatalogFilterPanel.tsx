@@ -124,7 +124,7 @@ export default function CatalogFilterPanel(props: CatalogFilterPanelProps) {
       />
 
       {filtersOpen && (
-        <div className="border-t border-gray-100 bg-gray-50">
+        <div className="border-t border-gray-100 bg-gray-50 max-h-[calc(100vh-120px)] overflow-y-auto overscroll-contain">
           <FilterGrid
             toggleArr={toggleArr}
             selectedMp={selectedMp} setSelectedMp={setSelectedMp}
