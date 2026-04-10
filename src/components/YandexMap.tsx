@@ -11,9 +11,14 @@ declare global {
   }
 }
 
+interface YGeoObjects {
+  getLength: () => number;
+  get: (i: number) => { geometry: { getCoordinates: () => [number, number] } };
+}
+
 interface YMaps {
   ready: (cb: () => void) => void;
-  geocode: (address: string) => Promise<{ geoObjects: { get: (i: number) => { geometry: { getCoordinates: () => [number, number] } } } }>;
+  geocode: (address: string) => Promise<{ geoObjects: YGeoObjects }>;
   Map: new (el: HTMLElement, opts: object) => YMap;
   Placemark: new (coords: [number, number], props: object, opts: object) => YPlacemark;
 }
@@ -33,10 +38,12 @@ interface Props {
 function loadYmaps(): Promise<void> {
   if (window.ymapsReady) return Promise.resolve();
 
-  return new Promise((resolve) => {
-    if (!window.ymapsCallbacks) window.ymapsCallbacks = [];
-    window.ymapsCallbacks.push(resolve);
+  if (!window.ymapsCallbacks) window.ymapsCallbacks = [];
 
+  return new Promise((resolve) => {
+    window.ymapsCallbacks!.push(resolve);
+
+    // Скрипт уже добавлен — просто ждём колбэк, не добавляем второй тег
     if (document.getElementById("ymaps-script")) return;
 
     const script = document.createElement("script");
@@ -44,11 +51,18 @@ function loadYmaps(): Promise<void> {
     script.src = `https://api-maps.yandex.ru/2.1/?apikey=${YANDEX_API_KEY}&lang=ru_RU`;
     script.async = true;
     script.onload = () => {
+      // ymaps.ready гарантирует, что все модули готовы
       window.ymaps.ready(() => {
         window.ymapsReady = true;
-        window.ymapsCallbacks?.forEach((cb) => cb());
+        const cbs = window.ymapsCallbacks ?? [];
         window.ymapsCallbacks = [];
+        cbs.forEach((cb) => cb());
       });
+    };
+    script.onerror = () => {
+      // При ошибке загрузки сбрасываем очередь
+      window.ymapsCallbacks?.forEach((cb) => cb());
+      window.ymapsCallbacks = [];
     };
     document.head.appendChild(script);
   });
@@ -75,8 +89,20 @@ export default function YandexMap({ address, className = "w-full h-64 rounded-xl
         await loadYmaps();
         if (cancelled || !containerRef.current) return;
 
-        const res = await window.ymaps.geocode(address);
+        // Геокодируем внутри ymaps.ready чтобы все модули точно были готовы
+        const res = await new Promise<{ geoObjects: YGeoObjects }>((resolve, reject) => {
+          window.ymaps.ready(() => {
+            window.ymaps.geocode(address).then(resolve).catch(reject);
+          });
+        });
+
         if (cancelled) return;
+
+        if (!res.geoObjects || res.geoObjects.getLength() === 0) {
+          setStatus("error");
+          setErrorMsg("Адрес не найден на карте. Уточните адрес.");
+          return;
+        }
 
         const coords = res.geoObjects.get(0).geometry.getCoordinates();
 
@@ -103,7 +129,7 @@ export default function YandexMap({ address, className = "w-full h-64 rounded-xl
       } catch {
         if (!cancelled) {
           setStatus("error");
-          setErrorMsg("Не удалось найти адрес на карте");
+          setErrorMsg("Не удалось загрузить карту");
         }
       }
     };
