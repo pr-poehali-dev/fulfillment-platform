@@ -26,30 +26,20 @@ def resp(status, body):
     return {'statusCode': status, 'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'}, 'body': json.dumps(body, default=str)}
 
 def send_email(to: str, subject: str, html: str):
-    host = os.environ.get('SMTP_HOST', '')
-    port = int(os.environ.get('SMTP_PORT', 465))
-    user = os.environ.get('SMTP_USER', '')
+    user = os.environ.get('SMTP_EMAIL', '')
     password = os.environ.get('SMTP_PASSWORD', '')
-    from_addr = os.environ.get('SMTP_FROM', user)
-
-    if not host or not user or not password:
+    if not user or not password:
         return
 
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
-    msg['From'] = f'FulfillHub <{from_addr}>'
+    msg['From'] = 'FulfillHub <%s>' % user
     msg['To'] = to
     msg.attach(MIMEText(html, 'html', 'utf-8'))
 
-    if port == 465:
-        with smtplib.SMTP_SSL(host, port) as s:
-            s.login(user, password)
-            s.sendmail(from_addr, to, msg.as_string())
-    else:
-        with smtplib.SMTP(host, port) as s:
-            s.starttls()
-            s.login(user, password)
-            s.sendmail(from_addr, to, msg.as_string())
+    with smtplib.SMTP_SSL('smtp.mail.ru', 465) as s:
+        s.login(user, password)
+        s.sendmail(user, to, msg.as_string())
 
 def verify_email_html(code: str, email: str) -> str:
     return f"""<!DOCTYPE html>
@@ -91,6 +81,51 @@ def verify_email_html(code: str, email: str) -> str:
   </table>
 </body>
 </html>"""
+
+def registration_confirm_html(email: str) -> str:
+    return """<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#0f172a;font-family:'Helvetica Neue',Arial,sans-serif">
+  <table width="100%%" cellpadding="0" cellspacing="0" style="background:#0f172a;padding:40px 20px">
+    <tr><td align="center">
+      <table width="480" cellpadding="0" cellspacing="0" style="background:#1e293b;border-radius:16px;overflow:hidden">
+        <tr>
+          <td style="background:linear-gradient(135deg,#1e3a5f,#0f172a);padding:32px;text-align:center">
+            <div style="display:inline-block;background:#f59e0b;border-radius:8px;padding:10px 14px;margin-bottom:16px">
+              <span style="color:#0f172a;font-size:20px">📦</span>
+            </div>
+            <h1 style="color:#ffffff;font-size:24px;margin:0;font-weight:800">FulfillHub</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px">
+            <h2 style="color:#ffffff;font-size:20px;margin:0 0 12px">Заявка принята!</h2>
+            <p style="color:#94a3b8;font-size:15px;line-height:1.7;margin:0 0 20px">
+              Спасибо за регистрацию на FulfillHub. Ваша заявка на размещение фулфилмента получена и передана на проверку.
+            </p>
+            <p style="color:#94a3b8;font-size:15px;line-height:1.7;margin:0 0 20px">
+              Наша команда рассмотрит её в течение 1–2 рабочих дней и свяжется с вами по этому email.
+            </p>
+            <div style="background:#0f172a;border-radius:12px;padding:20px;margin-bottom:24px">
+              <p style="color:#64748b;font-size:13px;margin:0 0 4px">Ваш аккаунт:</p>
+              <p style="color:#f59e0b;font-size:15px;font-weight:600;margin:0">%(email)s</p>
+            </div>
+            <p style="color:#64748b;font-size:12px;margin:0">
+              Войти в личный кабинет: <a href="https://fulfillhub.ru" style="color:#f59e0b;text-decoration:none">fulfillhub.ru</a>
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px;border-top:1px solid #334155;text-align:center">
+            <p style="color:#475569;font-size:11px;margin:0">© 2026 FulfillHub · %(email)s</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>""" % {'email': email}
 
 def hash_password(pw):
     salt = secrets.token_hex(16)
@@ -163,6 +198,7 @@ def handle_register(body):
         conn.commit()
         try:
             send_email(email, 'Подтвердите email — FulfillHub', verify_email_html(code, email))
+            send_email(email, 'Заявка принята — FulfillHub', registration_confirm_html(email))
         except Exception:
             pass
         return resp(201, {
