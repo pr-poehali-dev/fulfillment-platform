@@ -534,13 +534,15 @@ def handle_list_approved():
 # ─── QUOTES ──────────────────────────────────────────────────────────────────
 
 def ensure_seller(cur, name, email, phone, company):
-    """Находит или создаёт пользователя-селлера и профиль продавца. Возвращает user_id."""
+    """Находит или создаёт пользователя-селлера и профиль продавца. Возвращает user_id или raises ValueError."""
     import secrets, hashlib
     email_esc = email.replace("'", "''")
-    cur.execute("SELECT id FROM users WHERE email = '%s'" % email_esc)
+    cur.execute("SELECT id, role FROM users WHERE email = '%s'" % email_esc)
     row = cur.fetchone()
     if row:
-        user_id = row[0]
+        user_id, role = row
+        if role == 'fulfillment':
+            raise ValueError('Этот email зарегистрирован как аккаунт фулфилмента. Используйте другой email для запроса КП.')
     else:
         salt = secrets.token_hex(16)
         pw = secrets.token_urlsafe(12)
@@ -606,6 +608,9 @@ def handle_send_quote(body):
 
         conn.commit()
         return resp(201, {'ok': True, 'id': qid, 'lead_price': lead_price})
+    except ValueError as e:
+        conn.rollback()
+        return resp(400, {'error': str(e)})
     except Exception as e:
         conn.rollback()
         return resp(500, {'error': str(e)})
