@@ -92,7 +92,6 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
     e.preventDefault(); setError("");
     if (!email.trim())       { setError("Введите email"); return; }
     if (password.length < 6) { setError("Пароль — минимум 6 символов"); return; }
-    if (!phone.trim())       { setError("Введите номер телефона"); return; }
     setSubmitting(true);
     try {
       const data = await api.register(email.trim(), password, phone.trim());
@@ -309,13 +308,6 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
                     </label>
                     <input value={email} onChange={(e) => setEmail(e.target.value)}
                       type="email" placeholder="you@company.ru" className={inputCls} autoFocus />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-500 font-golos block mb-1">
-                      Телефон
-                    </label>
-                    <input value={phone} onChange={(e) => setPhone(e.target.value)}
-                      type="tel" placeholder="+7 (999) 000-00-00" className={inputCls} />
                   </div>
                   <div>
                     <label className="text-[11px] font-semibold text-gray-500 font-golos block mb-1">
