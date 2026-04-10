@@ -687,7 +687,7 @@ def handle_reset_password(body):
             return resp(400, {'error': 'Неверный или просроченный код'})
 
         pw_hash = hash_password(new_password)
-        cur.execute("UPDATE users SET password_hash = '%s', updated_at = NOW() WHERE id = %d" % (pw_hash.replace("'", "''"), user_id))
+        cur.execute("UPDATE users SET password_hash = '%s', email_verified = TRUE, updated_at = NOW() WHERE id = %d" % (pw_hash.replace("'", "''"), user_id))
         cur.execute("UPDATE email_codes SET used = TRUE WHERE id = %d" % ec[0])
 
         token = gen_token()
