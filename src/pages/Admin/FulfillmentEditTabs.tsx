@@ -12,6 +12,92 @@ import {
 } from "./types";
 import FulfillmentCardPreview from "./FulfillmentCardPreview";
 
+// ─── Address formatting helpers ───────────────────────────────────────────────
+
+// Сокращения, которые НЕ капитализируем
+const ABBREVS = new Set([
+  "ул", "пр", "пр-т", "пр-кт", "пер", "б-р", "бул", "бульв",
+  "пл", "наб", "ш", "туп", "проезд", "мкр", "мкрн",
+  "д", "дом", "стр", "строение", "корп", "корпус", "кв", "оф",
+  "г", "гор", "обл", "р-н", "пос", "дер", "с", "ст",
+]);
+
+function capitalizeWord(word: string): string {
+  if (!word) return word;
+  const lower = word.toLowerCase();
+  // Сокращения оставляем как есть (строчные)
+  if (ABBREVS.has(lower.replace(/\.$/, ""))) return lower;
+  // Цифры, номера домов — не трогаем
+  if (/^\d/.test(word)) return word;
+  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+}
+
+function formatAddress(raw: string): string {
+  // Разбиваем по запятым/точкам с запятой
+  const parts = raw.split(/\s*[,;]\s*/);
+
+  const formatted = parts.map((part) => {
+    const trimmed = part.trim();
+    if (!trimmed) return "";
+    // Каждую часть — обрабатываем пословно
+    return trimmed
+      .split(/\s+/)
+      .map((word, i) => {
+        // Первое слово каждой части всегда с заглавной (если не цифра)
+        if (i === 0 && !/^\d/.test(word)) {
+          const lower = word.toLowerCase().replace(/\.$/, "");
+          if (ABBREVS.has(lower)) return word.toLowerCase();
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        }
+        return capitalizeWord(word);
+      })
+      .join(" ");
+  }).filter(Boolean);
+
+  return formatted.join(", ");
+}
+
+function AddressInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const handleBlur = () => {
+    if (value.trim()) onChange(formatAddress(value));
+  };
+
+  // При наборе — только исправляем множественные пробелы и нормализуем разделители
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.value);
+  };
+
+  const isValid = !value.trim() || value.trim().length < 5 ? null
+    : /\d/.test(value) ? true   // есть номер дома — скорее всего ок
+    : null;
+
+  return (
+    <div className="space-y-1">
+      <input
+        value={value}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        className={`w-full px-3.5 py-2.5 border rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-2 transition-all ${
+          isValid === true
+            ? "border-emerald-300 focus:ring-emerald-500/20"
+            : "border-gray-200 focus:ring-navy-900/20"
+        }`}
+        placeholder="Москва, ул. Складская, д. 12, стр. 3"
+      />
+      {value.trim() && !/\d/.test(value) && (
+        <p className="text-[11px] text-amber-500 font-ibm flex items-center gap-1">
+          <span>⚠</span> Укажите номер дома
+        </p>
+      )}
+      {value.trim() && !value.includes(",") && value.trim().length > 5 && (
+        <p className="text-[11px] text-gray-400 font-ibm">
+          Разделяйте части адреса запятыми: город, улица, дом
+        </p>
+      )}
+    </div>
+  );
+}
+
 export type EditTab = "info" | "services" | "pricing" | "photos" | "preview";
 
 export const EDIT_TABS: { id: EditTab; label: string; icon: string }[] = [
@@ -107,7 +193,7 @@ export default function FulfillmentEditTabs({
                 <label className="text-xs font-semibold text-gray-600 font-golos block mb-1">
                   Адрес склада <span className="text-gray-400 font-normal">(отображается на карте)</span>
                 </label>
-                <input value={form.address || ""} onChange={(e) => set("address", e.target.value)} className={inputCls} placeholder="Москва, ул. Складская, д. 12, стр. 3" />
+                <AddressInput value={form.address || ""} onChange={(v) => set("address", v)} />
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-600 font-golos block mb-1">Год основания</label>
