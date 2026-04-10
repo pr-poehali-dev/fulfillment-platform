@@ -378,9 +378,6 @@ export function RequestQuoteModal({ partners, onClose }: {
           </div>
           <div className="flex-1">
             <div className="font-golos font-black text-navy-900">Запрос коммерческого предложения</div>
-            <div className="text-xs text-gray-400 font-ibm">
-              {partners.length === 1 ? `Для ${partners[0].name}` : `Для ${partners.length} партнёров`}
-            </div>
           </div>
           <button onClick={onClose} className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500">
             <Icon name="X" size={16} />
