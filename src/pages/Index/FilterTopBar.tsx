@@ -48,9 +48,12 @@ export default function FilterTopBar({
       {/* All filters button */}
       <button
         onClick={() => setFiltersOpen(!filtersOpen)}
-        className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border font-medium transition-all ${filtersOpen || activeFilterCount > 0 ? "bg-navy-900 text-white border-navy-900" : "border-gray-200 text-gray-600 hover:border-navy-400"}`}
+        className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border font-medium transition-all relative
+          ${filtersOpen || activeFilterCount > 0
+            ? "bg-navy-900 text-white border-navy-900"
+            : "border-gray-200 text-gray-600 hover:border-navy-400 animate-pulse-subtle"}`}
       >
-        <Icon name="SlidersHorizontal" size={14} />
+        <Icon name="SlidersHorizontal" size={14} className={!filtersOpen && activeFilterCount === 0 ? "animate-wiggle" : ""} />
         Фильтры
         {activeFilterCount > 0 && (
           <span className="bg-gold-500 text-navy-950 text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">

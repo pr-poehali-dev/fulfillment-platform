@@ -42,7 +42,7 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
   const [areaTo, setAreaTo] = useState<string>("");
   const [minRating, setMinRating] = useState<number>(0);
   const [sortBy, setSortBy] = useState("rating");
-  const [filtersOpen, setFiltersOpen] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const toggleArr = <T,>(arr: T[], val: T, set: (v: T[]) => void) =>
     set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
