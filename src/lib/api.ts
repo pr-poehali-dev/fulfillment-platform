@@ -59,6 +59,9 @@ export const api = {
   linkEmail: (email: string, password: string) =>
     request("auth", "link-email", { method: "POST", body: { email, password } }),
 
+  changePassword: (current_password: string, new_password: string) =>
+    request("auth", "change-password", { method: "POST", body: { current_password, new_password } }),
+
   forgotPassword: (email: string) =>
     request("auth", "forgot-password", { method: "POST", body: { email } }),
 

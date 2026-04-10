@@ -168,6 +168,51 @@ def reset_password_html(code: str, email: str) -> str:
 </body>
 </html>""" % {'code': code, 'email': email}
 
+def password_changed_html(email: str) -> str:
+    return """<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#0f172a;font-family:'Helvetica Neue',Arial,sans-serif">
+  <table width="100%%" cellpadding="0" cellspacing="0" style="background:#0f172a;padding:40px 20px">
+    <tr><td align="center">
+      <table width="480" cellpadding="0" cellspacing="0" style="background:#1e293b;border-radius:16px;overflow:hidden">
+        <tr>
+          <td style="background:linear-gradient(135deg,#1e3a5f,#0f172a);padding:32px;text-align:center">
+            <div style="display:inline-block;background:#f59e0b;border-radius:8px;padding:10px 14px;margin-bottom:16px">
+              <span style="color:#0f172a;font-size:20px">🔒</span>
+            </div>
+            <h1 style="color:#ffffff;font-size:24px;margin:0;font-weight:800">FulfillHub</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px">
+            <h2 style="color:#ffffff;font-size:20px;margin:0 0 12px">Пароль успешно изменён</h2>
+            <p style="color:#94a3b8;font-size:14px;line-height:1.6;margin:0 0 20px">
+              Пароль для вашего аккаунта был успешно изменён. Теперь используйте новый пароль для входа.
+            </p>
+            <div style="background:#0f172a;border-radius:12px;padding:20px;margin-bottom:24px">
+              <p style="color:#64748b;font-size:12px;margin:0 0 4px">Аккаунт:</p>
+              <p style="color:#f59e0b;font-size:15px;font-weight:600;margin:0;font-family:monospace">%(email)s</p>
+            </div>
+            <p style="color:#64748b;font-size:12px;margin:0 0 20px">
+              Если вы не меняли пароль — немедленно обратитесь в поддержку.
+            </p>
+            <a href="https://fulfillhub.ru/auth" style="display:block;text-align:center;background:#f59e0b;color:#0f172a;font-weight:700;font-size:14px;padding:12px 24px;border-radius:10px;text-decoration:none">
+              Войти в кабинет →
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px;border-top:1px solid #334155;text-align:center">
+            <p style="color:#475569;font-size:11px;margin:0">© 2026 FulfillHub · %(email)s</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>""" % {'email': email}
+
 def hash_password(pw):
     salt = secrets.token_hex(16)
     h = hashlib.pbkdf2_hmac('sha256', pw.encode(), salt.encode(), 100000).hex()
@@ -712,6 +757,54 @@ def handle_reset_password(body):
         cur.close()
         conn.close()
 
+def handle_change_password(body, token):
+    """Смена пароля авторизованным пользователем"""
+    if not token:
+        return resp(401, {'error': 'Не авторизован'})
+
+    current_password = body.get('current_password', '')
+    new_password = body.get('new_password', '')
+
+    if not current_password or not new_password:
+        return resp(400, {'error': 'Заполните все поля'})
+    if len(new_password) < 6:
+        return resp(400, {'error': 'Новый пароль — минимум 6 символов'})
+    if current_password == new_password:
+        return resp(400, {'error': 'Новый пароль должен отличаться от текущего'})
+
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user:
+            return resp(401, {'error': 'Не авторизован'})
+        user_id, email = user[0], user[1]
+
+        cur.execute("SELECT password_hash FROM users WHERE id = %d" % user_id)
+        row = cur.fetchone()
+        if not row or not row[0]:
+            return resp(400, {'error': 'Невозможно сменить пароль для этого аккаунта'})
+
+        if not check_password(current_password, row[0]):
+            return resp(400, {'error': 'Текущий пароль указан неверно'})
+
+        new_hash = hash_password(new_password)
+        cur.execute("UPDATE users SET password_hash = '%s', updated_at = NOW() WHERE id = %d" % (new_hash.replace("'", "''"), user_id))
+        conn.commit()
+
+        try:
+            send_email(email, 'Пароль успешно изменён — FulfillHub', password_changed_html(email))
+        except Exception:
+            pass
+
+        return resp(200, {'ok': True})
+    except Exception as e:
+        conn.rollback()
+        return resp(500, {'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
 def handler(event, context):
     """Аутентификация: регистрация, вход, подтверждение email, сессии"""
     if event.get('httpMethod') == 'OPTIONS':
@@ -751,6 +844,8 @@ def handler(event, context):
             return handle_forgot_password(body)
         if path == 'reset-password':
             return handle_reset_password(body)
+        if path == 'change-password':
+            return handle_change_password(body, token)
 
     if method == 'GET':
         if path == 'me':

@@ -32,6 +32,105 @@ const SELLER_STATUS_CFG = {
 
 type SellerTab = "quotes" | "support";
 
+function ChangePasswordModal({ onClose }: { onClose: () => void }) {
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+
+  const inputCls = "w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-900 text-sm font-ibm placeholder:text-gray-400 focus:outline-none focus:border-navy-500 focus:ring-2 focus:ring-navy-500/10 transition-all";
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!currentPw || !newPw) { setError("Заполните все поля"); return; }
+    if (newPw.length < 6) { setError("Новый пароль — минимум 6 символов"); return; }
+    setSubmitting(true);
+    try {
+      await api.changePassword(currentPw, newPw);
+      setDone(true);
+      toast.success("Пароль успешно изменён");
+    } catch (err: unknown) {
+      const e = err as { message?: string; detail?: string };
+      setError(e.message || e.detail || "Ошибка при смене пароля");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-gray-100">
+          <div className="w-9 h-9 bg-navy-900 rounded-xl flex items-center justify-center flex-shrink-0">
+            <Icon name="Lock" size={16} className="text-gold-400" />
+          </div>
+          <div className="flex-1">
+            <div className="font-golos font-black text-navy-950 text-sm">Смена пароля</div>
+            <div className="text-[11px] text-gray-400 font-ibm mt-0.5">Введите текущий и новый пароль</div>
+          </div>
+          <button onClick={onClose} className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-400 transition-colors">
+            <Icon name="X" size={14} />
+          </button>
+        </div>
+        <div className="p-5">
+          {done ? (
+            <div className="text-center space-y-4">
+              <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                <Icon name="CheckCircle" size={28} className="text-green-500" />
+              </div>
+              <p className="text-sm text-gray-600 font-ibm">Пароль изменён. Письмо с подтверждением отправлено на вашу почту.</p>
+              <button onClick={onClose} className="w-full bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos rounded-xl h-10 text-sm transition-colors">
+                Закрыть
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div>
+                <label className="text-[11px] font-semibold text-gray-500 font-golos block mb-1">Текущий пароль</label>
+                <div className="relative">
+                  <input value={currentPw} onChange={(e) => setCurrentPw(e.target.value)}
+                    type={showCurrent ? "text" : "password"} placeholder="Введите текущий пароль"
+                    className={`${inputCls} pr-10`} autoFocus />
+                  <button type="button" onClick={() => setShowCurrent(!showCurrent)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                    <Icon name={showCurrent ? "EyeOff" : "Eye"} size={15} />
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-gray-500 font-golos block mb-1">Новый пароль</label>
+                <div className="relative">
+                  <input value={newPw} onChange={(e) => setNewPw(e.target.value)}
+                    type={showNew ? "text" : "password"} placeholder="Минимум 6 символов"
+                    className={`${inputCls} pr-10`} />
+                  <button type="button" onClick={() => setShowNew(!showNew)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                    <Icon name={showNew ? "EyeOff" : "Eye"} size={15} />
+                  </button>
+                </div>
+              </div>
+              {error && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                  <Icon name="AlertCircle" size={13} className="text-red-400 flex-shrink-0" />
+                  <p className="text-red-500 text-xs font-ibm">{error}</p>
+                </div>
+              )}
+              <button type="submit" disabled={submitting}
+                className="w-full bg-navy-900 hover:bg-navy-800 disabled:opacity-40 text-white font-bold font-golos rounded-xl h-10 text-sm transition-colors flex items-center justify-center gap-2">
+                {submitting ? <><Icon name="Loader2" size={14} className="animate-spin" />Сохранение...</> : "Сохранить пароль"}
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Seller() {
   const navigate = useNavigate();
   const { user, loading, logout } = useAuth();
@@ -40,6 +139,7 @@ export default function Seller() {
   const [quotes, setQuotes] = useState<SellerQuote[]>([]);
   const [quotesLoading, setQuotesLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [changePwOpen, setChangePwOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth", { replace: true });
@@ -130,6 +230,10 @@ export default function Seller() {
         </nav>
 
         <div className="p-3 border-t border-white/10 space-y-1">
+          <button onClick={() => { setChangePwOpen(true); setSidebarOpen(false); }}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-white/40 hover:text-white/70 hover:bg-white/5 transition-all">
+            <Icon name="Lock" size={14} />Сменить пароль
+          </button>
           <Link to="/" className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-white/40 hover:text-white/70 hover:bg-white/5 transition-all">
             <Icon name="ArrowLeft" size={14} />На главную
           </Link>
@@ -139,6 +243,8 @@ export default function Seller() {
           </button>
         </div>
       </aside>
+
+      {changePwOpen && <ChangePasswordModal onClose={() => setChangePwOpen(false)} />}
 
       {sidebarOpen && (
         <div className="fixed inset-0 z-30 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
