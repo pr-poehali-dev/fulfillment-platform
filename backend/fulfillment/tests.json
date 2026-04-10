@@ -2,6 +2,8 @@
   {"name": "OPTIONS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
   {"name": "Unknown route", "method": "GET", "path": "/?action=unknown", "expectedStatus": 404, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
   {"name": "Profile unauthorized", "method": "GET", "path": "/?action=profile", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+  {"name": "Owner profile unauthorized", "method": "GET", "path": "/?action=owner-profile", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+  {"name": "My fulfillments unauthorized", "method": "GET", "path": "/?action=my-fulfillments", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
   {"name": "List approved", "method": "GET", "path": "/?action=approved", "expectedStatus": 200},
   {"name": "Send quote missing fields", "method": "POST", "path": "/?action=send-quote", "body": {}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
 ]}

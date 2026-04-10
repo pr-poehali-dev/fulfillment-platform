@@ -5,85 +5,101 @@ import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
 import { toast } from "sonner";
 
-import type { Profile, Quote, Tab } from "./Admin/types";
-import { EMPTY_PROFILE, STATUS_CFG } from "./Admin/types";
+import type { OwnerProfile, Fulfillment, Quote, Tab } from "./Admin/types";
 import AdminEmailVerify from "./Admin/AdminEmailVerify";
 import AdminSidebar from "./Admin/AdminSidebar";
-import AdminProfileTab from "./Admin/AdminProfileTab";
+import AdminOwnerProfile from "./Admin/AdminOwnerProfile";
+import AdminFulfillmentList from "./Admin/AdminFulfillmentList";
+import AdminFulfillmentEdit from "./Admin/AdminFulfillmentEdit";
 import AdminQuotesTab from "./Admin/AdminQuotesTab";
 import AdminSettingsTab from "./Admin/AdminSettingsTab";
 
 export default function Admin() {
   const navigate = useNavigate();
-  const { user, fulfillment, loading, logout, refresh } = useAuth();
+  const { user, loading, logout, refresh } = useAuth();
 
   const [tab, setTab] = useState<Tab>("profile");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [profile, setProfile] = useState<Profile>(EMPTY_PROFILE);
-  const [profileLoading, setProfileLoading] = useState(true);
+
+  // Owner profile
+  const [ownerProfile, setOwnerProfile] = useState<OwnerProfile | null>(null);
+  const [ownerLoading, setOwnerLoading] = useState(true);
+
+  // Fulfillments
+  const [fulfillments, setFulfillments] = useState<Fulfillment[]>([]);
+  const [fulfillmentsLoading, setFulfillmentsLoading] = useState(true);
+  const [editingFulfillment, setEditingFulfillment] = useState<Fulfillment | null>(null);
+
+  // Quotes
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [quotesLoading, setQuotesLoading] = useState(false);
 
-  // Email verification state
+  // Email verification
   const [verifyCode, setVerifyCode] = useState(["", "", "", "", "", ""]);
   const [verifySubmitting, setVerifySubmitting] = useState(false);
   const [verifyError, setVerifyError] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
 
-  // ─── AUTH GUARD ───────────────────────────────────────────────────────────
+  // ─── Auth guard ───────────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate("/auth", { replace: true });
-    }
+    if (!loading && !user) navigate("/auth", { replace: true });
   }, [user, loading, navigate]);
 
-  // ─── LOAD PROFILE ─────────────────────────────────────────────────────────
+  // ─── Load owner profile ───────────────────────────────────────────────────
 
-  const loadProfile = useCallback(async () => {
+  const loadOwnerProfile = useCallback(async () => {
     try {
-      setProfileLoading(true);
-      const data = await api.getProfile();
-      if (data) {
-        setProfile({
-          ...EMPTY_PROFILE,
-          ...data,
-          work_schemes: data.work_schemes || [],
-          features: data.features || [],
-          packaging_types: data.packaging_types || [],
-          marketplaces: data.marketplaces || [],
-          specializations: data.specializations || [],
-          photos: data.photos || [],
-          has_trial: !!data.has_trial,
-          warehouse_area: data.warehouse_area?.toString() || "",
-          founded_year: data.founded_year?.toString() || "",
-          storage_price: data.storage_price?.toString() || "",
-          assembly_price: data.assembly_price?.toString() || "",
-          delivery_price: data.delivery_price?.toString() || "",
-          min_volume: data.min_volume?.toString() || "",
-          team_size: data.team_size?.toString() || "",
-        });
-      }
+      setOwnerLoading(true);
+      const data = await api.getOwnerProfile();
+      setOwnerProfile(data.profile);
     } catch {
-      // Profile may not exist yet - that's ok, use empty
+      setOwnerProfile(null);
     } finally {
-      setProfileLoading(false);
+      setOwnerLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    if (user && user.email_verified) {
-      loadProfile();
-    }
-  }, [user, loadProfile]);
+  // ─── Load fulfillments ────────────────────────────────────────────────────
 
-  // ─── LOAD QUOTES ──────────────────────────────────────────────────────────
+  const loadFulfillments = useCallback(async () => {
+    try {
+      setFulfillmentsLoading(true);
+      const data = await api.listMyFulfillments();
+      const list: Fulfillment[] = (data.fulfillments || []).map((f: Fulfillment) => ({
+        ...f,
+        warehouse_area: f.warehouse_area?.toString() || "",
+        founded_year: f.founded_year?.toString() || "",
+        storage_price: f.storage_price?.toString() || "",
+        assembly_price: f.assembly_price?.toString() || "",
+        delivery_price: f.delivery_price?.toString() || "",
+        min_volume: f.min_volume?.toString() || "",
+        team_size: f.team_size?.toString() || "",
+        work_schemes: f.work_schemes || [],
+        features: f.features || [],
+        packaging_types: f.packaging_types || [],
+        marketplaces: f.marketplaces || [],
+        specializations: f.specializations || [],
+        photos: f.photos || [],
+        certificates: f.certificates || [],
+        services: f.services || [],
+        has_trial: !!f.has_trial,
+      }));
+      setFulfillments(list);
+    } catch {
+      setFulfillments([]);
+    } finally {
+      setFulfillmentsLoading(false);
+    }
+  }, []);
+
+  // ─── Load quotes ──────────────────────────────────────────────────────────
 
   const loadQuotes = useCallback(async () => {
     try {
       setQuotesLoading(true);
       const data = await api.myQuotes();
-      setQuotes(data.quotes || data || []);
+      setQuotes(data.quotes || []);
     } catch {
       setQuotes([]);
     } finally {
@@ -92,12 +108,17 @@ export default function Admin() {
   }, []);
 
   useEffect(() => {
-    if (tab === "quotes" && user?.email_verified) {
-      loadQuotes();
+    if (user?.email_verified) {
+      loadOwnerProfile();
+      loadFulfillments();
     }
+  }, [user, loadOwnerProfile, loadFulfillments]);
+
+  useEffect(() => {
+    if (tab === "quotes" && user?.email_verified) loadQuotes();
   }, [tab, user, loadQuotes]);
 
-  // ─── RESEND COOLDOWN ──────────────────────────────────────────────────────
+  // ─── Resend cooldown ──────────────────────────────────────────────────────
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -105,7 +126,7 @@ export default function Admin() {
     return () => clearTimeout(t);
   }, [resendCooldown]);
 
-  // ─── VERIFICATION HANDLERS ────────────────────────────────────────────────
+  // ─── Verify handlers ──────────────────────────────────────────────────────
 
   const handleVerifyEmail = async () => {
     const code = verifyCode.join("");
@@ -136,7 +157,7 @@ export default function Admin() {
     }
   };
 
-  // ─── LOADING / AUTH CHECK ─────────────────────────────────────────────────
+  // ─── Loading / auth ───────────────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -148,7 +169,7 @@ export default function Admin() {
 
   if (!user) return null;
 
-  // ─── EMAIL VERIFICATION SCREEN ────────────────────────────────────────────
+  // ─── Email verification screen ────────────────────────────────────────────
 
   if (!user.email_verified) {
     return (
@@ -166,31 +187,39 @@ export default function Admin() {
     );
   }
 
-  // ─── MAIN DASHBOARD ───────────────────────────────────────────────────────
+  // ─── Tab labels ───────────────────────────────────────────────────────────
 
-  const profileStatus = profile.status || fulfillment?.status || "draft";
-  const statusCfg = STATUS_CFG[profileStatus] || STATUS_CFG.draft;
+  const TAB_LABELS: Record<Tab, { title: string; sub: string }> = {
+    profile:      { title: "Мой профиль",        sub: "Ваши персональные данные" },
+    fulfillments: { title: "Мои фулфилменты",    sub: editingFulfillment ? `Редактирование: ${editingFulfillment.company_name || "без названия"}` : "Управление складами и услугами" },
+    quotes:       { title: "Заявки на КП",        sub: "Входящие запросы от селлеров" },
+    settings:     { title: "Настройки",           sub: "Управление аккаунтом" },
+  };
+
+  const handleFulfillmentSaved = (updated: Fulfillment) => {
+    setFulfillments((prev) => prev.map((f) => f.id === updated.id ? updated : f));
+    setEditingFulfillment(updated);
+  };
+
+  const { title, sub } = TAB_LABELS[tab];
 
   return (
     <div className="min-h-screen bg-gray-50 font-golos flex">
-      {/* Sidebar */}
       <AdminSidebar
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
         tab={tab}
-        setTab={setTab}
-        companyName={profile.company_name}
-        profileStatus={profileStatus}
+        setTab={(t) => { setTab(t); setEditingFulfillment(null); }}
+        ownerName={ownerProfile?.contact_name || ""}
         userEmail={user.email}
+        userId={user.id}
         onLogout={() => { logout(); navigate("/auth"); }}
       />
 
-      {/* Overlay (mobile) */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-30 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Main */}
       <main className="flex-1 flex flex-col min-w-0">
         {/* Topbar */}
         <div className="h-14 bg-white border-b border-gray-100 flex items-center px-4 sticky top-0 z-20">
@@ -198,16 +227,8 @@ export default function Admin() {
             <Icon name="Menu" size={20} />
           </button>
           <div>
-            <div className="font-golos font-bold text-navy-900 text-sm">
-              {tab === "profile" && "Профиль компании"}
-              {tab === "quotes" && "Заявки на КП"}
-              {tab === "settings" && "Настройки"}
-            </div>
-            <div className="text-xs text-gray-400 font-ibm">
-              {tab === "profile" && "Как вас видят клиенты в каталоге"}
-              {tab === "quotes" && "Входящие запросы от селлеров"}
-              {tab === "settings" && "Управление аккаунтом"}
-            </div>
+            <div className="font-golos font-bold text-navy-900 text-sm">{title}</div>
+            <div className="text-xs text-gray-400 font-ibm">{sub}</div>
           </div>
           <div className="ml-auto flex items-center gap-2">
             <span className="text-xs text-gray-400 font-ibm hidden sm:block">{user.email}</span>
@@ -220,19 +241,36 @@ export default function Admin() {
         {/* Content */}
         <div className="flex-1 overflow-auto p-4 md:p-6">
           {tab === "profile" && (
-            <AdminProfileTab
-              profile={profile}
-              setProfile={setProfile}
-              profileLoading={profileLoading}
-              profileStatus={profileStatus}
-              statusCfg={statusCfg}
-              moderationComment={profile.moderation_comment}
-              onReload={loadProfile}
+            <AdminOwnerProfile
+              profile={ownerProfile}
+              loading={ownerLoading}
+              userId={user.id}
+              userEmail={user.email}
+              onSaved={(p) => setOwnerProfile(p)}
             />
           )}
+
+          {tab === "fulfillments" && !editingFulfillment && (
+            <AdminFulfillmentList
+              fulfillments={fulfillments}
+              loading={fulfillmentsLoading}
+              onReload={loadFulfillments}
+              onEdit={(f) => setEditingFulfillment(f)}
+            />
+          )}
+
+          {tab === "fulfillments" && editingFulfillment && (
+            <AdminFulfillmentEdit
+              fulfillment={editingFulfillment}
+              onBack={() => { setEditingFulfillment(null); loadFulfillments(); }}
+              onSaved={handleFulfillmentSaved}
+            />
+          )}
+
           {tab === "quotes" && (
             <AdminQuotesTab quotes={quotes} quotesLoading={quotesLoading} onReload={loadQuotes} />
           )}
+
           {tab === "settings" && (
             <AdminSettingsTab user={user} onLogout={() => { logout(); navigate("/auth"); }} />
           )}

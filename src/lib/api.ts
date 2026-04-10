@@ -33,8 +33,8 @@ async function request(fn: keyof typeof URLS, action: string, opts?: { method?: 
   return data;
 }
 
-// Auth
 export const api = {
+  // ─── Auth ───────────────────────────────────────────────────────────────
   register: (email: string, password: string, phone: string) =>
     request("auth", "register", { method: "POST", body: { email, password, phone } }),
 
@@ -53,7 +53,33 @@ export const api = {
   registerFromForm: (body: Record<string, unknown>) =>
     request("auth", "register-from-form", { method: "POST", body }),
 
-  // Fulfillment profile
+  // ─── Owner profile ───────────────────────────────────────────────────────
+  getOwnerProfile: () =>
+    request("fulfillment", "owner-profile"),
+
+  updateOwnerProfile: (body: Record<string, unknown>) =>
+    request("fulfillment", "update-owner-profile", { method: "POST", body }),
+
+  // ─── Multi-fulfillment ───────────────────────────────────────────────────
+  listMyFulfillments: () =>
+    request("fulfillment", "my-fulfillments"),
+
+  getFulfillment: (id: number) =>
+    request("fulfillment", "get-fulfillment", { params: { id: String(id) } }),
+
+  createFulfillment: (body: Record<string, unknown>) =>
+    request("fulfillment", "create-fulfillment", { method: "POST", body }),
+
+  updateFulfillment: (body: Record<string, unknown>) =>
+    request("fulfillment", "update-fulfillment", { method: "POST", body }),
+
+  submitFulfillment: (id: number) =>
+    request("fulfillment", "submit-fulfillment", { method: "POST", body: { id } }),
+
+  closeFulfillment: (id: number) =>
+    request("fulfillment", "close-fulfillment", { method: "POST", body: { id } }),
+
+  // ─── Legacy (single profile) ─────────────────────────────────────────────
   getProfile: () =>
     request("fulfillment", "profile"),
 
@@ -66,11 +92,11 @@ export const api = {
   submitForModeration: () =>
     request("fulfillment", "submit-for-moderation", { method: "POST" }),
 
-  // Public
+  // ─── Public ─────────────────────────────────────────────────────────────
   listApproved: () =>
     request("fulfillment", "approved"),
 
-  // Quote requests
+  // ─── Quotes ─────────────────────────────────────────────────────────────
   sendQuote: (body: Record<string, unknown>) =>
     request("fulfillment", "send-quote", { method: "POST", body }),
 
@@ -80,7 +106,7 @@ export const api = {
   updateQuoteStatus: (quoteId: number, status: string) =>
     request("fulfillment", "update-quote-status", { method: "POST", body: { quote_id: quoteId, status } }),
 
-  // Admin / moderation
+  // ─── Admin ──────────────────────────────────────────────────────────────
   adminList: (status?: string) =>
     request("fulfillment", "admin-list", { params: status ? { status } : {} }),
 

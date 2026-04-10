@@ -1,4 +1,4 @@
-"""CRUD профиля фулфилмента, загрузка фото, модерация, запросы КП"""
+"""CRUD профиля владельца фулфилмента, управление несколькими фулфилментами, фото, модерация, КП"""
 import json
 import os
 import base64
@@ -9,7 +9,7 @@ import boto3
 CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Auth-Token',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Auth-Token, X-Authorization',
     'Access-Control-Max-Age': '86400',
 }
 
@@ -32,7 +32,9 @@ def get_s3():
 def cdn_url(key):
     return "https://cdn.poehali.dev/projects/%s/bucket/%s" % (os.environ['AWS_ACCESS_KEY_ID'], key)
 
-def handle_get_profile(token):
+# ─── OWNER PROFILE ───────────────────────────────────────────────────────────
+
+def handle_get_owner_profile(token):
     conn = get_db()
     cur = conn.cursor()
     try:
@@ -42,37 +44,28 @@ def handle_get_profile(token):
         user_id = user[0]
 
         cur.execute("""
-            SELECT id, company_name, inn, city, warehouse_area, founded_year, description,
-                detailed_description, logo, photos, contact_name, contact_email, contact_phone, contact_tg,
-                work_schemes, features, packaging_types, marketplaces,
-                storage_price, assembly_price, delivery_price, storage_rate, assembly_rate, delivery_rate,
-                min_volume, has_trial, team_size, working_hours, certificates, services,
-                badge, badge_color, rating, reviews_count, status, moderation_comment, specializations
-            FROM fulfillments WHERE user_id = %d
+            SELECT id, contact_name, contact_email, contact_phone, contact_tg, inn, created_at
+            FROM owner_profiles WHERE user_id = %d
         """ % user_id)
         row = cur.fetchone()
         if not row:
-            return resp(404, {'error': 'Профиль не найден'})
+            return resp(200, {'profile': None})
 
-        cols = ['id', 'company_name', 'inn', 'city', 'warehouse_area', 'founded_year', 'description',
-                'detailed_description', 'logo', 'photos', 'contact_name', 'contact_email', 'contact_phone', 'contact_tg',
-                'work_schemes', 'features', 'packaging_types', 'marketplaces',
-                'storage_price', 'assembly_price', 'delivery_price', 'storage_rate', 'assembly_rate', 'delivery_rate',
-                'min_volume', 'has_trial', 'team_size', 'working_hours', 'certificates', 'services',
-                'badge', 'badge_color', 'rating', 'reviews_count', 'status', 'moderation_comment', 'specializations']
-        profile = {}
-        for i, c in enumerate(cols):
-            v = row[i]
-            if c in ('storage_rate', 'assembly_rate', 'delivery_rate', 'rating'):
-                v = float(v) if v else 0
-            profile[c] = v
-
+        profile = {
+            'id': row[0],
+            'contact_name': row[1],
+            'contact_email': row[2],
+            'contact_phone': row[3],
+            'contact_tg': row[4],
+            'inn': row[5],
+            'created_at': str(row[6]),
+        }
         return resp(200, {'profile': profile})
     finally:
         cur.close()
         conn.close()
 
-def handle_update_profile(body, token):
+def handle_update_owner_profile(body, token):
     conn = get_db()
     cur = conn.cursor()
     try:
@@ -81,8 +74,151 @@ def handle_update_profile(body, token):
             return resp(401, {'error': 'Не авторизован'})
         user_id = user[0]
 
-        allowed = ['company_name', 'inn', 'city', 'warehouse_area', 'founded_year', 'description',
-                    'detailed_description', 'logo', 'contact_name', 'contact_email', 'contact_phone', 'contact_tg',
+        fields = ['contact_name', 'contact_email', 'contact_phone', 'contact_tg', 'inn']
+        vals = {}
+        for f in fields:
+            if f in body:
+                vals[f] = str(body[f]).replace("'", "''")
+
+        cur.execute("SELECT id FROM owner_profiles WHERE user_id = %d" % user_id)
+        existing = cur.fetchone()
+
+        if existing:
+            if vals:
+                sets = ', '.join("%s = '%s'" % (k, v) for k, v in vals.items())
+                cur.execute("UPDATE owner_profiles SET %s, updated_at = NOW() WHERE user_id = %d" % (sets, user_id))
+        else:
+            cols = list(vals.keys()) + ['user_id']
+            vs = ["'%s'" % vals[k] for k in list(vals.keys())] + [str(user_id)]
+            cur.execute("INSERT INTO owner_profiles (%s) VALUES (%s)" % (', '.join(cols), ', '.join(vs)))
+
+        conn.commit()
+
+        cur.execute("SELECT id, contact_name, contact_email, contact_phone, contact_tg, inn, created_at FROM owner_profiles WHERE user_id = %d" % user_id)
+        row = cur.fetchone()
+        profile = {
+            'id': row[0], 'contact_name': row[1], 'contact_email': row[2],
+            'contact_phone': row[3], 'contact_tg': row[4], 'inn': row[5], 'created_at': str(row[6]),
+        }
+        return resp(200, {'ok': True, 'profile': profile})
+    except Exception as e:
+        conn.rollback()
+        return resp(500, {'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+# ─── MULTI-FULFILLMENT ───────────────────────────────────────────────────────
+
+FULFILLMENT_COLS = [
+    'id', 'company_name', 'inn', 'city', 'warehouse_area', 'founded_year', 'description',
+    'detailed_description', 'logo', 'photos', 'work_schemes', 'features', 'packaging_types',
+    'marketplaces', 'storage_price', 'assembly_price', 'delivery_price',
+    'storage_rate', 'assembly_rate', 'delivery_rate',
+    'min_volume', 'has_trial', 'team_size', 'working_hours', 'certificates', 'services',
+    'badge', 'badge_color', 'rating', 'reviews_count', 'status', 'moderation_comment',
+    'specializations', 'created_at', 'updated_at',
+]
+
+def row_to_fulfillment(row):
+    item = {}
+    for i, c in enumerate(FULFILLMENT_COLS):
+        v = row[i]
+        if c in ('storage_rate', 'assembly_rate', 'delivery_rate', 'rating'):
+            v = float(v) if v else 0
+        item[c] = v
+    return item
+
+def handle_list_my_fulfillments(token):
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user:
+            return resp(401, {'error': 'Не авторизован'})
+        user_id = user[0]
+
+        cur.execute("""
+            SELECT %s FROM fulfillments WHERE user_id = %d ORDER BY created_at ASC
+        """ % (', '.join(FULFILLMENT_COLS), user_id))
+        rows = cur.fetchall()
+        return resp(200, {'fulfillments': [row_to_fulfillment(r) for r in rows]})
+    finally:
+        cur.close()
+        conn.close()
+
+def handle_get_fulfillment(token, fid):
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user:
+            return resp(401, {'error': 'Не авторизован'})
+        user_id = user[0]
+
+        cur.execute("""
+            SELECT %s FROM fulfillments WHERE id = %d AND user_id = %d
+        """ % (', '.join(FULFILLMENT_COLS), int(fid), user_id))
+        row = cur.fetchone()
+        if not row:
+            return resp(404, {'error': 'Фулфилмент не найден'})
+        return resp(200, {'fulfillment': row_to_fulfillment(row)})
+    finally:
+        cur.close()
+        conn.close()
+
+def handle_create_fulfillment(body, token):
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user:
+            return resp(401, {'error': 'Не авторизован'})
+        user_id = user[0]
+
+        name = str(body.get('company_name', 'Новый фулфилмент')).replace("'", "''")
+        cur.execute("""
+            INSERT INTO fulfillments (user_id, company_name, status)
+            VALUES (%d, '%s', 'draft')
+            RETURNING id
+        """ % (user_id, name))
+        new_id = cur.fetchone()[0]
+
+        # Связываем с owner_profile
+        cur.execute("SELECT id FROM owner_profiles WHERE user_id = %d" % user_id)
+        op = cur.fetchone()
+        if op:
+            cur.execute("UPDATE fulfillments SET owner_profile_id = %d WHERE id = %d" % (op[0], new_id))
+
+        conn.commit()
+        return resp(201, {'ok': True, 'id': new_id})
+    except Exception as e:
+        conn.rollback()
+        return resp(500, {'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+def handle_update_fulfillment(body, token):
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user:
+            return resp(401, {'error': 'Не авторизован'})
+        user_id = user[0]
+
+        fid = body.get('id')
+        if not fid:
+            return resp(400, {'error': 'id обязателен'})
+
+        cur.execute("SELECT id, status FROM fulfillments WHERE id = %d AND user_id = %d" % (int(fid), user_id))
+        existing = cur.fetchone()
+        if not existing:
+            return resp(404, {'error': 'Фулфилмент не найден'})
+
+        allowed = ['company_name', 'city', 'warehouse_area', 'founded_year', 'description',
+                    'detailed_description', 'logo',
                     'storage_price', 'assembly_price', 'delivery_price', 'storage_rate', 'assembly_rate', 'delivery_rate',
                     'min_volume', 'has_trial', 'team_size', 'working_hours']
         array_fields = ['work_schemes', 'features', 'packaging_types', 'marketplaces', 'certificates', 'photos', 'specializations']
@@ -116,7 +252,7 @@ def handle_update_profile(body, token):
             return resp(400, {'error': 'Нечего обновлять'})
 
         updates.append("updated_at = NOW()")
-        cur.execute("UPDATE fulfillments SET %s WHERE user_id = %d" % (', '.join(updates), user_id))
+        cur.execute("UPDATE fulfillments SET %s WHERE id = %d AND user_id = %d" % (', '.join(updates), int(fid), user_id))
         conn.commit()
         return resp(200, {'ok': True})
     except Exception as e:
@@ -125,6 +261,137 @@ def handle_update_profile(body, token):
     finally:
         cur.close()
         conn.close()
+
+def handle_submit_fulfillment_for_moderation(body, token):
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user:
+            return resp(401, {'error': 'Не авторизован'})
+        user_id = user[0]
+
+        fid = body.get('id')
+        if not fid:
+            return resp(400, {'error': 'id обязателен'})
+
+        cur.execute("""
+            SELECT company_name, city, description
+            FROM fulfillments WHERE id = %d AND user_id = %d
+        """ % (int(fid), user_id))
+        row = cur.fetchone()
+        if not row:
+            return resp(404, {'error': 'Фулфилмент не найден'})
+        if not row[0] or not row[1] or not row[2]:
+            return resp(400, {'error': 'Заполните: название, город, описание'})
+
+        cur.execute("UPDATE fulfillments SET status = 'pending', moderation_comment = '', updated_at = NOW() WHERE id = %d AND user_id = %d" % (int(fid), user_id))
+        conn.commit()
+        return resp(200, {'ok': True, 'status': 'pending'})
+    except Exception as e:
+        conn.rollback()
+        return resp(500, {'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+def handle_close_fulfillment(body, token):
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user:
+            return resp(401, {'error': 'Не авторизован'})
+        user_id = user[0]
+
+        fid = body.get('id')
+        if not fid:
+            return resp(400, {'error': 'id обязателен'})
+
+        cur.execute("UPDATE fulfillments SET status = 'closed', updated_at = NOW() WHERE id = %d AND user_id = %d" % (int(fid), user_id))
+        conn.commit()
+        return resp(200, {'ok': True})
+    except Exception as e:
+        conn.rollback()
+        return resp(500, {'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+# ─── LEGACY: single profile (обратная совместимость) ─────────────────────────
+
+def handle_get_profile(token):
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user:
+            return resp(401, {'error': 'Не авторизован'})
+        user_id = user[0]
+
+        cur.execute("""
+            SELECT %s FROM fulfillments WHERE user_id = %d ORDER BY created_at ASC LIMIT 1
+        """ % (', '.join(FULFILLMENT_COLS), user_id))
+        row = cur.fetchone()
+        if not row:
+            return resp(404, {'error': 'Профиль не найден'})
+
+        return resp(200, {'profile': row_to_fulfillment(row)})
+    finally:
+        cur.close()
+        conn.close()
+
+def handle_update_profile(body, token):
+    """Обратная совместимость — обновляет первый фулфилмент пользователя"""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user:
+            return resp(401, {'error': 'Не авторизован'})
+        user_id = user[0]
+
+        cur.execute("SELECT id FROM fulfillments WHERE user_id = %d ORDER BY created_at ASC LIMIT 1" % user_id)
+        row = cur.fetchone()
+        if not row:
+            cur.execute("INSERT INTO fulfillments (user_id, company_name, status) VALUES (%d, '', 'draft') RETURNING id" % user_id)
+            fid = cur.fetchone()[0]
+        else:
+            fid = row[0]
+
+        body['id'] = fid
+        conn.commit()
+        return handle_update_fulfillment(body, token)
+    except Exception as e:
+        conn.rollback()
+        return resp(500, {'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+def handle_submit_for_moderation(token):
+    """Обратная совместимость"""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user:
+            return resp(401, {'error': 'Не авторизован'})
+        user_id = user[0]
+
+        cur.execute("SELECT id FROM fulfillments WHERE user_id = %d ORDER BY created_at ASC LIMIT 1" % user_id)
+        row = cur.fetchone()
+        if not row:
+            return resp(404, {'error': 'Профиль не найден'})
+
+        return handle_submit_fulfillment_for_moderation({'id': row[0]}, token)
+    except Exception as e:
+        return resp(500, {'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+# ─── PHOTOS ──────────────────────────────────────────────────────────────────
 
 def handle_upload_photo(body, token):
     conn = get_db()
@@ -154,6 +421,8 @@ def handle_upload_photo(body, token):
     finally:
         cur.close()
         conn.close()
+
+# ─── PUBLIC ──────────────────────────────────────────────────────────────────
 
 def handle_list_approved():
     conn = get_db()
@@ -189,6 +458,8 @@ def handle_list_approved():
     finally:
         cur.close()
         conn.close()
+
+# ─── QUOTES ──────────────────────────────────────────────────────────────────
 
 def handle_send_quote(body):
     fulfillment_id = body.get('fulfillment_id')
@@ -237,35 +508,6 @@ def handle_send_quote(body):
         cur.close()
         conn.close()
 
-def handle_submit_for_moderation(token):
-    conn = get_db()
-    cur = conn.cursor()
-    try:
-        user = get_user_by_token(cur, token)
-        if not user:
-            return resp(401, {'error': 'Не авторизован'})
-        user_id = user[0]
-
-        cur.execute("""
-            SELECT company_name, city, description, contact_email, contact_phone
-            FROM fulfillments WHERE user_id = %d
-        """ % user_id)
-        row = cur.fetchone()
-        if not row:
-            return resp(404, {'error': 'Профиль не найден'})
-        if not row[0] or not row[1] or not row[2] or not row[3] or not row[4]:
-            return resp(400, {'error': 'Заполните обязательные поля: название, город, описание, email, телефон'})
-
-        cur.execute("UPDATE fulfillments SET status = 'pending', updated_at = NOW() WHERE user_id = %d" % user_id)
-        conn.commit()
-        return resp(200, {'ok': True, 'status': 'pending'})
-    except Exception as e:
-        conn.rollback()
-        return resp(500, {'error': str(e)})
-    finally:
-        cur.close()
-        conn.close()
-
 def handle_my_quotes(token):
     conn = get_db()
     cur = conn.cursor()
@@ -275,20 +517,18 @@ def handle_my_quotes(token):
             return resp(401, {'error': 'Не авторизован'})
         user_id = user[0]
 
-        cur.execute("SELECT id FROM fulfillments WHERE user_id = %d" % user_id)
-        ff = cur.fetchone()
-        if not ff:
-            return resp(404, {'error': 'Профиль не найден'})
-
         cur.execute("""
-            SELECT id, sender_name, sender_company, sender_email, sender_phone,
-                sku_count, orders_count, message, status, created_at
-            FROM quote_requests WHERE fulfillment_id = %d
-            ORDER BY created_at DESC
-        """ % ff[0])
+            SELECT q.id, q.sender_name, q.sender_company, q.sender_email, q.sender_phone,
+                q.sku_count, q.orders_count, q.message, q.status, q.created_at,
+                f.company_name as fulfillment_name, f.id as fulfillment_id
+            FROM quote_requests q
+            JOIN fulfillments f ON f.id = q.fulfillment_id
+            WHERE f.user_id = %d
+            ORDER BY q.created_at DESC
+        """ % user_id)
         rows = cur.fetchall()
         cols = ['id', 'sender_name', 'sender_company', 'sender_email', 'sender_phone',
-                'sku_count', 'orders_count', 'message', 'status', 'created_at']
+                'sku_count', 'orders_count', 'message', 'status', 'created_at', 'fulfillment_name', 'fulfillment_id']
         return resp(200, {'quotes': [dict(zip(cols, r)) for r in rows]})
     finally:
         cur.close()
@@ -317,7 +557,8 @@ def handle_update_quote_status(body, token):
         cur.close()
         conn.close()
 
-# --- ADMIN / MODERATION ---
+# ─── ADMIN ───────────────────────────────────────────────────────────────────
+
 def handle_admin_list(token, params):
     conn = get_db()
     cur = conn.cursor()
@@ -423,11 +664,13 @@ def handle_admin_set_lead_price(body, token):
         user = get_user_by_token(cur, token)
         if not user or user[2] != 'admin':
             return resp(403, {'error': 'Доступ запрещён'})
+
         fid = body.get('fulfillment_id')
-        price = float(body.get('lead_price', 0) or 0)
-        if not fid or price < 0:
+        price = body.get('lead_price')
+        if not fid or price is None:
             return resp(400, {'error': 'fulfillment_id и lead_price обязательны'})
-        cur.execute("UPDATE fulfillments SET lead_price = %s WHERE id = %d" % (price, int(fid)))
+
+        cur.execute("UPDATE fulfillments SET lead_price = %s WHERE id = %d" % (float(price), int(fid)))
         conn.commit()
         return resp(200, {'ok': True})
     finally:
@@ -441,24 +684,26 @@ def handle_admin_mark_paid(body, token):
         user = get_user_by_token(cur, token)
         if not user or user[2] != 'admin':
             return resp(403, {'error': 'Доступ запрещён'})
+
         qid = body.get('quote_id')
         if not qid:
             return resp(400, {'error': 'quote_id обязателен'})
-        cur.execute("""
-            UPDATE quote_requests SET payment_status = 'paid' WHERE id = %d
-            RETURNING fulfillment_id, lead_price
-        """ % int(qid))
+
+        cur.execute("SELECT fulfillment_id, lead_price FROM quote_requests WHERE id = %d AND payment_status = 'unpaid'" % int(qid))
         row = cur.fetchone()
         if row:
             cur.execute("UPDATE fulfillments SET balance = COALESCE(balance, 0) + %s WHERE id = %d" % (float(row[1] or 0), int(row[0])))
+        cur.execute("UPDATE quote_requests SET payment_status = 'paid' WHERE id = %d" % int(qid))
         conn.commit()
         return resp(200, {'ok': True})
     finally:
         cur.close()
         conn.close()
 
+# ─── ROUTER ──────────────────────────────────────────────────────────────────
+
 def handler(event, context):
-    """CRUD профиля фулфилмента, загрузка фото, модерация, запросы КП"""
+    """CRUD профиля владельца, управление несколькими фулфилментами, фото, модерация, КП"""
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': CORS_HEADERS, 'body': ''}
 
@@ -479,6 +724,14 @@ def handler(event, context):
         token = auth[7:]
 
     if method == 'GET':
+        if action == 'owner-profile':
+            return handle_get_owner_profile(token)
+        if action == 'my-fulfillments':
+            return handle_list_my_fulfillments(token)
+        if action == 'get-fulfillment':
+            fid = params.get('id', '0')
+            return handle_get_fulfillment(token, fid)
+        # legacy
         if action == 'profile':
             return handle_get_profile(token)
         if action == 'approved':
@@ -491,6 +744,17 @@ def handler(event, context):
             return handle_admin_all_quotes(token)
 
     if method == 'POST':
+        if action == 'update-owner-profile':
+            return handle_update_owner_profile(body, token)
+        if action == 'create-fulfillment':
+            return handle_create_fulfillment(body, token)
+        if action == 'update-fulfillment':
+            return handle_update_fulfillment(body, token)
+        if action == 'submit-fulfillment':
+            return handle_submit_fulfillment_for_moderation(body, token)
+        if action == 'close-fulfillment':
+            return handle_close_fulfillment(body, token)
+        # legacy
         if action == 'update-profile':
             return handle_update_profile(body, token)
         if action == 'upload-photo':

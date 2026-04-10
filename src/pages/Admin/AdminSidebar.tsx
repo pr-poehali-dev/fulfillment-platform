@@ -1,16 +1,15 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import type { Tab } from "./types";
-import { STATUS_CFG } from "./types";
 
 interface AdminSidebarProps {
   sidebarOpen: boolean;
   setSidebarOpen: (v: boolean) => void;
   tab: Tab;
   setTab: (t: Tab) => void;
-  companyName: string;
-  profileStatus: string;
+  ownerName: string;
   userEmail: string;
+  userId?: number;
   onLogout: () => void;
 }
 
@@ -19,13 +18,11 @@ export default function AdminSidebar({
   setSidebarOpen,
   tab,
   setTab,
-  companyName,
-  profileStatus,
+  ownerName,
   userEmail,
+  userId,
   onLogout,
 }: AdminSidebarProps) {
-  const statusCfg = STATUS_CFG[profileStatus] || STATUS_CFG.draft;
-
   return (
     <aside className={`${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-40 w-64 bg-navy-950 text-white transition-transform duration-200 flex flex-col`}>
       {/* Brand */}
@@ -44,18 +41,17 @@ export default function AdminSidebar({
         </button>
       </div>
 
-      {/* Company info */}
+      {/* Owner info */}
       <div className="p-4 border-b border-white/10">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-navy-800 rounded-xl flex items-center justify-center">
-            <Icon name="Building2" size={18} className="text-navy-300" />
+            <Icon name="User" size={18} className="text-navy-300" />
           </div>
           <div className="min-w-0">
-            <div className="font-golos font-bold text-sm truncate">{companyName || "Не указано"}</div>
-            <div className="text-xs text-white/40 flex items-center gap-1">
-              <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`} />
-              {statusCfg.label}
-            </div>
+            <div className="font-golos font-bold text-sm truncate">{ownerName || "Профиль не заполнен"}</div>
+            {userId && (
+              <div className="text-xs text-white/30 font-mono mt-0.5">PRO-{String(userId).padStart(6, "0")}</div>
+            )}
           </div>
         </div>
       </div>
@@ -63,7 +59,8 @@ export default function AdminSidebar({
       {/* Nav */}
       <nav className="flex-1 p-3 space-y-0.5">
         {([
-          { id: "profile" as Tab, label: "Профиль", icon: "Building2" },
+          { id: "profile" as Tab, label: "Мой профиль", icon: "User" },
+          { id: "fulfillments" as Tab, label: "Мои фулфилменты", icon: "Warehouse" },
           { id: "quotes" as Tab, label: "Заявки", icon: "Inbox" },
           { id: "settings" as Tab, label: "Настройки", icon: "Settings" },
         ]).map((item) => (
