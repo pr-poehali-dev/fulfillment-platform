@@ -3,6 +3,8 @@ import json
 import os
 import base64
 import uuid
+import urllib.request
+import urllib.parse
 import psycopg2
 import boto3
 
@@ -810,6 +812,37 @@ def handle_admin_mark_paid(body, token):
         cur.close()
         conn.close()
 
+# ─── GEOCODE ─────────────────────────────────────────────────────────────────
+
+def handle_geocode(params):
+    """Геокодирование адреса через HTTP Geocoder Яндекса (серверный вызов)"""
+    address = (params.get('address', '') if params else '').strip()
+    if not address:
+        return resp(400, {'error': 'address обязателен'})
+
+    api_key = os.environ.get('YANDEX_MAPS_API_KEY', '')
+    if not api_key:
+        return resp(500, {'error': 'YANDEX_MAPS_API_KEY не настроен'})
+
+    encoded = urllib.parse.quote(address)
+    url = "https://geocode-maps.yandex.ru/1.x/?apikey=%s&format=json&geocode=%s" % (api_key, encoded)
+
+    try:
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=5) as r:
+            data = json.loads(r.read().decode())
+
+        members = data.get('response', {}).get('GeoObjectCollection', {}).get('featureMember', [])
+        if not members:
+            return resp(200, {'found': False, 'coords': None})
+
+        pos = members[0]['GeoObject']['Point']['pos']
+        lon, lat = pos.split(' ')
+        return resp(200, {'found': True, 'coords': [float(lat), float(lon)]})
+    except Exception as e:
+        return resp(500, {'error': 'Geocode error: %s' % str(e)})
+
+
 # ─── ROUTER ──────────────────────────────────────────────────────────────────
 
 def handler(event, context):
@@ -848,6 +881,8 @@ def handler(event, context):
             return handle_get_profile(token)
         if action == 'approved':
             return handle_list_approved()
+        if action == 'geocode':
+            return handle_geocode(params)
         if action == 'my-quotes':
             return handle_my_quotes(token)
         if action == 'admin-list':
