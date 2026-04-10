@@ -1,33 +1,47 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
 
-const YANDEX_API_KEY = "8af3ef1e-35cc-45d8-9e11-1528e618e5f4";
+const API_KEY = "8af3ef1e-35cc-45d8-9e11-1528e618e5f4";
+const SCRIPT_URL = `https://api-maps.yandex.ru/2.1/?apikey=${API_KEY}&lang=ru_RU`;
 
-let ymapsPromise: Promise<void> | null = null;
-
-function loadYmaps(): Promise<void> {
-  if (ymapsPromise) return ymapsPromise;
-
-  ymapsPromise = new Promise((resolve, reject) => {
-    if (typeof window.ymaps !== "undefined") {
-      window.ymaps.ready(resolve);
+function ensureYmaps(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof (window as any).ymaps !== "undefined") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).ymaps.ready(() => resolve());
       return;
     }
 
-    const script = document.createElement("script");
-    script.src = `https://api-maps.yandex.ru/2.1/?apikey=${YANDEX_API_KEY}&lang=ru_RU`;
-    script.async = true;
-    script.onload = () => {
-      window.ymaps.ready(resolve);
-    };
-    script.onerror = () => {
-      ymapsPromise = null;
-      reject(new Error("Не удалось загрузить Яндекс Карты"));
-    };
-    document.head.appendChild(script);
-  });
+    const existing = document.querySelector('script[src*="api-maps.yandex.ru"]');
+    if (existing) {
+      const wait = setInterval(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (typeof (window as any).ymaps !== "undefined") {
+          clearInterval(wait);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (window as any).ymaps.ready(() => resolve());
+        }
+      }, 100);
+      setTimeout(() => { clearInterval(wait); reject(new Error("ymaps timeout")); }, 15000);
+      return;
+    }
 
-  return ymapsPromise;
+    const s = document.createElement("script");
+    s.src = SCRIPT_URL;
+    s.async = true;
+    s.onload = () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (typeof (window as any).ymaps === "undefined") {
+        reject(new Error("script loaded but ymaps undefined"));
+        return;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).ymaps.ready(() => resolve());
+    };
+    s.onerror = (e) => reject(new Error("script onerror: " + String(e)));
+    document.head.appendChild(s);
+  });
 }
 
 interface Props {
@@ -37,7 +51,8 @@ interface Props {
 
 export default function YandexMap({ address, className = "w-full h-64 rounded-xl overflow-hidden" }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<unknown>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapRef = useRef<any>(null);
   const [status, setStatus] = useState<"loading" | "ok" | "error">("loading");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -50,30 +65,28 @@ export default function YandexMap({ address, className = "w-full h-64 rounded-xl
 
     let cancelled = false;
 
-    const init = () => {
-      setStatus("loading");
-      loadYmaps()
-        .then(() => {
-          if (cancelled || !containerRef.current) return;
+    ensureYmaps()
+      .then(() => {
+        if (cancelled || !containerRef.current) return;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const ym = (window as any).ymaps;
 
+        ym.geocode(address).then(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const ym = window.ymaps as any;
-
-          ym.geocode(address).then((result: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+          (res: any) => {
             if (cancelled || !containerRef.current) return;
 
-            const geoObjects = result.geoObjects;
-            if (!geoObjects || geoObjects.getLength() === 0) {
+            if (!res.geoObjects || res.geoObjects.getLength() === 0) {
               setStatus("error");
-              setErrorMsg("Адрес не найден. Уточните адрес.");
+              setErrorMsg("Адрес не найден на карте");
               return;
             }
 
-            const coords = geoObjects.get(0).geometry.getCoordinates();
+            const coords = res.geoObjects.get(0).geometry.getCoordinates();
 
-            if (mapInstanceRef.current) {
-              try { (mapInstanceRef.current as any).destroy(); } catch { /* */ } // eslint-disable-line @typescript-eslint/no-explicit-any
-              mapInstanceRef.current = null;
+            if (mapRef.current) {
+              try { mapRef.current.destroy(); } catch { /* ok */ }
+              mapRef.current = null;
             }
 
             const map = new ym.Map(containerRef.current, {
@@ -82,42 +95,36 @@ export default function YandexMap({ address, className = "w-full h-64 rounded-xl
               controls: ["zoomControl"],
             });
 
-            const placemark = new ym.Placemark(coords, {
-              balloonContent: address,
-            }, {
-              preset: "islands#darkBlueDotIconWithCaption",
-            });
+            map.geoObjects.add(
+              new ym.Placemark(coords, { balloonContent: address }, {
+                preset: "islands#darkBlueDotIconWithCaption",
+              })
+            );
 
-            map.geoObjects.add(placemark);
-            mapInstanceRef.current = map;
+            mapRef.current = map;
             setStatus("ok");
-          }, (err: unknown) => {
-            console.error("[YandexMap] geocode error:", err);
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (err: any) => {
             if (!cancelled) {
               setStatus("error");
-              setErrorMsg("Ошибка геокодирования. Проверьте API-ключ Яндекс Карт.");
+              setErrorMsg("Геокодер: " + (err?.message || String(err)));
             }
-          });
-        })
-        .catch((err) => {
-          console.error("[YandexMap] load error:", err);
-          if (!cancelled) {
-            setStatus("error");
-            setErrorMsg("Не удалось загрузить Яндекс Карты");
           }
-        });
-    };
-
-    init();
+        );
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setStatus("error");
+          setErrorMsg("SDK: " + (err?.message || String(err)));
+        }
+      });
 
     return () => {
       cancelled = true;
-      if (mapInstanceRef.current) {
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (mapInstanceRef.current as any).destroy();
-        } catch { /* ignore */ }
-        mapInstanceRef.current = null;
+      if (mapRef.current) {
+        try { mapRef.current.destroy(); } catch { /* ok */ }
+        mapRef.current = null;
       }
     };
   }, [address]);
