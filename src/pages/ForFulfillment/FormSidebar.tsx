@@ -3,24 +3,6 @@ import Icon from "@/components/ui/icon";
 export default function FormSidebar() {
   return (
     <div className="space-y-5">
-      {/* Stats */}
-      <div className="bg-navy-gradient rounded-2xl p-5 text-white">
-        <div className="font-golos font-bold text-sm mb-4 text-gold-400">Платформа в цифрах</div>
-        <div className="space-y-3">
-          {[
-            { value: "15 000+", label: "Селлеров на платформе" },
-            { value: "200+",    label: "Фулфилмент-сервисов" },
-            { value: "1 час",   label: "Среднее время модерации" },
-            { value: "0 ₽",     label: "Комиссия с заявок" },
-          ].map((s) => (
-            <div key={s.value} className="flex items-center gap-3">
-              <div className="text-xl font-golos font-black text-gold-gradient w-20 flex-shrink-0">{s.value}</div>
-              <div className="text-xs text-white/60 font-ibm">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* How it works */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <div className="font-golos font-bold text-navy-900 text-sm mb-3">Как это работает</div>
