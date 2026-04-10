@@ -7,7 +7,7 @@ import api, { setToken } from "@/lib/api";
 import TelegramLoginButton from "@/components/TelegramLoginButton";
 
 type Tab  = "login" | "register";
-type Step = "form" | "verify";
+type Step = "form" | "verify" | "reset-email" | "reset-code" | "reset-done";
 
 interface AuthModalProps {
   open: boolean;
@@ -28,11 +28,14 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
   const [email,      setEmail]      = useState("");
   const [password,   setPassword]   = useState("");
   const [phone,      setPhone]      = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [showPw,     setShowPw]     = useState(false);
+  const [showNewPw,  setShowNewPw]  = useState(false);
   const [verifyCode, setVerifyCode] = useState(["", "", "", "", "", ""]);
   const [error,      setError]      = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [resendCD,   setResendCD]   = useState(0);
+  const [emailExists, setEmailExists] = useState(false);
 
   const codeRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -59,9 +62,10 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
 
   const reset = () => {
     setEmail(""); setPassword(""); setPhone(""); setShowPw(false);
-    setVerifyCode(["", "", "", "", "", ""]); setError(""); setStep("form");
+    setNewPassword(""); setShowNewPw(false);
+    setVerifyCode(["", "", "", "", "", ""]); setError(""); setStep("form"); setEmailExists(false);
   };
-  const switchTab = (t: Tab) => { setTab(t); setError(""); setStep("form"); };
+  const switchTab = (t: Tab) => { setTab(t); setError(""); setStep("form"); setEmailExists(false); };
   const close = () => { reset(); onClose(); };
 
   const handleTelegramAuth = async (tgUser: { id: number; first_name: string; last_name?: string; username?: string; auth_date: number; hash: string }) => {
@@ -89,7 +93,7 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
   };
 
   const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault(); setError("");
+    e.preventDefault(); setError(""); setEmailExists(false);
     if (!email.trim())       { setError("Введите email"); return; }
     if (password.length < 6) { setError("Пароль — минимум 6 символов"); return; }
     setSubmitting(true);
@@ -97,7 +101,8 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
       const data = await api.register(email.trim(), password, phone.trim());
       setToken(data.token); setStep("verify");
     } catch (err: unknown) {
-      const e = err as { message?: string; detail?: string };
+      const e = err as { message?: string; detail?: string; status?: number };
+      if (e.status === 409) { setEmailExists(true); return; }
       setError(e.message || e.detail || "Ошибка регистрации");
     } finally { setSubmitting(false); }
   };
@@ -107,11 +112,43 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
     if (code.length !== 6) { setError("Введите 6-значный код"); return; }
     setError(""); setSubmitting(true);
     try {
-      await api.verifyEmail(code); await refresh();
-      close(); navigate("/admin", { replace: true });
+      await api.verifyEmail(code);
+      await refresh();
+      onClose();
+      navigate("/admin", { replace: true });
     } catch (err: unknown) {
       const e = err as { message?: string; detail?: string };
       setError(e.message || e.detail || "Неверный код");
+    } finally { setSubmitting(false); }
+  };
+
+  const handleForgotSend = async (e: React.FormEvent) => {
+    e.preventDefault(); setError("");
+    if (!email.trim()) { setError("Введите email"); return; }
+    setSubmitting(true);
+    try {
+      await api.forgotPassword(email.trim());
+      setVerifyCode(["", "", "", "", "", ""]);
+      setStep("reset-code");
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setError(e.message || "Не удалось отправить код");
+    } finally { setSubmitting(false); }
+  };
+
+  const handleResetConfirm = async () => {
+    const code = verifyCode.join("");
+    if (code.length !== 6) { setError("Введите 6-значный код"); return; }
+    if (newPassword.length < 6) { setError("Пароль — минимум 6 символов"); return; }
+    setError(""); setSubmitting(true);
+    try {
+      const data = await api.resetPassword(email.trim(), code, newPassword);
+      setToken(data.token);
+      await refresh();
+      setStep("reset-done");
+    } catch (err: unknown) {
+      const e = err as { message?: string; detail?: string };
+      setError(e.message || e.detail || "Неверный или просроченный код");
     } finally { setSubmitting(false); }
   };
 
@@ -162,10 +199,16 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
           </div>
           <div className="flex-1">
             <div className="font-golos font-black text-navy-950 text-sm leading-none">
-              {step === "verify" ? "Подтверждение email" : "Личный кабинет"}
+              {step === "verify" ? "Подтверждение email" :
+               step === "reset-email" ? "Восстановление пароля" :
+               step === "reset-code" ? "Новый пароль" :
+               step === "reset-done" ? "Пароль изменён" :
+               "Личный кабинет"}
             </div>
             <div className="text-[11px] text-gray-400 font-ibm mt-0.5">
-              {step === "verify" ? `Код отправлен на ${email}` : "FulfillHub"}
+              {step === "verify" ? `Код отправлен на ${email}` :
+               step === "reset-code" ? `Код отправлен на ${email}` :
+               "FulfillHub"}
             </div>
           </div>
           <button
@@ -177,7 +220,88 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
         </div>
 
         <div className="p-5">
-          {step === "verify" ? (
+          {step === "reset-done" ? (
+            /* ── RESET DONE ── */
+            <div className="space-y-4 text-center">
+              <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                <Icon name="CheckCircle" size={28} className="text-green-500" />
+              </div>
+              <p className="text-sm text-gray-600 font-ibm">Пароль успешно изменён. Вы вошли в аккаунт.</p>
+              <Button onClick={() => { onClose(); navigate("/admin", { replace: true }); }}
+                className="w-full bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos rounded-xl h-10">
+                Перейти в кабинет
+              </Button>
+            </div>
+          ) : step === "reset-email" ? (
+            /* ── RESET EMAIL ── */
+            <form onSubmit={handleForgotSend} className="space-y-4">
+              <p className="text-xs text-gray-500 font-ibm">Введите email — пришлём код для сброса пароля</p>
+              <div>
+                <label className="text-[11px] font-semibold text-gray-500 font-golos block mb-1">Email</label>
+                <input value={email} onChange={(e) => setEmail(e.target.value)}
+                  type="email" placeholder="you@company.ru" className={inputCls} autoFocus />
+              </div>
+              {error && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                  <Icon name="AlertCircle" size={13} className="text-red-400 flex-shrink-0" />
+                  <p className="text-red-500 text-xs font-ibm">{error}</p>
+                </div>
+              )}
+              <Button type="submit" disabled={submitting}
+                className="w-full bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos rounded-xl h-10 disabled:opacity-40">
+                {submitting ? <><Icon name="Loader2" size={14} className="mr-1.5 animate-spin" />Отправка...</> : "Отправить код"}
+              </Button>
+              <button type="button" onClick={() => { setStep("form"); setError(""); }}
+                className="w-full text-xs text-gray-400 hover:text-gray-600 font-ibm transition-colors">
+                ← Вернуться к входу
+              </button>
+            </form>
+          ) : step === "reset-code" ? (
+            /* ── RESET CODE + NEW PASSWORD ── */
+            <div className="space-y-4">
+              <p className="text-xs text-gray-500 font-ibm text-center">Введите код из письма и придумайте новый пароль</p>
+              <div className="flex gap-2 justify-center" onPaste={(e) => {
+                e.preventDefault();
+                const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+                if (!pasted) return;
+                const next = Array(6).fill("").map((_, i) => pasted[i] || "");
+                setVerifyCode(next);
+                codeRefs.current[Math.min(pasted.length, 5)]?.focus();
+              }}>
+                {verifyCode.map((digit, i) => (
+                  <input key={i}
+                    ref={(el) => { codeRefs.current[i] = el; }}
+                    type="text" inputMode="numeric" maxLength={1}
+                    value={digit}
+                    onChange={(e) => { if (!/^\d*$/.test(e.target.value)) return; const next = [...verifyCode]; next[i] = e.target.value.slice(-1); setVerifyCode(next); if (e.target.value && i < 5) codeRefs.current[i + 1]?.focus(); }}
+                    onKeyDown={(e) => { if (e.key === "Backspace" && !verifyCode[i] && i > 0) codeRefs.current[i - 1]?.focus(); }}
+                    className="w-11 h-12 text-center text-lg font-bold border border-gray-200 rounded-xl bg-gray-50 text-navy-950 focus:outline-none focus:border-navy-500 focus:ring-2 focus:ring-navy-500/10 transition-all"
+                    placeholder="·"
+                  />
+                ))}
+              </div>
+              <div className="relative">
+                <input value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+                  type={showNewPw ? "text" : "password"} placeholder="Новый пароль (мин. 6 символов)"
+                  className={`${inputCls} pr-10`} />
+                <button type="button" onClick={() => setShowNewPw(!showNewPw)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                  <Icon name={showNewPw ? "EyeOff" : "Eye"} size={15} />
+                </button>
+              </div>
+              {error && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                  <Icon name="AlertCircle" size={13} className="text-red-400 flex-shrink-0" />
+                  <p className="text-red-500 text-xs font-ibm">{error}</p>
+                </div>
+              )}
+              <Button onClick={handleResetConfirm}
+                disabled={submitting || verifyCode.join("").length !== 6 || newPassword.length < 6}
+                className="w-full bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos rounded-xl h-10 disabled:opacity-40">
+                {submitting ? <><Icon name="Loader2" size={14} className="mr-1.5 animate-spin" />Сохранение...</> : "Сохранить пароль"}
+              </Button>
+            </div>
+          ) : step === "verify" ? (
             /* ── VERIFY ── */
             <div className="space-y-4">
               <p className="text-xs text-gray-500 font-ibm text-center">
@@ -298,6 +422,11 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
                       ? <><Icon name="Loader2" size={14} className="mr-1.5 animate-spin" />Вход...</>
                       : "Войти"}
                   </Button>
+                  <button type="button"
+                    onClick={() => { setStep("reset-email"); setError(""); }}
+                    className="w-full text-center text-xs text-gray-400 hover:text-navy-600 font-ibm transition-colors">
+                    Забыли пароль?
+                  </button>
                 </form>
               ) : (
                 /* Register form */
@@ -323,6 +452,20 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
                       </button>
                     </div>
                   </div>
+
+                  {emailExists && (
+                    <div className="bg-amber-50 border border-amber-100 rounded-lg px-3 py-2.5 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Icon name="AlertCircle" size={13} className="text-amber-500 flex-shrink-0" />
+                        <p className="text-amber-700 text-xs font-ibm font-medium">Этот email уже зарегистрирован</p>
+                      </div>
+                      <button type="button"
+                        onClick={() => { setStep("reset-email"); setError(""); setEmailExists(false); }}
+                        className="text-xs text-navy-600 hover:text-navy-800 font-semibold font-ibm underline transition-colors ml-5">
+                        Восстановить пароль →
+                      </button>
+                    </div>
+                  )}
 
                   {error && (
                     <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-lg px-3 py-2">

@@ -127,6 +127,47 @@ def registration_confirm_html(email: str) -> str:
 </body>
 </html>""" % {'email': email}
 
+def reset_password_html(code: str, email: str) -> str:
+    return """<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#0f172a;font-family:'Helvetica Neue',Arial,sans-serif">
+  <table width="100%%" cellpadding="0" cellspacing="0" style="background:#0f172a;padding:40px 20px">
+    <tr><td align="center">
+      <table width="480" cellpadding="0" cellspacing="0" style="background:#1e293b;border-radius:16px;overflow:hidden">
+        <tr>
+          <td style="background:linear-gradient(135deg,#1e3a5f,#0f172a);padding:32px;text-align:center">
+            <div style="display:inline-block;background:#f59e0b;border-radius:8px;padding:10px 14px;margin-bottom:16px">
+              <span style="color:#0f172a;font-size:20px">🔑</span>
+            </div>
+            <h1 style="color:#ffffff;font-size:24px;margin:0;font-weight:800">FulfillHub</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px">
+            <h2 style="color:#ffffff;font-size:20px;margin:0 0 12px">Восстановление пароля</h2>
+            <p style="color:#94a3b8;font-size:14px;line-height:1.6;margin:0 0 24px">
+              Введите этот код для сброса пароля:
+            </p>
+            <div style="background:#0f172a;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px">
+              <span style="color:#f59e0b;font-size:36px;font-weight:900;letter-spacing:12px;font-family:monospace">%(code)s</span>
+            </div>
+            <p style="color:#64748b;font-size:12px;margin:0">
+              Код действителен 30 минут. Если вы не запрашивали сброс пароля — просто проигнорируйте это письмо.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px;border-top:1px solid #334155;text-align:center">
+            <p style="color:#475569;font-size:11px;margin:0">© 2026 FulfillHub · %(email)s</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>""" % {'code': code, 'email': email}
+
 def hash_password(pw):
     salt = secrets.token_hex(16)
     h = hashlib.pbkdf2_hmac('sha256', pw.encode(), salt.encode(), 100000).hex()
@@ -587,6 +628,90 @@ def handle_link_email(body, token):
         conn.close()
 
 
+def handle_forgot_password(body):
+    email = body.get('email', '').strip().lower()
+    if not email:
+        return resp(400, {'error': 'Email обязателен'})
+
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT id FROM users WHERE email = '%s'" % email.replace("'", "''"))
+        row = cur.fetchone()
+        if not row:
+            return resp(200, {'ok': True})
+        user_id = row[0]
+
+        code = gen_code()
+        expires = (datetime.utcnow() + timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M:%S')
+        cur.execute("""
+            INSERT INTO email_codes (user_id, code, purpose, expires_at)
+            VALUES (%d, '%s', 'reset', '%s')
+        """ % (user_id, code, expires))
+        conn.commit()
+        try:
+            send_email(email, 'Восстановление пароля — FulfillHub', reset_password_html(code, email))
+        except Exception:
+            pass
+        return resp(200, {'ok': True})
+    finally:
+        cur.close()
+        conn.close()
+
+def handle_reset_password(body):
+    email = body.get('email', '').strip().lower()
+    code = body.get('code', '').strip()
+    new_password = body.get('new_password', '')
+
+    if not email or not code or not new_password:
+        return resp(400, {'error': 'Заполните все поля'})
+    if len(new_password) < 6:
+        return resp(400, {'error': 'Пароль — минимум 6 символов'})
+
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT id FROM users WHERE email = '%s'" % email.replace("'", "''"))
+        row = cur.fetchone()
+        if not row:
+            return resp(400, {'error': 'Пользователь не найден'})
+        user_id = row[0]
+
+        cur.execute("""
+            SELECT id FROM email_codes
+            WHERE user_id = %d AND code = '%s' AND purpose = 'reset' AND used = FALSE AND expires_at > NOW()
+            ORDER BY created_at DESC LIMIT 1
+        """ % (user_id, code.replace("'", "''")))
+        ec = cur.fetchone()
+        if not ec:
+            return resp(400, {'error': 'Неверный или просроченный код'})
+
+        pw_hash = hash_password(new_password)
+        cur.execute("UPDATE users SET password_hash = '%s', updated_at = NOW() WHERE id = %d" % (pw_hash.replace("'", "''"), user_id))
+        cur.execute("UPDATE email_codes SET used = TRUE WHERE id = %d" % ec[0])
+
+        token = gen_token()
+        token_expires = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
+        cur.execute("""
+            INSERT INTO sessions (user_id, token, expires_at)
+            VALUES (%d, '%s', '%s')
+        """ % (user_id, token.replace("'", "''"), token_expires))
+
+        cur.execute("SELECT role, email_verified FROM users WHERE id = %d" % user_id)
+        u = cur.fetchone()
+        conn.commit()
+        return resp(200, {
+            'ok': True,
+            'token': token,
+            'user': {'id': user_id, 'email': email, 'role': u[0], 'email_verified': u[1]},
+        })
+    except Exception as e:
+        conn.rollback()
+        return resp(500, {'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
 def handler(event, context):
     """Аутентификация: регистрация, вход, подтверждение email, сессии"""
     if event.get('httpMethod') == 'OPTIONS':
@@ -622,6 +747,10 @@ def handler(event, context):
             return handle_telegram_auth(body)
         if path == 'link-email':
             return handle_link_email(body, token)
+        if path == 'forgot-password':
+            return handle_forgot_password(body)
+        if path == 'reset-password':
+            return handle_reset_password(body)
 
     if method == 'GET':
         if path == 'me':

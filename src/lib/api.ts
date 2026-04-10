@@ -59,6 +59,12 @@ export const api = {
   linkEmail: (email: string, password: string) =>
     request("auth", "link-email", { method: "POST", body: { email, password } }),
 
+  forgotPassword: (email: string) =>
+    request("auth", "forgot-password", { method: "POST", body: { email } }),
+
+  resetPassword: (email: string, code: string, new_password: string) =>
+    request("auth", "reset-password", { method: "POST", body: { email, code, new_password } }),
+
   // ─── Owner profile ───────────────────────────────────────────────────────
   getOwnerProfile: () =>
     request("fulfillment", "owner-profile"),
