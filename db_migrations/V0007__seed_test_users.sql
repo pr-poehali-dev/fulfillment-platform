@@ -1,0 +1,16 @@
+INSERT INTO t_p18520385_fulfillment_platform.users (email, password_hash, phone, role, email_verified) VALUES
+('test_msk_logistics@example.com',   'x', '+79001110001', 'fulfillment', true),
+('test_spb_sklad@example.com',       'x', '+79001110002', 'fulfillment', true),
+('test_ekb_express@example.com',     'x', '+79001110003', 'fulfillment', true),
+('test_kzn_fulf@example.com',        'x', '+79001110004', 'fulfillment', true),
+('test_nsk_store@example.com',       'x', '+79001110005', 'fulfillment', true),
+('test_rnd_pack@example.com',        'x', '+79001110006', 'fulfillment', true),
+('test_smr_wms@example.com',         'x', '+79001110007', 'fulfillment', true),
+('test_ufa_cargo@example.com',       'x', '+79001110008', 'fulfillment', true),
+('test_msk_mega@example.com',        'x', '+79001110009', 'fulfillment', true),
+('test_spb_wildpack@example.com',    'x', '+79001110010', 'fulfillment', true),
+('test_krd_south@example.com',       'x', '+79001110011', 'fulfillment', true),
+('test_msk_ozon_pro@example.com',    'x', '+79001110012', 'fulfillment', true),
+('test_spb_premium@example.com',     'x', '+79001110013', 'fulfillment', true),
+('test_nsk_economy@example.com',     'x', '+79001110014', 'fulfillment', true),
+('test_ekb_fullstock@example.com',   'x', '+79001110015', 'fulfillment', true);
