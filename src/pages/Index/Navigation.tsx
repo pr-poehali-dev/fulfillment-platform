@@ -45,6 +45,8 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, fulfillment, loading: authLoading } = useAuth();
   const isLoggedIn = !authLoading && !!user;
+  const isSeller = user?.role === "seller";
+  const cabinetHref = isSeller ? "/seller" : "/admin";
   const displayName = fulfillment?.company_name || user?.email?.split("@")[0] || "";
 
   return (
@@ -75,7 +77,7 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
             Разместить сервис
           </a>
           {isLoggedIn ? (
-            <a href="/admin" className="flex items-center gap-2 px-3.5 py-1.5 bg-white/10 hover:bg-white/15 border border-white/15 rounded-lg text-sm font-medium text-white transition-all">
+            <a href={cabinetHref} className="flex items-center gap-2 px-3.5 py-1.5 bg-white/10 hover:bg-white/15 border border-white/15 rounded-lg text-sm font-medium text-white transition-all">
               <div className="w-6 h-6 bg-gold-500 rounded-full flex items-center justify-center text-navy-950 text-xs font-black font-golos">
                 {displayName.charAt(0).toUpperCase()}
               </div>
@@ -97,7 +99,7 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
         <div className="md:hidden bg-navy-950 border-t border-white/10 px-4 py-3 flex flex-col gap-1">
           <a href="/for-fulfillment" className="px-3 py-2 rounded text-sm text-gold-400 hover:bg-gold-500/10">Разместить сервис</a>
           {isLoggedIn ? (
-            <a href="/admin" className="px-3 py-2 rounded text-sm text-white font-bold hover:bg-white/10 flex items-center gap-2">
+            <a href={cabinetHref} className="px-3 py-2 rounded text-sm text-white font-bold hover:bg-white/10 flex items-center gap-2">
               <div className="w-5 h-5 bg-gold-500 rounded-full flex items-center justify-center text-navy-950 text-[10px] font-black font-golos">
                 {displayName.charAt(0).toUpperCase()}
               </div>
