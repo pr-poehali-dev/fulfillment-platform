@@ -53,6 +53,9 @@ export const api = {
   registerFromForm: (body: Record<string, unknown>) =>
     request("auth", "register-from-form", { method: "POST", body }),
 
+  telegramAuth: (data: Record<string, string | number>) =>
+    request("auth", "telegram", { method: "POST", body: data }),
+
   // ─── Owner profile ───────────────────────────────────────────────────────
   getOwnerProfile: () =>
     request("fulfillment", "owner-profile"),

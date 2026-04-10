@@ -2,6 +2,7 @@
 import json
 import os
 import hashlib
+import hmac
 import secrets
 import random
 import string
@@ -394,6 +395,99 @@ def handle_register_from_form(body):
         cur.close()
         conn.close()
 
+def handle_telegram_auth(body):
+    tg_id     = body.get('id')
+    tg_hash   = body.get('hash', '')
+    auth_date = body.get('auth_date')
+
+    if not tg_id or not tg_hash or not auth_date:
+        return resp(400, {'error': 'Неверные данные от Telegram'})
+
+    # Проверяем свежесть (не старше 10 минут)
+    try:
+        if abs(datetime.utcnow().timestamp() - int(auth_date)) > 600:
+            return resp(400, {'error': 'Данные авторизации устарели, попробуйте снова'})
+    except Exception:
+        return resp(400, {'error': 'Неверный auth_date'})
+
+    # Верифицируем подпись по алгоритму Telegram
+    bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+    secret_key = hashlib.sha256(bot_token.encode()).digest()
+
+    check_fields = {k: v for k, v in body.items() if k != 'hash'}
+    data_check_string = '\n'.join(f'{k}={v}' for k, v in sorted(check_fields.items()))
+    expected_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+
+    if not hmac.compare_digest(expected_hash, tg_hash):
+        return resp(401, {'error': 'Подпись не прошла проверку'})
+
+    # Находим или создаём пользователя по telegram_id
+    tg_id_int    = int(tg_id)
+    first_name   = str(body.get('first_name', '')).replace("'", "''")
+    last_name    = str(body.get('last_name',  '')).replace("'", "''")
+    username     = str(body.get('username',   '')).replace("'", "''")
+    fake_email   = f"tg_{tg_id}@telegram.local"
+
+    conn = get_db()
+    cur  = conn.cursor()
+    try:
+        cur.execute("SELECT id, email, role, email_verified FROM users WHERE telegram_id = %d" % tg_id_int)
+        row = cur.fetchone()
+
+        if row:
+            user_id, email, role, verified = row
+        else:
+            cur.execute("SELECT id FROM users WHERE email = '%s'" % fake_email.replace("'", "''"))
+            existing = cur.fetchone()
+            if existing:
+                user_id = existing[0]
+                cur.execute("UPDATE users SET telegram_id = %d WHERE id = %d" % (tg_id_int, user_id))
+                cur.execute("SELECT email, role, email_verified FROM users WHERE id = %d" % user_id)
+                r = cur.fetchone()
+                email, role, verified = r[0], r[1], r[2]
+            else:
+                display_name = ('%s %s' % (first_name, last_name)).strip().replace("'", "''")
+                cur.execute("""
+                    INSERT INTO users (email, password_hash, phone, role, email_verified, telegram_id)
+                    VALUES ('%s', '', '', 'fulfillment', TRUE, %d)
+                    RETURNING id
+                """ % (fake_email.replace("'", "''"), tg_id_int))
+                user_id = cur.fetchone()[0]
+                email   = fake_email
+                role    = 'fulfillment'
+                verified = True
+
+                cur.execute("""
+                    INSERT INTO fulfillments (user_id, contact_email, status)
+                    VALUES (%d, '%s', 'draft')
+                """ % (user_id, fake_email.replace("'", "''")))
+
+                cur.execute("""
+                    INSERT INTO owner_profiles (user_id, contact_name, contact_email, contact_tg)
+                    VALUES (%d, '%s', '%s', '%s')
+                    ON CONFLICT (user_id) DO NOTHING
+                """ % (user_id, display_name, fake_email.replace("'", "''"), username))
+
+        token        = gen_token()
+        token_expires = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
+        cur.execute("""
+            INSERT INTO sessions (user_id, token, expires_at)
+            VALUES (%d, '%s', '%s')
+        """ % (user_id, token.replace("'", "''"), token_expires))
+
+        conn.commit()
+        return resp(200, {
+            'token': token,
+            'user':  {'id': user_id, 'email': email, 'role': role, 'email_verified': verified},
+        })
+    except Exception as e:
+        conn.rollback()
+        return resp(500, {'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+
 def handler(event, context):
     """Аутентификация: регистрация, вход, подтверждение email, сессии"""
     if event.get('httpMethod') == 'OPTIONS':
@@ -425,6 +519,8 @@ def handler(event, context):
             return handle_resend_code(token)
         if path == 'register-from-form':
             return handle_register_from_form(body)
+        if path == 'telegram':
+            return handle_telegram_auth(body)
 
     if method == 'GET':
         if path == 'me':

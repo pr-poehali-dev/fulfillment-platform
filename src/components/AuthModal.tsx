@@ -4,6 +4,7 @@ import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import api, { setToken } from "@/lib/api";
+import TelegramLoginButton from "@/components/TelegramLoginButton";
 
 type Tab  = "login" | "register";
 type Step = "form" | "verify";
@@ -62,6 +63,17 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
   };
   const switchTab = (t: Tab) => { setTab(t); setError(""); setStep("form"); };
   const close = () => { reset(); onClose(); };
+
+  const handleTelegramAuth = async (tgUser: { id: number; first_name: string; last_name?: string; username?: string; auth_date: number; hash: string }) => {
+    setError(""); setSubmitting(true);
+    try {
+      const data = await api.telegramAuth(tgUser as Record<string, string | number>);
+      setToken(data.token); await refresh();
+    } catch (err: unknown) {
+      const e = err as { message?: string; detail?: string };
+      setError(e.message || e.detail || "Ошибка входа через Telegram");
+    } finally { setSubmitting(false); }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault(); setError("");
@@ -233,17 +245,14 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
               </div>
 
               {/* Telegram */}
-              <button
-                disabled
-                title="Скоро будет доступно"
-                className="w-full flex items-center justify-center gap-2.5 py-2.5 rounded-xl border border-[#2AABEE]/40 bg-[#2AABEE]/5 text-[#1d96d4] text-sm font-bold font-golos opacity-50 cursor-not-allowed"
-              >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.88 13.674l-2.967-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.835.885h-.52z"/>
-                </svg>
-                Войти через Telegram
-                <span className="text-[10px] font-normal text-gray-400 font-ibm">(скоро)</span>
-              </button>
+              {submitting ? (
+                <div className="flex items-center justify-center gap-2 py-2 text-sm text-gray-400 font-ibm">
+                  <Icon name="Loader2" size={15} className="animate-spin" />
+                  Входим через Telegram...
+                </div>
+              ) : (
+                <TelegramLoginButton onAuth={handleTelegramAuth} botName="SkladMatch_bot" />
+              )}
 
               {/* Divider */}
               <div className="flex items-center gap-3">
