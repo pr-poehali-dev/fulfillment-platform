@@ -362,9 +362,15 @@ export function RequestQuoteModal({ partners, onClose }: {
   const inputCls = "w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/20";
 
   return (
-    <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 md:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()}
-        className="bg-white md:rounded-2xl shadow-2xl w-full h-full md:h-auto md:max-w-lg md:max-h-[92vh] overflow-hidden flex flex-col">
+        className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-lg max-h-[92vh] md:max-h-[92vh] overflow-hidden flex flex-col animate-slide-up md:animate-scale-in">
+
+        {/* Ручка — только мобилка */}
+        <div className="flex justify-center pt-3 pb-1 flex-shrink-0 md:hidden">
+          <div className="w-10 h-1 rounded-full bg-gray-300" />
+        </div>
+
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 flex-shrink-0">
           <div className="w-9 h-9 bg-gold-500/15 rounded-xl flex items-center justify-center">
