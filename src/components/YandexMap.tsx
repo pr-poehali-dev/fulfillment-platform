@@ -3,74 +3,41 @@ import Icon from "@/components/ui/icon";
 
 const YANDEX_API_KEY = "8af3ef1e-35cc-45d8-9e11-1528e618e5f4";
 
-declare global {
-  interface Window {
-    ymaps: YMaps;
-    ymapsReady?: boolean;
-    ymapsCallbacks?: Array<() => void>;
-  }
-}
+let ymapsPromise: Promise<void> | null = null;
 
-interface YGeoObjects {
-  getLength: () => number;
-  get: (i: number) => { geometry: { getCoordinates: () => [number, number] } };
-}
+function loadYmaps(): Promise<void> {
+  if (ymapsPromise) return ymapsPromise;
 
-interface YMaps {
-  ready: (cb: () => void) => void;
-  geocode: (address: string) => Promise<{ geoObjects: YGeoObjects }>;
-  Map: new (el: HTMLElement, opts: object) => YMap;
-  Placemark: new (coords: [number, number], props: object, opts: object) => YPlacemark;
-}
+  ymapsPromise = new Promise((resolve, reject) => {
+    if (typeof window.ymaps !== "undefined") {
+      window.ymaps.ready(resolve);
+      return;
+    }
 
-interface YMap {
-  geoObjects: { add: (o: YPlacemark) => void };
-  destroy: () => void;
-}
+    const script = document.createElement("script");
+    script.src = `https://api-maps.yandex.ru/2.1/?apikey=${YANDEX_API_KEY}&lang=ru_RU`;
+    script.async = true;
+    script.onload = () => {
+      window.ymaps.ready(resolve);
+    };
+    script.onerror = () => {
+      ymapsPromise = null;
+      reject(new Error("Не удалось загрузить Яндекс Карты"));
+    };
+    document.head.appendChild(script);
+  });
 
-type YPlacemark = object;
+  return ymapsPromise;
+}
 
 interface Props {
   address: string;
   className?: string;
 }
 
-function loadYmaps(): Promise<void> {
-  if (window.ymapsReady) return Promise.resolve();
-
-  if (!window.ymapsCallbacks) window.ymapsCallbacks = [];
-
-  return new Promise((resolve) => {
-    window.ymapsCallbacks!.push(resolve);
-
-    // Скрипт уже добавлен — просто ждём колбэк, не добавляем второй тег
-    if (document.getElementById("ymaps-script")) return;
-
-    const script = document.createElement("script");
-    script.id = "ymaps-script";
-    script.src = `https://api-maps.yandex.ru/2.1/?apikey=${YANDEX_API_KEY}&lang=ru_RU`;
-    script.async = true;
-    script.onload = () => {
-      // ymaps.ready гарантирует, что все модули готовы
-      window.ymaps.ready(() => {
-        window.ymapsReady = true;
-        const cbs = window.ymapsCallbacks ?? [];
-        window.ymapsCallbacks = [];
-        cbs.forEach((cb) => cb());
-      });
-    };
-    script.onerror = () => {
-      // При ошибке загрузки сбрасываем очередь
-      window.ymapsCallbacks?.forEach((cb) => cb());
-      window.ymapsCallbacks = [];
-    };
-    document.head.appendChild(script);
-  });
-}
-
 export default function YandexMap({ address, className = "w-full h-64 rounded-xl overflow-hidden" }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef       = useRef<YMap | null>(null);
+  const mapInstanceRef = useRef<unknown>(null);
   const [status, setStatus] = useState<"loading" | "ok" | "error">("loading");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -89,44 +56,46 @@ export default function YandexMap({ address, className = "w-full h-64 rounded-xl
         await loadYmaps();
         if (cancelled || !containerRef.current) return;
 
-        // Геокодируем внутри ymaps.ready чтобы все модули точно были готовы
-        const res = await new Promise<{ geoObjects: YGeoObjects }>((resolve, reject) => {
-          window.ymaps.ready(() => {
-            window.ymaps.geocode(address).then(resolve).catch(reject);
-          });
-        });
+        const ymaps = window.ymaps;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result: any = await ymaps.geocode(address);
         if (cancelled) return;
 
-        if (!res.geoObjects || res.geoObjects.getLength() === 0) {
+        const geoObjects = result.geoObjects;
+        if (!geoObjects || geoObjects.getLength() === 0) {
           setStatus("error");
-          setErrorMsg("Адрес не найден на карте. Уточните адрес.");
+          setErrorMsg("Адрес не найден. Уточните адрес.");
           return;
         }
 
-        const coords = res.geoObjects.get(0).geometry.getCoordinates();
+        const coords = geoObjects.get(0).geometry.getCoordinates();
 
-        if (mapRef.current) {
-          mapRef.current.destroy();
-          mapRef.current = null;
+        if (mapInstanceRef.current) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (mapInstanceRef.current as any).destroy();
+          mapInstanceRef.current = null;
         }
 
-        const map = new window.ymaps.Map(containerRef.current, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const map = new (ymaps as any).Map(containerRef.current, {
           center: coords,
           zoom: 15,
           controls: ["zoomControl"],
         });
 
-        const mark = new window.ymaps.Placemark(coords, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const placemark = new (ymaps as any).Placemark(coords, {
           balloonContent: address,
         }, {
           preset: "islands#darkBlueDotIconWithCaption",
         });
 
-        map.geoObjects.add(mark);
-        mapRef.current = map;
+        map.geoObjects.add(placemark);
+        mapInstanceRef.current = map;
         setStatus("ok");
-      } catch {
+      } catch (err) {
+        console.error("[YandexMap] Error:", err);
         if (!cancelled) {
           setStatus("error");
           setErrorMsg("Не удалось загрузить карту");
@@ -135,21 +104,23 @@ export default function YandexMap({ address, className = "w-full h-64 rounded-xl
     };
 
     init();
+
     return () => {
       cancelled = true;
-      if (mapRef.current) {
-        mapRef.current.destroy();
-        mapRef.current = null;
+      if (mapInstanceRef.current) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (mapInstanceRef.current as any).destroy();
+        } catch { /* ignore */ }
+        mapInstanceRef.current = null;
       }
     };
   }, [address]);
 
   return (
     <div className={`relative ${className}`}>
-      {/* Map container */}
       <div ref={containerRef} className="w-full h-full" />
 
-      {/* Loading overlay */}
       {status === "loading" && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-xl">
           <div className="flex flex-col items-center gap-2 text-gray-400">
@@ -159,7 +130,6 @@ export default function YandexMap({ address, className = "w-full h-64 rounded-xl
         </div>
       )}
 
-      {/* Error state */}
       {status === "error" && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-50 rounded-xl border border-gray-200">
           <div className="flex flex-col items-center gap-2 text-gray-400">
