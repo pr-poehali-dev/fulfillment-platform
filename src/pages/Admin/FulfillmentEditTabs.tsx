@@ -7,6 +7,7 @@ import {
   WORK_SCHEME_OPTIONS,
   FEATURE_OPTIONS,
   SPECIALIZATION_OPTIONS,
+  PACKAGING_OPTIONS,
   MARKETPLACE_OPTIONS,
 } from "./types";
 import FulfillmentCardPreview from "./FulfillmentCardPreview";
@@ -185,13 +186,17 @@ export default function FulfillmentEditTabs({
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-gray-600 font-golos block mb-1">Виды упаковки (через запятую)</label>
-              <input
-                value={form.packaging_types.join(", ")}
-                onChange={(e) => set("packaging_types", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))}
-                className={inputCls}
-                placeholder="Короб, Полиэтилен, Пузырчатая плёнка"
-              />
+              <label className="text-xs font-semibold text-gray-600 font-golos block mb-2">Виды упаковки</label>
+              <div className="flex flex-wrap gap-2">
+                {PACKAGING_OPTIONS.map((pk) => (
+                  <button key={pk} onClick={() => toggleArr("packaging_types", pk)}
+                    className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                      form.packaging_types.includes(pk) ? "bg-purple-600 text-white border-purple-600" : "bg-white text-gray-600 border-gray-200 hover:border-purple-400"
+                    }`}>
+                    {pk}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div>

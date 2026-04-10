@@ -154,7 +154,7 @@ function Step2({ schemes, toggleScheme, features, toggleFeature, packaging, togg
       <div>
         <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide font-ibm block mb-2">Типы упаковки</label>
         <div className="flex flex-wrap gap-2">
-          {["Полиэтилен", "Короб", "Пузырчатая плёнка", "Термоусадка", "Деревянная обрешётка", "Металлический контейнер", "Кастомная упаковка"].map((pk) => (
+          {["Полиэтилен (ПВД)", "Коробка (картон)", "Воздушно-пузырьковая плёнка (ВПП)", "Термоусадочная плёнка (ПОФ)", "Деревянная обрешётка", "Фирменные пакеты", "Индивидуальная упаковка"].map((pk) => (
             <button key={pk} onClick={() => togglePackaging(pk)}
               className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
                 packaging.includes(pk)

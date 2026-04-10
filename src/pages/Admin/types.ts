@@ -118,6 +118,16 @@ export const SPECIALIZATION_OPTIONS: { key: string; label: string; icon: string 
   { key: "electronics", label: "Электроника", icon: "Cpu" },
 ];
 
+export const PACKAGING_OPTIONS = [
+  "Полиэтилен (ПВД)",
+  "Коробка (картон)",
+  "Воздушно-пузырьковая плёнка (ВПП)",
+  "Термоусадочная плёнка (ПОФ)",
+  "Деревянная обрешётка",
+  "Фирменные пакеты",
+  "Индивидуальная упаковка",
+];
+
 export const MARKETPLACE_OPTIONS = ["Wildberries", "Ozon", "Яндекс Маркет", "СберМегаМаркет", "Lamoda", "AliExpress"];
 
 export const STATUS_CFG: Record<string, { label: string; bg: string; text: string; dot: string; border: string }> = {

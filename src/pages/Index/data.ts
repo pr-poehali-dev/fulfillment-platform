@@ -57,7 +57,7 @@ export const FEATURE_FILTERS = [
 
 export const SCHEME_FILTERS = ["FBS", "FBO", "DBS", "Кросс-докинг"];
 
-export const PACKAGING_FILTERS = ["Полиэтилен", "Короб", "Пузырчатая плёнка", "Термоусадка", "Деревянная обрешётка", "Металлический контейнер"];
+export const PACKAGING_FILTERS = ["Полиэтилен (ПВД)", "Коробка (картон)", "Воздушно-пузырьковая плёнка (ВПП)", "Термоусадочная плёнка (ПОФ)", "Деревянная обрешётка", "Фирменные пакеты", "Индивидуальная упаковка"];
 
 export const MARKETPLACE_FILTERS = ["Wildberries", "Ozon", "Яндекс Маркет", "СберМегаМаркет", "Ali"];
 
