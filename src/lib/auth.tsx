@@ -8,7 +8,16 @@ interface User {
   email_verified: boolean;
 }
 
-interface Fulfillment {
+interface OwnerProfileMini {
+  id: number;
+  contact_name: string;
+  contact_email: string;
+  contact_phone: string;
+  contact_tg: string;
+  inn: string;
+}
+
+interface FulfillmentMini {
   id: number;
   company_name: string;
   status: string;
@@ -16,7 +25,8 @@ interface Fulfillment {
 
 interface AuthCtx {
   user: User | null;
-  fulfillment: Fulfillment | null;
+  ownerProfile: OwnerProfileMini | null;
+  fulfillment: FulfillmentMini | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, phone: string) => Promise<void>;
@@ -25,25 +35,28 @@ interface AuthCtx {
 }
 
 const Ctx = createContext<AuthCtx>({
-  user: null, fulfillment: null, loading: true,
+  user: null, ownerProfile: null, fulfillment: null, loading: true,
   login: async () => {}, register: async () => ({}), logout: () => {}, refresh: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [fulfillment, setFulfillment] = useState<Fulfillment | null>(null);
+  const [ownerProfile, setOwnerProfile] = useState<OwnerProfileMini | null>(null);
+  const [fulfillment, setFulfillment] = useState<FulfillmentMini | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     const token = localStorage.getItem("fh:token");
-    if (!token) { setUser(null); setFulfillment(null); setLoading(false); return; }
+    if (!token) { setUser(null); setOwnerProfile(null); setFulfillment(null); setLoading(false); return; }
     try {
       const data = await api.me();
       setUser(data.user);
-      setFulfillment(data.fulfillment);
+      setOwnerProfile(data.owner_profile || null);
+      setFulfillment(data.fulfillment || null);
     } catch {
       setToken("");
       setUser(null);
+      setOwnerProfile(null);
       setFulfillment(null);
     }
     setLoading(false);
@@ -68,11 +81,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setToken("");
     setUser(null);
+    setOwnerProfile(null);
     setFulfillment(null);
   };
 
   return (
-    <Ctx.Provider value={{ user, fulfillment, loading, login, register, logout, refresh }}>
+    <Ctx.Provider value={{ user, ownerProfile, fulfillment, loading, login, register, logout, refresh }}>
       {children}
     </Ctx.Provider>
   );

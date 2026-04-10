@@ -139,6 +139,12 @@ def handle_register(body):
             VALUES (%d, '%s', '%s', 'draft')
         """ % (user_id, email.replace("'", "''"), phone.replace("'", "''")))
 
+        cur.execute("""
+            INSERT INTO owner_profiles (user_id, contact_email, contact_phone)
+            VALUES (%d, '%s', '%s')
+            ON CONFLICT (user_id) DO NOTHING
+        """ % (user_id, email.replace("'", "''"), phone.replace("'", "''")))
+
         code = gen_code()
         expires = (datetime.utcnow() + timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M:%S')
         cur.execute("""
@@ -266,7 +272,20 @@ def handle_me(token):
             return resp(401, {'error': 'Не авторизован'})
         user_id, email, role, verified = user
 
-        cur.execute("SELECT id, company_name, status FROM fulfillments WHERE user_id = %d" % user_id)
+        # Получаем owner_profile (создаём если нет)
+        cur.execute("SELECT id, contact_name, contact_email, contact_phone, contact_tg, inn FROM owner_profiles WHERE user_id = %d" % user_id)
+        op = cur.fetchone()
+        if not op:
+            cur.execute("INSERT INTO owner_profiles (user_id, contact_email) VALUES (%d, '%s') ON CONFLICT (user_id) DO NOTHING RETURNING id, contact_name, contact_email, contact_phone, contact_tg, inn" % (user_id, email.replace("'", "''")))
+            op = cur.fetchone()
+            conn.commit()
+
+        owner_profile = None
+        if op:
+            owner_profile = {'id': op[0], 'contact_name': op[1], 'contact_email': op[2], 'contact_phone': op[3], 'contact_tg': op[4], 'inn': op[5]}
+
+        # Первый фулфилмент (для обратной совместимости)
+        cur.execute("SELECT id, company_name, status FROM fulfillments WHERE user_id = %d ORDER BY created_at ASC LIMIT 1" % user_id)
         ff = cur.fetchone()
         fulfillment = None
         if ff:
@@ -274,7 +293,8 @@ def handle_me(token):
 
         return resp(200, {
             'user': {'id': user_id, 'email': email, 'role': role, 'email_verified': verified},
-            'fulfillment': fulfillment
+            'owner_profile': owner_profile,
+            'fulfillment': fulfillment,
         })
     finally:
         cur.close()
@@ -340,6 +360,12 @@ def handle_register_from_form(body):
         """ % (user_id, company, inn, city, area, year, desc, name, email.replace("'", "''"), phone.replace("'", "''"), tg,
                to_pg_arr(schemes_arr), to_pg_arr(features_arr), to_pg_arr(packaging_arr), to_pg_arr(mp_arr),
                sp, ap, dp, mv, ht))
+
+        cur.execute("""
+            INSERT INTO owner_profiles (user_id, contact_name, contact_email, contact_phone, contact_tg, inn)
+            VALUES (%d, '%s', '%s', '%s', '%s', '%s')
+            ON CONFLICT (user_id) DO NOTHING
+        """ % (user_id, name, email.replace("'", "''"), phone.replace("'", "''"), tg, inn))
 
         token = gen_token()
         token_expires = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
