@@ -578,7 +578,7 @@ def handle_send_quote(body):
         ff = cur.fetchone()
         if not ff:
             return resp(404, {'error': 'Фулфилмент не найден'})
-        if ff[2] != 'approved':
+        if ff[2] not in ('approved', 'active'):
             return resp(403, {'error': 'Фулфилмент недоступен'})
         lead_price = float(ff[1] or 0)
 
