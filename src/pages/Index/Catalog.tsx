@@ -41,7 +41,6 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
   const [areaFrom, setAreaFrom] = useState<string>("");
   const [areaTo, setAreaTo] = useState<string>("");
   const [minRating, setMinRating] = useState<number>(0);
-  const [maxFoundedYear, setMaxFoundedYear] = useState<number>(0);
   const [sortBy, setSortBy] = useState("rating");
   const [filtersOpen, setFiltersOpen] = useState(true);
 
@@ -64,7 +63,7 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
     (numAssemblyFrom > 0 || numAssemblyTo > 0 ? 1 : 0) +
     (numDeliveryFrom > 0 || numDeliveryTo > 0 ? 1 : 0) +
     (numAreaFrom > 0 || numAreaTo > 0 ? 1 : 0) +
-    (minRating > 0 ? 1 : 0) + (maxFoundedYear > 0 ? 1 : 0);
+    (minRating > 0 ? 1 : 0);
 
   const clearAll = () => {
     setSelectedMp([]);
@@ -84,7 +83,6 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
     setAreaFrom("");
     setAreaTo("");
     setMinRating(0);
-    setMaxFoundedYear(0);
   };
 
   const filtered = PARTNERS.filter((p) => {
@@ -102,7 +100,6 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
     if (numAreaFrom > 0 && (p.warehouseArea || 0) < numAreaFrom) return false;
     if (numAreaTo > 0 && (p.warehouseArea || 0) > numAreaTo) return false;
     if (minRating > 0 && (p.rating || 0) < minRating) return false;
-    if (maxFoundedYear > 0 && (p.foundedYear || 0) > maxFoundedYear) return false;
     if (selectedFeatures.length && !selectedFeatures.every((f) => p.features.includes(f))) return false;
     if (selectedSchemes.length && !selectedSchemes.some((s) => p.workSchemes.includes(s))) return false;
     if (selectedPackaging.length && !selectedPackaging.some((pk) => p.packagingTypes.includes(pk))) return false;
@@ -151,7 +148,6 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
         areaFrom={areaFrom} setAreaFrom={setAreaFrom}
         areaTo={areaTo} setAreaTo={setAreaTo}
         minRating={minRating} setMinRating={setMinRating}
-        maxFoundedYear={maxFoundedYear} setMaxFoundedYear={setMaxFoundedYear}
         sortBy={sortBy} setSortBy={setSortBy}
         filtersOpen={filtersOpen} setFiltersOpen={setFiltersOpen}
       />

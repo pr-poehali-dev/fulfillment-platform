@@ -34,8 +34,6 @@ interface FilterActiveChipsProps {
   setAreaTo: (v: string) => void;
   minRating: number;
   setMinRating: (v: number) => void;
-  maxFoundedYear: number;
-  setMaxFoundedYear: (v: number) => void;
   toggleArr: <T>(arr: T[], val: T, set: (v: T[]) => void) => void;
 }
 
@@ -52,7 +50,6 @@ export default function FilterActiveChips({
   numDeliveryFrom, numDeliveryTo, setDeliveryFrom, setDeliveryTo,
   numAreaFrom, numAreaTo, setAreaFrom, setAreaTo,
   minRating, setMinRating,
-  maxFoundedYear, setMaxFoundedYear,
   toggleArr,
 }: FilterActiveChipsProps) {
   const chipCls = "inline-flex items-center gap-1 bg-navy-900 text-white text-xs px-2 py-0.5 rounded-full font-ibm";
@@ -114,12 +111,6 @@ export default function FilterActiveChips({
         <span className={chipCls}>
           рейтинг от {minRating}
           <button onClick={() => setMinRating(0)}><Icon name="X" size={9} /></button>
-        </span>
-      )}
-      {maxFoundedYear > 0 && (
-        <span className={chipCls}>
-          опыт от {new Date().getFullYear() - maxFoundedYear} лет
-          <button onClick={() => setMaxFoundedYear(0)}><Icon name="X" size={9} /></button>
         </span>
       )}
     </div>

@@ -40,8 +40,6 @@ export interface FilterState {
   setAreaTo: (v: string) => void;
   minRating: number;
   setMinRating: (v: number) => void;
-  maxFoundedYear: number;
-  setMaxFoundedYear: (v: number) => void;
   sortBy: string;
   setSortBy: (v: string) => void;
   filtersOpen: boolean;
@@ -85,7 +83,6 @@ export default function CatalogFilterPanel(props: CatalogFilterPanelProps) {
     areaFrom, setAreaFrom,
     areaTo, setAreaTo,
     minRating, setMinRating,
-    maxFoundedYear, setMaxFoundedYear,
     sortBy, setSortBy,
     filtersOpen, setFiltersOpen,
   } = props;
@@ -147,7 +144,6 @@ export default function CatalogFilterPanel(props: CatalogFilterPanelProps) {
             deliveryTo={deliveryTo} setDeliveryTo={setDeliveryTo}
             areaFrom={areaFrom} setAreaFrom={setAreaFrom}
             areaTo={areaTo} setAreaTo={setAreaTo}
-            maxFoundedYear={maxFoundedYear} setMaxFoundedYear={setMaxFoundedYear}
             uniqueCerts={uniqueCerts} selectedCerts={selectedCerts} setSelectedCerts={setSelectedCerts}
             minRating={minRating} setMinRating={setMinRating}
           />
@@ -170,7 +166,6 @@ export default function CatalogFilterPanel(props: CatalogFilterPanelProps) {
               numAreaFrom={numAreaFrom} numAreaTo={numAreaTo}
               setAreaFrom={setAreaFrom} setAreaTo={setAreaTo}
               minRating={minRating} setMinRating={setMinRating}
-              maxFoundedYear={maxFoundedYear} setMaxFoundedYear={setMaxFoundedYear}
               toggleArr={toggleArr}
             />
           )}
