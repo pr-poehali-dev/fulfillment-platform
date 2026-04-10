@@ -95,9 +95,16 @@ export function RequestQuoteModal({ partners, onClose }: {
               <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mb-3 mx-auto">
                 <Icon name="CheckCircle" size={28} className="text-emerald-600" />
               </div>
-              <h3 className="font-golos font-black text-xl text-navy-900 mb-1">Запрос отправлен!</h3>
+              <h3 className="font-golos font-black text-xl text-navy-900 mb-1">
+                {partners.length === 1 ? "Запрос отправлен!" : `Запросы отправлены (${partners.length})`}
+              </h3>
               <p className="text-sm text-gray-500 font-ibm max-w-xs mx-auto">
-                {partners.length === 1 ? "Партнёр" : "Партнёры"} свяжутся с вами в течение 24 часов на{" "}
+                {partners.length === 1
+                  ? "Партнёр свяжется с вами в течение 24 часов на"
+                  : partners.length < 5
+                  ? `${partners.length} партнёра свяжутся с вами в течение 24 часов на`
+                  : `${partners.length} партнёров свяжутся с вами в течение 24 часов на`
+                }{" "}
                 <strong className="text-navy-900">{email}</strong>
               </p>
             </div>
