@@ -255,7 +255,11 @@ export default function Admin() {
               fulfillments={fulfillments}
               loading={fulfillmentsLoading}
               onReload={loadFulfillments}
-              onEdit={(f) => setEditingFulfillment(f)}
+              onEdit={(f) => {
+                // Если нового фулфилмента ещё нет в списке — добавляем
+                setFulfillments((prev) => prev.some((x) => x.id === f.id) ? prev : [...prev, f]);
+                setEditingFulfillment(f);
+              }}
             />
           )}
 
