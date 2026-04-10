@@ -1,18 +1,30 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
+import api from "@/lib/api";
 
 export default function SupportSection() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const inputCls = "w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/20";
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!name.trim() || !email.trim() || !message.trim()) return;
-    setSent(true);
+    setError("");
+    setSubmitting(true);
+    try {
+      await api.sendSupportRequest(name.trim(), email.trim(), message.trim());
+      setSent(true);
+    } catch {
+      setError("Не удалось отправить сообщение. Попробуйте позже или напишите нам напрямую.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (sent) {
@@ -33,7 +45,6 @@ export default function SupportSection() {
 
   return (
     <div className="space-y-4">
-      {/* Info */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <div className="font-golos font-bold text-navy-900 mb-3 flex items-center gap-2">
           <Icon name="LifeBuoy" size={16} className="text-navy-700" />
@@ -61,7 +72,6 @@ export default function SupportSection() {
           ))}
         </div>
 
-        {/* Form */}
         <div className="border-t border-gray-100 pt-4 space-y-3">
           <div className="text-xs font-semibold text-gray-600 font-golos">Написать в поддержку</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -80,15 +90,20 @@ export default function SupportSection() {
               placeholder="Подробно опишите вашу проблему или вопрос..."
               className={`${inputCls} resize-none`} />
           </div>
-          <div className="flex items-center gap-3">
-            <Button onClick={handleSubmit}
-              disabled={!name.trim() || !email.trim() || !message.trim()}
-              className="bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos text-sm h-10 px-6 disabled:opacity-40">
-              <Icon name="Send" size={14} className="mr-1.5" />
-              Отправить
-            </Button>
-            <span className="text-xs text-gray-400 font-ibm">Форма пока не активна — мы работаем над интеграцией</span>
-          </div>
+          {error && (
+            <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+              <Icon name="AlertCircle" size={13} className="text-red-400 flex-shrink-0" />
+              <p className="text-red-500 text-xs font-ibm">{error}</p>
+            </div>
+          )}
+          <Button onClick={handleSubmit}
+            disabled={!name.trim() || !email.trim() || !message.trim() || submitting}
+            className="bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos text-sm h-10 px-6 disabled:opacity-40">
+            {submitting
+              ? <><Icon name="Loader2" size={14} className="mr-1.5 animate-spin" />Отправка...</>
+              : <><Icon name="Send" size={14} className="mr-1.5" />Отправить</>
+            }
+          </Button>
         </div>
       </div>
     </div>

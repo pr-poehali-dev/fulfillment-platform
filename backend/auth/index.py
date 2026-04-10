@@ -759,6 +759,73 @@ def handle_reset_password(body):
         cur.close()
         conn.close()
 
+def handle_support_request(body):
+    """Обращение в поддержку — письмо на support@fulfillhub.ru"""
+    name = body.get('name', '').strip()
+    email = body.get('email', '').strip()
+    message = body.get('message', '').strip()
+    if not name or not email or not message:
+        return resp(400, {'error': 'Заполните все поля'})
+
+    html = """<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:'Helvetica Neue',Arial,sans-serif">
+  <table width="100%%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:32px 20px">
+    <tr><td align="center">
+      <table width="520" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0">
+        <tr>
+          <td style="background:#0f172a;padding:20px 28px">
+            <span style="color:#f59e0b;font-size:18px;font-weight:800">FulfillHub</span>
+            <span style="color:#64748b;font-size:13px;margin-left:12px">Обращение в поддержку</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:28px">
+            <table width="100%%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="padding:0 0 16px">
+                  <span style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em">Имя</span><br>
+                  <span style="font-size:15px;color:#0f172a;font-weight:600">%(name)s</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:0 0 16px">
+                  <span style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em">Email</span><br>
+                  <a href="mailto:%(email)s" style="font-size:15px;color:#2563eb;font-weight:600">%(email)s</a>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:0 0 8px">
+                  <span style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em">Сообщение</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="background:#f8fafc;border-radius:8px;padding:16px;font-size:14px;color:#334155;line-height:1.6;border:1px solid #e2e8f0">
+                  %(message)s
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 28px;border-top:1px solid #e2e8f0;text-align:center">
+            <span style="color:#94a3b8;font-size:11px">© 2026 FulfillHub</span>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>""" % {'name': name, 'email': email, 'message': message.replace('\n', '<br>')}
+
+    try:
+        send_email('support@fulfillhub.ru', 'Обращение в поддержку от %s' % name, html)
+    except Exception as e:
+        return resp(500, {'error': 'Не удалось отправить сообщение. Попробуйте позже.'})
+
+    return resp(200, {'ok': True})
+
 def handle_change_password(body, token):
     """Смена пароля авторизованным пользователем"""
     if not token:
@@ -848,6 +915,8 @@ def handler(event, context):
             return handle_reset_password(body)
         if path == 'change-password':
             return handle_change_password(body, token)
+        if path == 'support':
+            return handle_support_request(body)
 
     if method == 'GET':
         if path == 'me':

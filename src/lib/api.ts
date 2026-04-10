@@ -62,6 +62,9 @@ export const api = {
   changePassword: (current_password: string, new_password: string) =>
     request("auth", "change-password", { method: "POST", body: { current_password, new_password } }),
 
+  sendSupportRequest: (name: string, email: string, message: string) =>
+    request("auth", "support", { method: "POST", body: { name, email, message } }),
+
   forgotPassword: (email: string) =>
     request("auth", "forgot-password", { method: "POST", body: { email } }),
 
