@@ -8,15 +8,18 @@ const inputCls =
 // ─── Step 1 ───────────────────────────────────────────────────────────────────
 
 interface Step1Props {
-  companyName: string; setCompanyName: (v: string) => void;
-  inn: string;         setInn: (v: string) => void;
-  city: string;        setCity: (v: string) => void;
-  foundedYear: string; setFoundedYear: (v: string) => void;
+  companyName: string;   setCompanyName: (v: string) => void;
+  inn: string;           setInn: (v: string) => void;
+  city: string;          setCity: (v: string) => void;
+  address: string;       setAddress: (v: string) => void;
+  foundedYear: string;   setFoundedYear: (v: string) => void;
   warehouseArea: string; setWarehouseArea: (v: string) => void;
-  description: string; setDescription: (v: string) => void;
+  teamSize: string;      setTeamSize: (v: string) => void;
+  workingHours: string;  setWorkingHours: (v: string) => void;
+  description: string;   setDescription: (v: string) => void;
 }
 
-function Step1({ companyName, setCompanyName, inn, setInn, city, setCity, foundedYear, setFoundedYear, warehouseArea, setWarehouseArea, description, setDescription }: Step1Props) {
+function Step1({ companyName, setCompanyName, inn, setInn, city, setCity, address, setAddress, foundedYear, setFoundedYear, warehouseArea, setWarehouseArea, teamSize, setTeamSize, workingHours, setWorkingHours, description, setDescription }: Step1Props) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -50,9 +53,28 @@ function Step1({ companyName, setCompanyName, inn, setInn, city, setCity, founde
         </div>
       </div>
       <div>
-        <label className="text-xs font-semibold text-gray-600 font-golos block mb-1.5">Площадь склада (м²)</label>
-        <input value={warehouseArea} onChange={(e) => setWarehouseArea(e.target.value)}
-          placeholder="10 000" type="number" className={inputCls} />
+        <label className="text-xs font-semibold text-gray-600 font-golos block mb-1.5">
+          Адрес склада <span className="text-gray-400 font-normal">(отображается на карте)</span>
+        </label>
+        <input value={address} onChange={(e) => setAddress(e.target.value)}
+          placeholder="Москва, ул. Складская, д. 12, стр. 3" className={inputCls} />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="text-xs font-semibold text-gray-600 font-golos block mb-1.5">Площадь склада (м²)</label>
+          <input value={warehouseArea} onChange={(e) => setWarehouseArea(e.target.value)}
+            placeholder="10 000" type="number" className={inputCls} />
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-gray-600 font-golos block mb-1.5">Размер команды (чел.)</label>
+          <input value={teamSize} onChange={(e) => setTeamSize(e.target.value)}
+            placeholder="50" type="number" className={inputCls} />
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-gray-600 font-golos block mb-1.5">Часы работы</label>
+          <input value={workingHours} onChange={(e) => setWorkingHours(e.target.value)}
+            placeholder="Пн-Пт 09:00-18:00" className={inputCls} />
+        </div>
       </div>
       <div>
         <label className="text-xs font-semibold text-gray-600 font-golos block mb-1.5">О компании</label>
@@ -322,12 +344,15 @@ function Step4({ contactName, setContactName, contactEmail, setContactEmail, con
 
 export interface FormState {
   // Step 1
-  companyName: string; setCompanyName: (v: string) => void;
-  inn: string;         setInn: (v: string) => void;
-  city: string;        setCity: (v: string) => void;
+  companyName: string;   setCompanyName: (v: string) => void;
+  inn: string;           setInn: (v: string) => void;
+  city: string;          setCity: (v: string) => void;
+  address: string;       setAddress: (v: string) => void;
   warehouseArea: string; setWarehouseArea: (v: string) => void;
-  foundedYear: string; setFoundedYear: (v: string) => void;
-  description: string; setDescription: (v: string) => void;
+  foundedYear: string;   setFoundedYear: (v: string) => void;
+  teamSize: string;      setTeamSize: (v: string) => void;
+  workingHours: string;  setWorkingHours: (v: string) => void;
+  description: string;   setDescription: (v: string) => void;
   // Step 2
   schemes: string[];      toggleScheme: (v: string) => void;
   features: string[];     toggleFeature: (v: string) => void;
@@ -375,12 +400,15 @@ export default function RegistrationFormSteps({ step, state, canNext, submitting
 
       {step === 1 && (
         <Step1
-          companyName={s.companyName} setCompanyName={s.setCompanyName}
-          inn={s.inn}                 setInn={s.setInn}
-          city={s.city}               setCity={s.setCity}
-          foundedYear={s.foundedYear} setFoundedYear={s.setFoundedYear}
+          companyName={s.companyName}     setCompanyName={s.setCompanyName}
+          inn={s.inn}                     setInn={s.setInn}
+          city={s.city}                   setCity={s.setCity}
+          address={s.address}             setAddress={s.setAddress}
+          foundedYear={s.foundedYear}     setFoundedYear={s.setFoundedYear}
           warehouseArea={s.warehouseArea} setWarehouseArea={s.setWarehouseArea}
-          description={s.description} setDescription={s.setDescription}
+          teamSize={s.teamSize}           setTeamSize={s.setTeamSize}
+          workingHours={s.workingHours}   setWorkingHours={s.setWorkingHours}
+          description={s.description}     setDescription={s.setDescription}
         />
       )}
       {step === 2 && (

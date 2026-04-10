@@ -16,8 +16,11 @@ export default function RegistrationForm() {
   const [companyName, setCompanyName] = useState("");
   const [inn, setInn] = useState("");
   const [city, setCity] = useState("");
+  const [address, setAddress] = useState("");
   const [warehouseArea, setWarehouseArea] = useState("");
   const [foundedYear, setFoundedYear] = useState("");
+  const [teamSize, setTeamSize] = useState("");
+  const [workingHours, setWorkingHours] = useState("");
   const [description, setDescription] = useState("");
 
   // Step 2
@@ -56,8 +59,11 @@ export default function RegistrationForm() {
     setSubmitting(true);
     try {
       const data = await api.registerFromForm({
-        companyName, inn, city, warehouseArea: parseInt(warehouseArea) || 0,
-        foundedYear: parseInt(foundedYear) || 0, description,
+        companyName, inn, city, address,
+        warehouseArea: parseInt(warehouseArea) || 0,
+        foundedYear: parseInt(foundedYear) || 0,
+        teamSize: parseInt(teamSize) || 0,
+        workingHours, description,
         schemes, features, packaging, marketplaces,
         storagePrice, assemblyPrice, deliveryPrice, minVolume, hasTrial,
         contactName, contactEmail, contactPhone, contactTg,
@@ -94,8 +100,11 @@ export default function RegistrationForm() {
     companyName, setCompanyName,
     inn,         setInn,
     city,        setCity,
+    address,     setAddress,
     warehouseArea, setWarehouseArea,
     foundedYear, setFoundedYear,
+    teamSize,    setTeamSize,
+    workingHours, setWorkingHours,
     description, setDescription,
     schemes,      toggleScheme:      (v) => toggle(schemes, v, setSchemes),
     features,     toggleFeature:     (v) => toggle(features, v, setFeatures),

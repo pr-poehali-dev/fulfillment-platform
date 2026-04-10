@@ -1,28 +1,5 @@
 import Icon from "@/components/ui/icon";
 
-const BENEFITS = [
-  {
-    icon: "Users",
-    title: "15 000+ активных селлеров",
-    desc: "Ваша карточка будет видна тысячам продавцов, ищущих фулфилмент прямо сейчас.",
-  },
-  {
-    icon: "Shield",
-    title: "Бесплатное размещение",
-    desc: "Регистрация и размещение в каталоге — бесплатно. Комиссия только за успешную сделку.",
-  },
-  {
-    icon: "BarChart3",
-    title: "Аналитика и заявки",
-    desc: "Отслеживайте просмотры, получайте заявки на КП и управляйте ими в личном кабинете.",
-  },
-  {
-    icon: "Zap",
-    title: "Быстрый запуск",
-    desc: "Заполните анкету за 10 минут — модерация занимает до 24 часов.",
-  },
-];
-
 interface ForFulfillmentLayoutProps {
   children: React.ReactNode;
 }
@@ -74,14 +51,16 @@ export default function ForFulfillmentLayout({ children }: ForFulfillmentLayoutP
               <span className="text-gold-gradient">фулфилмент-сервис</span><br />
               в каталоге
             </h1>
-            <p className="text-white/65 text-lg font-ibm font-light leading-relaxed max-w-2xl mx-auto mb-8">
-              Получайте заявки от 15 000+ активных селлеров. Бесплатное размещение, прозрачная аналитика и удобный кабинет для управления клиентами.
+            <p className="text-white/75 text-lg font-ibm font-light leading-relaxed max-w-2xl mx-auto mb-6">
+              Работа с площадкой позволяет получать целевые лиды и запросы на КП от заинтересованных селлеров напрямую —
+              без затрат на маркетинг, рекламу и аналитику. Вы сосредоточены на операционке, мы берём на себя привлечение клиентов.
             </p>
-            <div className="flex flex-wrap justify-center gap-6 text-white/60 font-ibm text-sm">
+            <div className="flex flex-wrap justify-center gap-6 text-white/60 font-ibm text-sm mb-8">
               {[
-                { icon: "Clock", text: "Модерация 24 часа" },
-                { icon: "DollarSign", text: "Размещение бесплатно" },
-                { icon: "TrendingUp", text: "Рост заявок с первого дня" },
+                { icon: "Clock",        text: "Модерация за 1 час" },
+                { icon: "DollarSign",   text: "Размещение бесплатно" },
+                { icon: "TrendingUp",   text: "Целевые лиды с первого дня" },
+                { icon: "Target",       text: "Только заинтересованные селлеры" },
               ].map((item) => (
                 <div key={item.text} className="flex items-center gap-1.5">
                   <Icon name={item.icon as "Clock"} size={14} className="text-gold-400" />
@@ -89,22 +68,20 @@ export default function ForFulfillmentLayout({ children }: ForFulfillmentLayoutP
                 </div>
               ))}
             </div>
-          </div>
-        </section>
 
-        {/* Benefits */}
-        <section className="py-12 bg-white border-b border-gray-100">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {BENEFITS.map((b) => (
-                <div key={b.title} className="flex gap-3">
-                  <div className="w-10 h-10 bg-navy-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Icon name={b.icon as "Users"} size={18} className="text-navy-700" />
+            {/* Value props */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto">
+              {[
+                { icon: "UserCheck", title: "Целевая аудитория", desc: "Селлеры, уже ищущие фулфилмент" },
+                { icon: "Inbox",     title: "Заявки в кабинет",  desc: "КП и запросы — всё в одном месте" },
+                { icon: "Zap",       title: "Быстрый старт",     desc: "Заполните анкету за 10 минут" },
+              ].map((b) => (
+                <div key={b.title} className="bg-white/8 border border-white/10 rounded-xl p-4 text-left">
+                  <div className="w-8 h-8 bg-gold-500/15 rounded-lg flex items-center justify-center mb-2">
+                    <Icon name={b.icon as "Zap"} size={15} className="text-gold-400" />
                   </div>
-                  <div>
-                    <div className="font-golos font-bold text-navy-900 text-sm mb-1">{b.title}</div>
-                    <div className="text-xs text-gray-500 font-ibm leading-relaxed">{b.desc}</div>
-                  </div>
+                  <div className="font-golos font-bold text-white text-sm mb-0.5">{b.title}</div>
+                  <div className="text-xs text-white/50 font-ibm">{b.desc}</div>
                 </div>
               ))}
             </div>
