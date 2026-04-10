@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { StarRating, BadgeChip } from "./Navigation";
 import type { Partner } from "./data";
 
+const withRuble = (s: string) => (s && s !== "по запросу" && !s.includes("₽") ? `${s} ₽` : s);
+
 interface ComparePageProps {
   compareList: number[];
   setCompareList: React.Dispatch<React.SetStateAction<number[]>>;
@@ -48,14 +50,14 @@ export default function ComparePage({ compareList, setCompareList, onClose, part
     )},
     { label: "Хранение", render: (p) => (
       <div>
-        <span className="font-golos font-bold text-navy-900">{p.storage}</span>
+        <span className="font-golos font-bold text-navy-900">{withRuble(p.storage)}</span>
       </div>
     )},
     { label: "Сборка заказа", render: (p) => (
-      <span className="font-golos font-bold text-navy-900">{p.assembly}</span>
+      <span className="font-golos font-bold text-navy-900">{withRuble(p.assembly)}</span>
     )},
     { label: "Доставка", render: (p) => (
-      <span className="font-golos font-bold text-navy-900">{p.delivery}</span>
+      <span className="font-golos font-bold text-navy-900">{withRuble(p.delivery)}</span>
     )},
     { label: "Упаковка", render: (p) => (
       <div className="flex flex-wrap gap-1">

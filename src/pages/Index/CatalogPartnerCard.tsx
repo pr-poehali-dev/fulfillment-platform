@@ -2,6 +2,9 @@ import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { StarRating, BadgeChip } from "./Navigation";
 import type { Partner } from "./data";
+import { FEATURE_FILTERS, SPECIALIZATION_FILTERS } from "./data";
+
+const withRuble = (s: string) => (s && s !== "по запросу" && !s.includes("₽") ? `${s} ₽` : s);
 
 interface PartnerCardProps {
   p: Partner;
@@ -13,15 +16,18 @@ interface PartnerCardProps {
   onRequestQuote: () => void;
 }
 
+const FEATURE_COLORS: Record<string, string> = {
+  cameras: "text-blue-500", dangerous: "text-red-500", returns: "text-emerald-500",
+  same_day: "text-amber-500", temp_control: "text-cyan-500", packaging: "text-purple-500",
+  honest_mark: "text-indigo-500", defect_check: "text-green-600", seller_packaging: "text-violet-500",
+  shipment_prep: "text-orange-500", barcode_check: "text-teal-500", cargo_receive: "text-sky-500",
+};
+const SPEC_COLORS: Record<string, string> = {
+  small_goods: "text-slate-500", cosmetics: "text-pink-500", clothing: "text-rose-500",
+  fuel_lubricants: "text-yellow-600", construction: "text-stone-500", appliances: "text-blue-600", electronics: "text-indigo-600",
+};
+
 export default function PartnerCard({ p, inCompare, onCompare, isFavorite, onToggleFavorite, onOpenDetail, onRequestQuote }: PartnerCardProps) {
-  const featureIcons: Record<string, { icon: string; label: string; color: string }> = {
-    cameras: { icon: "Camera", label: "Камеры", color: "text-blue-500" },
-    dangerous: { icon: "AlertTriangle", label: "Опасные грузы", color: "text-red-500" },
-    returns: { icon: "RefreshCw", label: "Возвраты", color: "text-emerald-500" },
-    same_day: { icon: "Zap", label: "День в день", color: "text-amber-500" },
-    temp_control: { icon: "Thermometer", label: "Темп. режим", color: "text-cyan-500" },
-    packaging: { icon: "Package", label: "Упаковка", color: "text-purple-500" },
-  };
 
   return (
     <div className="bg-white border border-gray-100 rounded-xl card-hover shadow-sm flex flex-col overflow-hidden group">
@@ -66,32 +72,50 @@ export default function PartnerCard({ p, inCompare, onCompare, isFavorite, onTog
           {p.tags.length > 2 && <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded font-ibm">+{p.tags.length - 2}</span>}
         </div>
 
-        {/* Feature icons */}
-        <div className="flex flex-wrap gap-2 mb-3">
-          {p.features.map((f) => {
-            const fi = featureIcons[f];
-            if (!fi) return null;
-            return (
-              <div key={f} className="flex items-center gap-1 text-xs text-gray-500 font-ibm" title={fi.label}>
-                <Icon name={fi.icon as "Camera"} size={12} className={fi.color} />
-              </div>
-            );
-          })}
-        </div>
+        {/* Features */}
+        {p.features.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {p.features.map((fKey) => {
+              const def = FEATURE_FILTERS.find((x) => x.key === fKey);
+              if (!def) return null;
+              return (
+                <span key={fKey} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded">
+                  <Icon name={def.icon as "Camera"} size={10} className={FEATURE_COLORS[fKey] || "text-gray-400"} />
+                  {def.label}
+                </span>
+              );
+            })}
+          </div>
+        )}
+        {/* Specializations */}
+        {(p.specializations || []).length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {(p.specializations || []).map((sKey) => {
+              const def = SPECIALIZATION_FILTERS.find((x) => x.key === sKey);
+              if (!def) return null;
+              return (
+                <span key={sKey} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded">
+                  <Icon name={def.icon as "Boxes"} size={10} className={SPEC_COLORS[sKey] || "text-gray-400"} />
+                  {def.label}
+                </span>
+              );
+            })}
+          </div>
+        )}
 
         {/* Rates */}
         <div className="grid grid-cols-3 gap-1 bg-gray-50 rounded-lg p-2 mb-3">
           <div className="text-center">
             <div className="text-xs text-gray-400 font-ibm">Хранение</div>
-            <div className="text-xs font-semibold text-navy-900">{p.storage}</div>
+            <div className="text-xs font-semibold text-navy-900">{withRuble(p.storage)}</div>
           </div>
           <div className="text-center border-x border-gray-200">
             <div className="text-xs text-gray-400 font-ibm">Сборка</div>
-            <div className="text-xs font-semibold text-navy-900">{p.assembly}</div>
+            <div className="text-xs font-semibold text-navy-900">{withRuble(p.assembly)}</div>
           </div>
           <div className="text-center">
             <div className="text-xs text-gray-400 font-ibm">Доставка</div>
-            <div className="text-xs font-semibold text-navy-900">{p.delivery}</div>
+            <div className="text-xs font-semibold text-navy-900">{withRuble(p.delivery)}</div>
           </div>
         </div>
 

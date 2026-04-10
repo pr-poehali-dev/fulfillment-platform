@@ -54,7 +54,7 @@ export const FEATURE_FILTERS = [
   { key: "cargo_receive", label: "Получение товара карго", icon: "Ship" },
 ];
 
-export const SCHEME_FILTERS = ["FBS", "FBO", "DBS"];
+export const SCHEME_FILTERS = ["FBS", "FBO", "DBS", "Кросс-докинг"];
 
 export const PACKAGING_FILTERS = ["Полиэтилен", "Короб", "Пузырчатая плёнка", "Термоусадка", "Деревянная обрешётка", "Металлический контейнер"];
 
