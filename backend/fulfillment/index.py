@@ -224,11 +224,19 @@ def handle_update_fulfillment(body, token):
         array_fields = ['work_schemes', 'features', 'packaging_types', 'marketplaces', 'certificates', 'photos', 'specializations']
         json_fields = ['services']
 
+        numeric_fields = {'warehouse_area', 'founded_year', 'storage_price', 'assembly_price',
+                          'delivery_price', 'storage_rate', 'assembly_rate', 'delivery_rate',
+                          'min_volume', 'team_size'}
+
         updates = []
         for k in allowed:
             if k in body:
                 v = body[k]
-                if isinstance(v, bool):
+                if v is None:
+                    if k in numeric_fields:
+                        updates.append("%s = NULL" % k)
+                    # для строковых None просто пропускаем
+                elif isinstance(v, bool):
                     updates.append("%s = %s" % (k, 'TRUE' if v else 'FALSE'))
                 elif isinstance(v, (int, float)):
                     updates.append("%s = %s" % (k, v))
