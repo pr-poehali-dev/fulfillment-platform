@@ -63,6 +63,7 @@ export default function AdminSidebar({
           { id: "fulfillments" as Tab, label: "Мои фулфилменты", icon: "Warehouse" },
           { id: "quotes" as Tab, label: "Заявки", icon: "Inbox" },
           { id: "settings" as Tab, label: "Настройки", icon: "Settings" },
+          { id: "support" as Tab, label: "Техподдержка", icon: "LifeBuoy" },
         ]).map((item) => (
           <button key={item.id}
             onClick={() => { setTab(item.id); setSidebarOpen(false); }}

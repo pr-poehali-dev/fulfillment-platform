@@ -13,6 +13,7 @@ import AdminFulfillmentList from "./Admin/AdminFulfillmentList";
 import AdminFulfillmentEdit from "./Admin/AdminFulfillmentEdit";
 import AdminQuotesTab from "./Admin/AdminQuotesTab";
 import AdminSettingsTab from "./Admin/AdminSettingsTab";
+import SupportSection from "@/components/SupportSection";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -190,10 +191,11 @@ export default function Admin() {
   // ─── Tab labels ───────────────────────────────────────────────────────────
 
   const TAB_LABELS: Record<Tab, { title: string; sub: string }> = {
-    profile:      { title: "Мой профиль",        sub: "Ваши персональные данные" },
-    fulfillments: { title: "Мои фулфилменты",    sub: editingFulfillment ? `Редактирование: ${editingFulfillment.company_name || "без названия"}` : "Управление складами и услугами" },
-    quotes:       { title: "Заявки на КП",        sub: "Входящие запросы от селлеров" },
-    settings:     { title: "Настройки",           sub: "Управление аккаунтом" },
+    profile:      { title: "Мой профиль",            sub: "Ваши персональные данные" },
+    fulfillments: { title: "Мои фулфилменты",        sub: editingFulfillment ? `Редактирование: ${editingFulfillment.company_name || "без названия"}` : "Управление складами и услугами" },
+    quotes:       { title: "Заявки на КП",            sub: "Входящие запросы от селлеров" },
+    settings:     { title: "Настройки",               sub: "Управление аккаунтом" },
+    support:      { title: "Техническая поддержка",   sub: "Мы всегда готовы помочь" },
   };
 
   const handleFulfillmentSaved = (updated: Fulfillment) => {
@@ -277,6 +279,12 @@ export default function Admin() {
 
           {tab === "settings" && (
             <AdminSettingsTab user={user} onLogout={() => { logout(); navigate("/auth"); }} />
+          )}
+
+          {tab === "support" && (
+            <div className="max-w-2xl">
+              <SupportSection />
+            </div>
           )}
         </div>
       </main>

@@ -14,6 +14,13 @@ function QuoteDetailModal({ quote, onClose, onStatusChange }: {
 }) {
   const qs = QUOTE_STATUS_CFG[quote.status] || QUOTE_STATUS_CFG.new;
 
+  // При открытии помечаем как просмотренную
+  const markViewed = async () => {
+    try { await api.viewQuote(quote.id); } catch { /* silent */ }
+  };
+   
+  useState(() => { markViewed(); });
+
   const formatDate = (d: string) => {
     try {
       return new Date(d).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -225,6 +232,12 @@ export default function AdminQuotesTab({ quotes, quotesLoading, onReload }: Admi
                       {q.status === "new" && <span className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0 animate-pulse" />}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-gray-500 font-ibm flex-wrap">
+                      {q.fulfillment_name && (
+                        <span className="inline-flex items-center gap-0.5 text-navy-600 font-semibold">
+                          <Icon name="Warehouse" size={10} />{q.fulfillment_name}
+                        </span>
+                      )}
+                      {q.fulfillment_name && (q.sku_count > 0 || q.orders_count > 0) && <span>·</span>}
                       {q.sku_count > 0 && <span className="flex items-center gap-0.5"><Icon name="Package" size={10} />{q.sku_count} SKU</span>}
                       {q.sku_count > 0 && q.orders_count > 0 && <span>·</span>}
                       {q.orders_count > 0 && <span className="flex items-center gap-0.5"><Icon name="ShoppingCart" size={10} />{q.orders_count} зак/мес</span>}

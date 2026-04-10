@@ -469,6 +469,36 @@ def handle_list_approved():
 
 # ─── QUOTES ──────────────────────────────────────────────────────────────────
 
+def ensure_seller(cur, name, email, phone, company):
+    """Находит или создаёт пользователя-селлера и профиль продавца. Возвращает user_id."""
+    import secrets, hashlib
+    email_esc = email.replace("'", "''")
+    cur.execute("SELECT id FROM users WHERE email = '%s'" % email_esc)
+    row = cur.fetchone()
+    if row:
+        user_id = row[0]
+    else:
+        salt = secrets.token_hex(16)
+        pw = secrets.token_urlsafe(12)
+        h = hashlib.pbkdf2_hmac('sha256', pw.encode(), salt.encode(), 100000).hex()
+        pw_hash = "%s:%s" % (salt, h)
+        cur.execute("""
+            INSERT INTO users (email, password_hash, role, email_verified)
+            VALUES ('%s', '%s', 'seller', TRUE)
+            RETURNING id
+        """ % (email_esc, pw_hash.replace("'", "''")))
+        user_id = cur.fetchone()[0]
+
+    name_esc = name.replace("'", "''")
+    company_esc = company.replace("'", "''")
+    phone_esc = phone.replace("'", "''")
+    cur.execute("""
+        INSERT INTO sellers (user_id, name, company, phone)
+        VALUES (%d, '%s', '%s', '%s')
+        ON CONFLICT (user_id) DO UPDATE SET name = EXCLUDED.name, company = EXCLUDED.company, phone = EXCLUDED.phone, updated_at = NOW()
+    """ % (user_id, name_esc, company_esc, phone_esc))
+    return user_id
+
 def handle_send_quote(body):
     fulfillment_id = body.get('fulfillment_id')
     name = body.get('name', '').strip()
@@ -493,11 +523,14 @@ def handle_send_quote(body):
         sku = int(body.get('sku_count', 0) or 0)
         orders = int(body.get('orders_count', 0) or 0)
 
+        # Авторегистрация / поиск селлера
+        seller_user_id = ensure_seller(cur, name, email, phone, body.get('company', ''))
+
         cur.execute("""
-            INSERT INTO quote_requests (fulfillment_id, sender_name, sender_company, sender_email, sender_phone, sku_count, orders_count, message, lead_price)
-            VALUES (%d, '%s', '%s', '%s', '%s', %d, %d, '%s', %s)
+            INSERT INTO quote_requests (fulfillment_id, seller_id, sender_name, sender_company, sender_email, sender_phone, sku_count, orders_count, message, lead_price)
+            VALUES (%d, %d, '%s', '%s', '%s', '%s', %d, %d, '%s', %s)
             RETURNING id
-        """ % (int(fulfillment_id), name.replace("'", "''"), company, email.replace("'", "''"), phone.replace("'", "''"), sku, orders, msg, lead_price))
+        """ % (int(fulfillment_id), seller_user_id, name.replace("'", "''"), company, email.replace("'", "''"), phone.replace("'", "''"), sku, orders, msg, lead_price))
         qid = cur.fetchone()[0]
 
         cur.execute("""
@@ -516,6 +549,73 @@ def handle_send_quote(body):
         cur.close()
         conn.close()
 
+
+def handle_view_quote(body, token):
+    """Фулфилмент отмечает заявку как просмотренную"""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user:
+            return resp(401, {'error': 'Не авторизован'})
+        user_id = user[0]
+        qid = body.get('quote_id')
+        if not qid:
+            return resp(400, {'error': 'quote_id обязателен'})
+
+        cur.execute("""
+            UPDATE quote_requests SET viewed_by_fulfillment = TRUE
+            WHERE id = %d AND fulfillment_id IN (SELECT id FROM fulfillments WHERE user_id = %d)
+        """ % (int(qid), user_id))
+        conn.commit()
+        return resp(200, {'ok': True})
+    finally:
+        cur.close()
+        conn.close()
+
+
+def handle_seller_quotes(token):
+    """Заявки КП для кабинета селлера"""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user:
+            return resp(401, {'error': 'Не авторизован'})
+        user_id = user[0]
+
+        cur.execute("""
+            SELECT q.id, q.fulfillment_id, f.company_name as fulfillment_name,
+                q.status, q.viewed_by_fulfillment,
+                q.sku_count, q.orders_count, q.message, q.created_at,
+                q.sender_name, q.sender_email, q.sender_phone, q.sender_company
+            FROM quote_requests q
+            JOIN fulfillments f ON f.id = q.fulfillment_id
+            WHERE q.seller_id = %d
+            ORDER BY q.created_at DESC
+        """ % user_id)
+        rows = cur.fetchall()
+        cols = ['id', 'fulfillment_id', 'fulfillment_name', 'status', 'viewed_by_fulfillment',
+                'sku_count', 'orders_count', 'message', 'created_at',
+                'sender_name', 'sender_email', 'sender_phone', 'sender_company']
+
+        result = []
+        for r in rows:
+            item = dict(zip(cols, r))
+            # Статус для селлера: new/viewed/answered
+            if item['status'] == 'answered':
+                item['seller_status'] = 'answered'
+            elif item['viewed_by_fulfillment']:
+                item['seller_status'] = 'viewed'
+            else:
+                item['seller_status'] = 'new'
+            result.append(item)
+
+        return resp(200, {'quotes': result})
+    finally:
+        cur.close()
+        conn.close()
+
 def handle_my_quotes(token):
     conn = get_db()
     cur = conn.cursor()
@@ -528,7 +628,8 @@ def handle_my_quotes(token):
         cur.execute("""
             SELECT q.id, q.sender_name, q.sender_company, q.sender_email, q.sender_phone,
                 q.sku_count, q.orders_count, q.message, q.status, q.created_at,
-                f.company_name as fulfillment_name, f.id as fulfillment_id
+                f.company_name as fulfillment_name, f.id as fulfillment_id,
+                q.viewed_by_fulfillment
             FROM quote_requests q
             JOIN fulfillments f ON f.id = q.fulfillment_id
             WHERE f.user_id = %d
@@ -536,7 +637,8 @@ def handle_my_quotes(token):
         """ % user_id)
         rows = cur.fetchall()
         cols = ['id', 'sender_name', 'sender_company', 'sender_email', 'sender_phone',
-                'sku_count', 'orders_count', 'message', 'status', 'created_at', 'fulfillment_name', 'fulfillment_id']
+                'sku_count', 'orders_count', 'message', 'status', 'created_at', 'fulfillment_name', 'fulfillment_id',
+                'viewed_by_fulfillment']
         return resp(200, {'quotes': [dict(zip(cols, r)) for r in rows]})
     finally:
         cur.close()
@@ -556,7 +658,7 @@ def handle_update_quote_status(body, token):
             return resp(400, {'error': 'quote_id и status обязательны'})
 
         cur.execute("""
-            UPDATE quote_requests SET status = '%s'
+            UPDATE quote_requests SET status = '%s', viewed_by_fulfillment = TRUE
             WHERE id = %d AND fulfillment_id IN (SELECT id FROM fulfillments WHERE user_id = %d)
         """ % (new_status, int(qid), user_id))
         conn.commit()
@@ -739,6 +841,8 @@ def handler(event, context):
         if action == 'get-fulfillment':
             fid = params.get('id', '0')
             return handle_get_fulfillment(token, fid)
+        if action == 'seller-quotes':
+            return handle_seller_quotes(token)
         # legacy
         if action == 'profile':
             return handle_get_profile(token)
@@ -762,6 +866,8 @@ def handler(event, context):
             return handle_submit_fulfillment_for_moderation(body, token)
         if action == 'close-fulfillment':
             return handle_close_fulfillment(body, token)
+        if action == 'view-quote':
+            return handle_view_quote(body, token)
         # legacy
         if action == 'update-profile':
             return handle_update_profile(body, token)

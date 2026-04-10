@@ -8,6 +8,7 @@ import { AuthProvider } from "@/lib/auth";
 import Index from "./pages/Index";
 import ForFulfillment from "./pages/ForFulfillment";
 import Admin from "./pages/Admin";
+import Seller from "./pages/Seller";
 import AuthPage from "./pages/AuthPage";
 import Moderation from "./pages/Moderation";
 import NotFound from "./pages/NotFound";
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/for-fulfillment" element={<ForFulfillment />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/seller" element={<Seller />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/moderation" element={<Moderation />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -106,6 +106,13 @@ export const api = {
   updateQuoteStatus: (quoteId: number, status: string) =>
     request("fulfillment", "update-quote-status", { method: "POST", body: { quote_id: quoteId, status } }),
 
+  viewQuote: (quoteId: number) =>
+    request("fulfillment", "view-quote", { method: "POST", body: { quote_id: quoteId } }),
+
+  // ─── Seller cabinet ─────────────────────────────────────────────────────
+  sellerQuotes: () =>
+    request("fulfillment", "seller-quotes"),
+
   // ─── Admin ──────────────────────────────────────────────────────────────
   adminList: (status?: string) =>
     request("fulfillment", "admin-list", { params: status ? { status } : {} }),
