@@ -35,6 +35,58 @@ def send_email(to: str, subject: str, html: str):
         s.login(user, password)
         s.sendmail(user, to, msg.as_string())
 
+def seller_welcome_html(email: str, password: str, name: str) -> str:
+    return """<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#0f172a;font-family:'Helvetica Neue',Arial,sans-serif">
+  <table width="100%%" cellpadding="0" cellspacing="0" style="background:#0f172a;padding:40px 20px">
+    <tr><td align="center">
+      <table width="480" cellpadding="0" cellspacing="0" style="background:#1e293b;border-radius:16px;overflow:hidden">
+        <tr>
+          <td style="background:linear-gradient(135deg,#1e3a5f,#0f172a);padding:32px;text-align:center">
+            <div style="display:inline-block;background:#f59e0b;border-radius:8px;padding:10px 14px;margin-bottom:16px">
+              <span style="color:#0f172a;font-size:20px">📦</span>
+            </div>
+            <h1 style="color:#ffffff;font-size:24px;margin:0;font-weight:800">FulfillHub</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px">
+            <h2 style="color:#ffffff;font-size:20px;margin:0 0 8px">Добро пожаловать, %(name)s!</h2>
+            <p style="color:#94a3b8;font-size:14px;line-height:1.6;margin:0 0 24px">
+              Вы отправили запрос коммерческого предложения на FulfillHub. Для вас автоматически создан личный кабинет — в нём вы сможете отслеживать статусы своих заявок.
+            </p>
+            <div style="background:#0f172a;border-radius:12px;padding:20px;margin-bottom:20px">
+              <p style="color:#64748b;font-size:12px;margin:0 0 12px;text-transform:uppercase;letter-spacing:0.05em">Данные для входа</p>
+              <div style="margin-bottom:10px">
+                <p style="color:#64748b;font-size:12px;margin:0 0 2px">Логин (email):</p>
+                <p style="color:#f59e0b;font-size:15px;font-weight:600;margin:0;font-family:monospace">%(email)s</p>
+              </div>
+              <div>
+                <p style="color:#64748b;font-size:12px;margin:0 0 2px">Временный пароль:</p>
+                <p style="color:#f59e0b;font-size:15px;font-weight:600;margin:0;font-family:monospace">%(password)s</p>
+              </div>
+            </div>
+            <p style="color:#94a3b8;font-size:13px;margin:0 0 20px">
+              Рекомендуем сменить пароль после первого входа.
+            </p>
+            <a href="https://fulfillhub.ru/auth" style="display:block;text-align:center;background:#f59e0b;color:#0f172a;font-weight:700;font-size:14px;padding:12px 24px;border-radius:10px;text-decoration:none">
+              Войти в личный кабинет →
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px;border-top:1px solid #334155;text-align:center">
+            <p style="color:#475569;font-size:11px;margin:0">© 2026 FulfillHub · %(email)s</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>""" % {'email': email, 'password': password, 'name': name or email}
+
 def registration_confirm_html(email: str) -> str:
     return """<!DOCTYPE html>
 <html>
@@ -534,19 +586,20 @@ def handle_list_approved():
 # ─── QUOTES ──────────────────────────────────────────────────────────────────
 
 def ensure_seller(cur, name, email, phone, company):
-    """Находит или создаёт пользователя-селлера и профиль продавца. Возвращает user_id или raises ValueError."""
+    """Находит или создаёт пользователя-селлера. Возвращает (user_id, temp_pw|None). Raises ValueError при конфликте ролей."""
     import secrets, hashlib
     email_esc = email.replace("'", "''")
     cur.execute("SELECT id, role FROM users WHERE email = '%s'" % email_esc)
     row = cur.fetchone()
+    temp_pw = None
     if row:
         user_id, role = row
         if role == 'fulfillment':
             raise ValueError('Этот email зарегистрирован как аккаунт фулфилмента. Используйте другой email для запроса КП.')
     else:
+        temp_pw = secrets.token_urlsafe(10)
         salt = secrets.token_hex(16)
-        pw = secrets.token_urlsafe(12)
-        h = hashlib.pbkdf2_hmac('sha256', pw.encode(), salt.encode(), 100000).hex()
+        h = hashlib.pbkdf2_hmac('sha256', temp_pw.encode(), salt.encode(), 100000).hex()
         pw_hash = "%s:%s" % (salt, h)
         cur.execute("""
             INSERT INTO users (email, password_hash, role, email_verified)
@@ -563,7 +616,7 @@ def ensure_seller(cur, name, email, phone, company):
         VALUES (%d, '%s', '%s', '%s')
         ON CONFLICT (user_id) DO UPDATE SET name = EXCLUDED.name, company = EXCLUDED.company, phone = EXCLUDED.phone, updated_at = NOW()
     """ % (user_id, name_esc, company_esc, phone_esc))
-    return user_id
+    return user_id, temp_pw
 
 def handle_send_quote(body):
     fulfillment_id = body.get('fulfillment_id')
@@ -590,7 +643,7 @@ def handle_send_quote(body):
         orders = int(body.get('orders_count', 0) or 0)
 
         # Авторегистрация / поиск селлера
-        seller_user_id = ensure_seller(cur, name, email, phone, body.get('company', ''))
+        seller_user_id, temp_pw = ensure_seller(cur, name, email, phone, body.get('company', ''))
 
         cur.execute("""
             INSERT INTO quote_requests (fulfillment_id, seller_id, sender_name, sender_company, sender_email, sender_phone, sku_count, orders_count, message, lead_price)
@@ -607,6 +660,13 @@ def handle_send_quote(body):
         """ % (lead_price, int(fulfillment_id)))
 
         conn.commit()
+
+        if temp_pw:
+            try:
+                send_email(email, 'Добро пожаловать на FulfillHub!', seller_welcome_html(email, temp_pw, name))
+            except Exception:
+                pass
+
         return resp(201, {'ok': True, 'id': qid, 'lead_price': lead_price})
     except ValueError as e:
         conn.rollback()
