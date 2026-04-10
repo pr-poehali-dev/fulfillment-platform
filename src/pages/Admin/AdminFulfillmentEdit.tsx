@@ -14,6 +14,29 @@ import {
 
 type EditTab = "info" | "services" | "pricing" | "photos";
 
+interface CheckItem {
+  label: string;
+  done: boolean;
+  tab: EditTab;
+  hint?: string;
+}
+
+function useReadinessCheck(form: Fulfillment): { items: CheckItem[]; score: number; ready: boolean } {
+  const items: CheckItem[] = [
+    { label: "Название компании", done: !!form.company_name?.trim(), tab: "info" },
+    { label: "Город", done: !!form.city?.trim(), tab: "info" },
+    { label: "Краткое описание", done: form.description?.trim().length >= 30, tab: "info", hint: "Минимум 30 символов" },
+    { label: "Схема работы (FBS/FBO/…)", done: form.work_schemes?.length > 0, tab: "services" },
+    { label: "Маркетплейсы", done: form.marketplaces?.length > 0, tab: "services" },
+    { label: "Хотя бы одна особенность", done: form.features?.length > 0, tab: "services" },
+    { label: "Стоимость хранения", done: !!form.storage_price?.toString().trim(), tab: "pricing" },
+    { label: "Стоимость сборки", done: !!form.assembly_price?.toString().trim(), tab: "pricing" },
+    { label: "Фотографии (хотя бы 1)", done: form.photos?.length > 0, tab: "photos", hint: "Фото склада или производства" },
+  ];
+  const score = items.filter((i) => i.done).length;
+  return { items, score, ready: score === items.length };
+}
+
 interface AdminFulfillmentEditProps {
   fulfillment: Fulfillment;
   onBack: () => void;
@@ -30,6 +53,7 @@ export default function AdminFulfillmentEdit({ fulfillment, onBack, onSaved }: A
   const fileRef = useRef<HTMLInputElement>(null);
 
   const st = STATUS_CFG[form.status] || STATUS_CFG.draft;
+  const readiness = useReadinessCheck(form);
   const inputCls = "w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/20";
 
   const set = (key: keyof Fulfillment, val: unknown) => setForm((f) => ({ ...f, [key]: val }));
@@ -138,6 +162,9 @@ export default function AdminFulfillmentEdit({ fulfillment, onBack, onSaved }: A
     { id: "photos", label: "Фото", icon: "Camera" },
   ];
 
+  const tabMissingCount = (tabId: EditTab) =>
+    readiness.items.filter((i) => i.tab === tabId && !i.done).length;
+
   return (
     <div className="max-w-4xl space-y-5">
       {/* Topbar */}
@@ -180,17 +207,25 @@ export default function AdminFulfillmentEdit({ fulfillment, onBack, onSaved }: A
       {/* Edit tabs */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="border-b border-gray-100 flex overflow-x-auto">
-          {EDIT_TABS.map((t) => (
-            <button key={t.id} onClick={() => setEditTab(t.id)}
-              className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold font-golos whitespace-nowrap transition-all border-b-2 ${
-                editTab === t.id
-                  ? "border-navy-900 text-navy-900"
-                  : "border-transparent text-gray-400 hover:text-navy-700"
-              }`}>
-              <Icon name={t.icon as "Building2"} size={14} />
-              {t.label}
-            </button>
-          ))}
+          {EDIT_TABS.map((t) => {
+            const missing = tabMissingCount(t.id);
+            return (
+              <button key={t.id} onClick={() => setEditTab(t.id)}
+                className={`relative flex items-center gap-2 px-5 py-3.5 text-sm font-semibold font-golos whitespace-nowrap transition-all border-b-2 ${
+                  editTab === t.id
+                    ? "border-navy-900 text-navy-900"
+                    : "border-transparent text-gray-400 hover:text-navy-700"
+                }`}>
+                <Icon name={t.icon as "Building2"} size={14} />
+                {t.label}
+                {missing > 0 && form.status !== "pending" && form.status !== "approved" && (
+                  <span className="w-4 h-4 rounded-full bg-amber-400 text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                    {missing}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         <div className="p-5">
@@ -372,6 +407,68 @@ export default function AdminFulfillmentEdit({ fulfillment, onBack, onSaved }: A
           )}
         </div>
       </div>
+
+      {/* Readiness checklist — показываем только для черновиков и отклонённых */}
+      {(form.status === "draft" || form.status === "rejected") && (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="font-golos font-bold text-navy-900 text-sm flex items-center gap-2">
+              <Icon name="ClipboardCheck" size={15} className="text-navy-600" />
+              Готовность к публикации
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-28 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${readiness.ready ? "bg-emerald-500" : "bg-amber-400"}`}
+                  style={{ width: `${(readiness.score / readiness.items.length) * 100}%` }}
+                />
+              </div>
+              <span className={`text-xs font-bold font-golos ${readiness.ready ? "text-emerald-600" : "text-amber-600"}`}>
+                {readiness.score}/{readiness.items.length}
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            {readiness.items.map((item) => (
+              <button
+                key={item.label}
+                onClick={() => !item.done && setEditTab(item.tab)}
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors ${
+                  item.done
+                    ? "bg-emerald-50 cursor-default"
+                    : "bg-amber-50 hover:bg-amber-100 cursor-pointer"
+                }`}
+              >
+                <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${item.done ? "bg-emerald-500" : "bg-amber-200"}`}>
+                  {item.done
+                    ? <Icon name="Check" size={10} className="text-white" />
+                    : <Icon name="Minus" size={10} className="text-amber-600" />
+                  }
+                </div>
+                <div className="min-w-0">
+                  <span className={`text-xs font-medium font-golos ${item.done ? "text-emerald-700" : "text-amber-800"}`}>
+                    {item.label}
+                  </span>
+                  {!item.done && item.hint && (
+                    <span className="text-xs text-amber-600 font-ibm block leading-none mt-0.5">{item.hint}</span>
+                  )}
+                </div>
+                {!item.done && (
+                  <Icon name="ArrowRight" size={12} className="text-amber-500 ml-auto flex-shrink-0" />
+                )}
+              </button>
+            ))}
+          </div>
+          {readiness.ready && (
+            <div className="mt-3 flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+              <Icon name="CheckCircle" size={14} className="text-emerald-600 flex-shrink-0" />
+              <p className="text-xs text-emerald-700 font-golos font-semibold">
+                Всё заполнено — можно отправлять на модерацию!
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Action bar */}
       <div className="sticky bottom-0 bg-gray-50/95 backdrop-blur-sm py-4 -mx-4 md:-mx-6 px-4 md:px-6 border-t border-gray-100">
