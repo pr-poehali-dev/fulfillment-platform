@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import type { Partner } from "./data";
 import api from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 const inputCls = "w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/20";
 
@@ -10,6 +12,8 @@ export function RequestQuoteModal({ partners, onClose }: {
   partners: Partner[];
   onClose: () => void;
 }) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
   const [email, setEmail] = useState("");
@@ -143,12 +147,13 @@ export function RequestQuoteModal({ partners, onClose }: {
                   </div>
                 ))}
               </div>
-              <a href="/seller">
-                <Button className="w-full bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos h-9 text-sm">
-                  <Icon name="ArrowRight" size={14} className="mr-1.5" />
-                  Перейти в кабинет
-                </Button>
-              </a>
+              <Button
+                onClick={() => { onClose(); navigate(user?.role === "seller" ? "/seller" : "/auth"); }}
+                className="w-full bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos h-9 text-sm"
+              >
+                <Icon name="ArrowRight" size={14} className="mr-1.5" />
+                {user?.role === "seller" ? "Перейти в кабинет" : "Войти в кабинет"}
+              </Button>
             </div>
 
             <Button variant="outline" onClick={onClose} className="border-gray-200 text-gray-500 hover:bg-gray-50 font-golos text-sm">
