@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/lib/auth";
+import { useAuthGuard } from "@/lib/webapp/useAuthGuard";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import SupportSection from "@/components/SupportSection";
@@ -141,9 +142,7 @@ export default function Seller() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [changePwOpen, setChangePwOpen] = useState(false);
 
-  useEffect(() => {
-    if (!loading && !user) navigate("/auth", { replace: true });
-  }, [user, loading, navigate]);
+  useAuthGuard("seller");
 
   const loadQuotes = useCallback(async () => {
     try {

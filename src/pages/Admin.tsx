@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/lib/auth";
+import { useAuthGuard } from "@/lib/webapp/useAuthGuard";
 import api from "@/lib/api";
 import { toast } from "sonner";
 
@@ -42,10 +43,7 @@ export default function Admin() {
   const [resendCooldown, setResendCooldown] = useState(0);
 
   // ─── Auth guard ───────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    if (!loading && !user) navigate("/auth", { replace: true });
-  }, [user, loading, navigate]);
+  useAuthGuard("admin");
 
   // ─── Load owner profile ───────────────────────────────────────────────────
 
