@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { type Partner } from "./data";
 import FilterTopBar from "./FilterTopBar";
 import FilterGrid from "./FilterGrid";
 import FilterActiveChips from "./FilterActiveChips";
+import Icon from "@/components/ui/icon";
 
 export interface FilterState {
   selectedMp: string[];
@@ -109,68 +111,142 @@ export default function CatalogFilterPanel(props: CatalogFilterPanelProps) {
     setCityDropdownOpen(false);
   };
 
-  return (
-    <div className="sticky top-14 z-40 bg-white border-b border-gray-100 shadow-sm">
-      <FilterTopBar
-        selectedMp={selectedMp} toggleArr={toggleArr} setSelectedMp={setSelectedMp}
-        filtersOpen={filtersOpen} setFiltersOpen={setFiltersOpen}
-        activeFilterCount={activeFilterCount}
-        showFavoritesOnly={showFavoritesOnly} onToggleFavoritesFilter={onToggleFavoritesFilter}
-        sortBy={sortBy} setSortBy={setSortBy}
-        filtered={filtered} partners={partners}
-        onRequestQuoteMany={onRequestQuoteMany}
-        compareList={compareList} onOpenCompare={onOpenCompare}
-        clearAll={clearAll}
-      />
+  // Блокируем скролл body когда bottom sheet открыт на мобилке
+  useEffect(() => {
+    if (filtersOpen && window.innerWidth < 1024) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [filtersOpen]);
 
+  const filterGridProps = {
+    toggleArr,
+    selectedMp, setSelectedMp,
+    selectedSchemes, setSelectedSchemes,
+    selectedFeatures, setSelectedFeatures,
+    selectedSpecs, setSelectedSpecs,
+    selectedPackaging, setSelectedPackaging,
+    selectedCities, setSelectedCities,
+    cityInput, setCityInput,
+    cityDropdownOpen, setCityDropdownOpen,
+    citySuggestions, addCity,
+    storageFrom, setStorageFrom,
+    storageTo, setStorageTo,
+    assemblyFrom, setAssemblyFrom,
+    assemblyTo, setAssemblyTo,
+    deliveryFrom, setDeliveryFrom,
+    deliveryTo, setDeliveryTo,
+    areaFrom, setAreaFrom,
+    areaTo, setAreaTo,
+    uniqueCerts, selectedCerts, setSelectedCerts,
+    minRating, setMinRating,
+  };
+
+  const filterChipsProps = {
+    selectedMp, setSelectedMp,
+    selectedSchemes, setSelectedSchemes,
+    selectedFeatures, setSelectedFeatures,
+    selectedSpecs, setSelectedSpecs,
+    selectedPackaging, setSelectedPackaging,
+    selectedCities, setSelectedCities,
+    selectedCerts, setSelectedCerts,
+    numStorageFrom, numStorageTo, setStorageFrom, setStorageTo,
+    numAssemblyFrom, numAssemblyTo, setAssemblyFrom, setAssemblyTo,
+    numDeliveryFrom, numDeliveryTo, setDeliveryFrom, setDeliveryTo,
+    numAreaFrom, numAreaTo, setAreaFrom, setAreaTo,
+    minRating, setMinRating,
+    toggleArr,
+  };
+
+  return (
+    <>
+      {/* ── Sticky top bar (всегда) ── */}
+      <div className="sticky top-14 z-40 bg-white border-b border-gray-100 shadow-sm">
+        <FilterTopBar
+          selectedMp={selectedMp} toggleArr={toggleArr} setSelectedMp={setSelectedMp}
+          filtersOpen={filtersOpen} setFiltersOpen={setFiltersOpen}
+          activeFilterCount={activeFilterCount}
+          showFavoritesOnly={showFavoritesOnly} onToggleFavoritesFilter={onToggleFavoritesFilter}
+          sortBy={sortBy} setSortBy={setSortBy}
+          filtered={filtered} partners={partners}
+          onRequestQuoteMany={onRequestQuoteMany}
+          compareList={compareList} onOpenCompare={onOpenCompare}
+          clearAll={clearAll}
+        />
+
+        {/* ── Десктоп: раскрывается вниз под топбаром ── */}
+        {filtersOpen && (
+          <div className="hidden lg:block border-t border-gray-100 bg-gray-50 max-h-[calc(100vh-120px)] overflow-y-auto overscroll-contain">
+            <FilterGrid {...filterGridProps} />
+            {activeFilterCount > 0 && <FilterActiveChips {...filterChipsProps} />}
+          </div>
+        )}
+      </div>
+
+      {/* ── Мобилка: bottom sheet ── */}
       {filtersOpen && (
-        <div className="border-t border-gray-100 bg-gray-50 max-h-[calc(100vh-120px)] overflow-y-auto overscroll-contain">
-          <FilterGrid
-            toggleArr={toggleArr}
-            selectedMp={selectedMp} setSelectedMp={setSelectedMp}
-            selectedSchemes={selectedSchemes} setSelectedSchemes={setSelectedSchemes}
-            selectedFeatures={selectedFeatures} setSelectedFeatures={setSelectedFeatures}
-            selectedSpecs={selectedSpecs} setSelectedSpecs={setSelectedSpecs}
-            selectedPackaging={selectedPackaging} setSelectedPackaging={setSelectedPackaging}
-            selectedCities={selectedCities} setSelectedCities={setSelectedCities}
-            cityInput={cityInput} setCityInput={setCityInput}
-            cityDropdownOpen={cityDropdownOpen} setCityDropdownOpen={setCityDropdownOpen}
-            citySuggestions={citySuggestions} addCity={addCity}
-            storageFrom={storageFrom} setStorageFrom={setStorageFrom}
-            storageTo={storageTo} setStorageTo={setStorageTo}
-            assemblyFrom={assemblyFrom} setAssemblyFrom={setAssemblyFrom}
-            assemblyTo={assemblyTo} setAssemblyTo={setAssemblyTo}
-            deliveryFrom={deliveryFrom} setDeliveryFrom={setDeliveryFrom}
-            deliveryTo={deliveryTo} setDeliveryTo={setDeliveryTo}
-            areaFrom={areaFrom} setAreaFrom={setAreaFrom}
-            areaTo={areaTo} setAreaTo={setAreaTo}
-            uniqueCerts={uniqueCerts} selectedCerts={selectedCerts} setSelectedCerts={setSelectedCerts}
-            minRating={minRating} setMinRating={setMinRating}
+        <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end">
+          {/* Затемнение фона */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setFiltersOpen(false)}
           />
 
-          {activeFilterCount > 0 && (
-            <FilterActiveChips
-              selectedMp={selectedMp} setSelectedMp={setSelectedMp}
-              selectedSchemes={selectedSchemes} setSelectedSchemes={setSelectedSchemes}
-              selectedFeatures={selectedFeatures} setSelectedFeatures={setSelectedFeatures}
-              selectedSpecs={selectedSpecs} setSelectedSpecs={setSelectedSpecs}
-              selectedPackaging={selectedPackaging} setSelectedPackaging={setSelectedPackaging}
-              selectedCities={selectedCities} setSelectedCities={setSelectedCities}
-              selectedCerts={selectedCerts} setSelectedCerts={setSelectedCerts}
-              numStorageFrom={numStorageFrom} numStorageTo={numStorageTo}
-              setStorageFrom={setStorageFrom} setStorageTo={setStorageTo}
-              numAssemblyFrom={numAssemblyFrom} numAssemblyTo={numAssemblyTo}
-              setAssemblyFrom={setAssemblyFrom} setAssemblyTo={setAssemblyTo}
-              numDeliveryFrom={numDeliveryFrom} numDeliveryTo={numDeliveryTo}
-              setDeliveryFrom={setDeliveryFrom} setDeliveryTo={setDeliveryTo}
-              numAreaFrom={numAreaFrom} numAreaTo={numAreaTo}
-              setAreaFrom={setAreaFrom} setAreaTo={setAreaTo}
-              minRating={minRating} setMinRating={setMinRating}
-              toggleArr={toggleArr}
-            />
-          )}
+          {/* Шторка */}
+          <div className="relative bg-white rounded-t-2xl shadow-2xl flex flex-col max-h-[90vh] animate-slide-up">
+            {/* Ручка */}
+            <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+              <div className="w-10 h-1 rounded-full bg-gray-300" />
+            </div>
+
+            {/* Заголовок */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 flex-shrink-0">
+              <span className="font-golos font-bold text-navy-900 text-base">
+                Фильтры
+                {activeFilterCount > 0 && (
+                  <span className="ml-2 bg-gold-500 text-navy-950 text-xs font-bold px-2 py-0.5 rounded-full">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </span>
+              <div className="flex items-center gap-2">
+                {activeFilterCount > 0 && (
+                  <button
+                    onClick={clearAll}
+                    className="text-xs text-gray-400 hover:text-red-500 font-ibm transition-colors"
+                  >
+                    Сбросить
+                  </button>
+                )}
+                <button
+                  onClick={() => setFiltersOpen(false)}
+                  className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors"
+                >
+                  <Icon name="X" size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Скроллируемый контент */}
+            <div className="flex-1 overflow-y-auto overscroll-contain">
+              <FilterGrid {...filterGridProps} />
+              {activeFilterCount > 0 && <FilterActiveChips {...filterChipsProps} />}
+            </div>
+
+            {/* Кнопка «Показать» */}
+            <div className="flex-shrink-0 p-4 border-t border-gray-100 bg-white">
+              <button
+                onClick={() => setFiltersOpen(false)}
+                className="w-full bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos rounded-xl h-12 transition-colors"
+              >
+                Показать {filtered.length} {filtered.length === 1 ? "результат" : filtered.length < 5 ? "результата" : "результатов"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
