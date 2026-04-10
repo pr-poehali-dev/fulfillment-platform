@@ -368,24 +368,62 @@ export function RequestQuoteModal({ partners, onClose }: {
 
         {/* Body */}
         {sent ? (
-          <div className="p-8 text-center flex-1 flex flex-col items-center justify-center">
-            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
-              <Icon name="CheckCircle" size={32} className="text-emerald-600" />
+          <div className="flex-1 overflow-auto p-6 flex flex-col gap-5">
+            {/* Success header */}
+            <div className="text-center pt-2">
+              <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mb-3 mx-auto">
+                <Icon name="CheckCircle" size={28} className="text-emerald-600" />
+              </div>
+              <h3 className="font-golos font-black text-xl text-navy-900 mb-1">Запрос отправлен!</h3>
+              <p className="text-sm text-gray-500 font-ibm max-w-xs mx-auto">
+                {partners.length === 1 ? "Партнёр" : "Партнёры"} свяжутся с вами в течение 24 часов на{" "}
+                <strong className="text-navy-900">{email}</strong>
+              </p>
             </div>
-            <h3 className="font-golos font-black text-2xl text-navy-900 mb-2">Запрос отправлен!</h3>
-            <p className="text-sm text-gray-500 font-ibm mb-4 max-w-xs">
-              {partners.length === 1 ? "Партнёр" : "Партнёры"} свяжутся с вами в течение 24 часов на <strong className="text-navy-900">{email}</strong>
-            </p>
-            <div className="w-full max-w-xs space-y-1.5 mb-5">
+
+            {/* Partners list */}
+            <div className="space-y-1.5">
               {partners.map((p) => (
                 <div key={p.id} className="flex items-center gap-2 bg-emerald-50 rounded-lg px-3 py-2 border border-emerald-100">
                   <span className="text-lg">{p.logo}</span>
-                  <span className="text-xs font-ibm text-gray-700 flex-1 text-left">{p.name}</span>
+                  <span className="text-xs font-ibm text-gray-700 flex-1">{p.name}</span>
                   <Icon name="Check" size={13} className="text-emerald-600" />
                 </div>
               ))}
             </div>
-            <Button onClick={onClose} className="bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos px-7">
+
+            {/* Cabinet promo */}
+            <div className="bg-gradient-to-br from-navy-50 to-gold-50/30 border border-navy-100 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-7 h-7 bg-navy-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Icon name="LayoutDashboard" size={14} className="text-gold-400" />
+                </div>
+                <span className="font-golos font-black text-navy-900 text-sm">Личный кабинет селлера</span>
+              </div>
+              <div className="grid grid-cols-1 gap-2 mb-4">
+                {[
+                  { icon: "Bell",        text: "Уведомления о статусах ваших заявок" },
+                  { icon: "Eye",         text: "Видно, когда фулфилмент просмотрел запрос" },
+                  { icon: "FileText",    text: "«Отправлено КП» — узнаете о готовом предложении" },
+                  { icon: "History",     text: "История всех ваших запросов в одном месте" },
+                ].map((item) => (
+                  <div key={item.text} className="flex items-center gap-2">
+                    <div className="w-5 h-5 bg-white rounded flex items-center justify-center flex-shrink-0 border border-navy-100">
+                      <Icon name={item.icon as "Bell"} size={11} className="text-navy-600" />
+                    </div>
+                    <span className="text-xs text-gray-600 font-ibm">{item.text}</span>
+                  </div>
+                ))}
+              </div>
+              <a href="/seller">
+                <Button className="w-full bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos h-9 text-sm">
+                  <Icon name="ArrowRight" size={14} className="mr-1.5" />
+                  Перейти в кабинет
+                </Button>
+              </a>
+            </div>
+
+            <Button variant="outline" onClick={onClose} className="border-gray-200 text-gray-500 hover:bg-gray-50 font-golos text-sm">
               Закрыть
             </Button>
           </div>
