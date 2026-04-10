@@ -72,7 +72,10 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
     setError(""); setSubmitting(true);
     try {
       const data = await api.telegramAuth(tgUser as Record<string, string | number>);
-      setToken(data.token); await refresh();
+      setToken(data.token);
+      await refresh();
+      onClose();
+      navigate(data.user.role === "seller" ? "/seller" : "/admin", { replace: true });
     } catch (err: unknown) {
       const e = err as { message?: string; detail?: string };
       setError(e.message || e.detail || "Ошибка входа через Telegram");
@@ -85,7 +88,10 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
     setSubmitting(true);
     try {
       const data = await api.login(email.trim(), password);
-      setToken(data.token); await refresh();
+      setToken(data.token);
+      await refresh();
+      onClose();
+      navigate(data.user.role === "seller" ? "/seller" : "/admin", { replace: true });
     } catch (err: unknown) {
       const e = err as { message?: string; detail?: string };
       setError(e.message || e.detail || "Неверный email или пароль");
