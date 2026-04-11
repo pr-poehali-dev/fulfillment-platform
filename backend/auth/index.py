@@ -25,25 +25,34 @@ def get_db():
 def resp(status, body):
     return {'statusCode': status, 'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'}, 'body': json.dumps(body, default=str)}
 
-def send_email(to: str, subject: str, html: str):
+def _smtp_send(smtp_user: str, smtp_pass: str, from_addr: str, to, subject: str, html: str, reply_to: str = ''):
+    recipients = [to] if isinstance(to, str) else list(to)
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = subject
+    msg['From'] = 'FulfillHub <%s>' % from_addr
+    msg['To'] = ', '.join(recipients)
+    if reply_to:
+        msg['Reply-To'] = reply_to
+    msg.attach(MIMEText(html, 'html', 'utf-8'))
+    with smtplib.SMTP('mail.hosting.reg.ru', 587) as s:
+        s.ehlo()
+        s.starttls()
+        s.login(smtp_user, smtp_pass)
+        s.sendmail(smtp_user, recipients, msg.as_string())
+
+def send_noreply(to: str, subject: str, html: str):
+    user = os.environ.get('SMTP_NOREPLY_EMAIL', os.environ.get('SMTP_EMAIL', ''))
+    password = os.environ.get('SMTP_NOREPLY_PASSWORD', os.environ.get('SMTP_PASSWORD', ''))
+    if not user or not password:
+        return
+    _smtp_send(user, password, user, to, subject, html)
+
+def send_email(to, subject: str, html: str, reply_to: str = ''):
     user = os.environ.get('SMTP_EMAIL', '')
     password = os.environ.get('SMTP_PASSWORD', '')
     if not user or not password:
         return
-
-    recipients = [to] if isinstance(to, str) else to
-
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = 'FulfillHub <%s>' % user
-    msg['To'] = ', '.join(recipients) if isinstance(recipients, list) else recipients
-    msg.attach(MIMEText(html, 'html', 'utf-8'))
-
-    with smtplib.SMTP('mail.hosting.reg.ru', 587) as s:
-        s.ehlo()
-        s.starttls()
-        s.login(user, password)
-        s.sendmail(user, recipients, msg.as_string())
+    _smtp_send(user, password, user, to, subject, html, reply_to)
 
 def verify_email_html(code: str, email: str) -> str:
     return f"""<!DOCTYPE html>
@@ -287,8 +296,8 @@ def handle_register(body):
 
         conn.commit()
         try:
-            send_email(email, 'Подтвердите email — FulfillHub', verify_email_html(code, email))
-            send_email(email, 'Заявка принята — FulfillHub', registration_confirm_html(email))
+            send_noreply(email, 'Подтвердите email — FulfillHub', verify_email_html(code, email))
+            send_noreply(email, 'Заявка принята — FulfillHub', registration_confirm_html(email))
         except Exception:
             pass
         return resp(201, {
@@ -382,7 +391,7 @@ def handle_resend_code(token):
         """ % (user_id, code, expires))
         conn.commit()
         try:
-            send_email(email, 'Подтвердите email — FulfillHub', verify_email_html(code, email))
+            send_noreply(email, 'Подтвердите email — FulfillHub', verify_email_html(code, email))
         except Exception:
             pass
         return resp(200, {'ok': True})
@@ -509,6 +518,27 @@ def handle_register_from_form(body):
         """ % (user_id, code, code_expires))
 
         conn.commit()
+
+        try:
+            contact_name = body.get('contactName', '')
+            contact_phone = body.get('contactPhone', '')
+            company = body.get('companyName', '')
+            city = body.get('city', '')
+            partner_html = """<html><body style="font-family:Arial,sans-serif;background:#f8fafc;margin:0;padding:20px">
+<div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden">
+<div style="background:#0f172a;padding:20px 28px"><span style="color:#f59e0b;font-size:18px;font-weight:800">FulfillHub</span>
+<span style="color:#64748b;font-size:13px;margin-left:12px">Новая заявка фулфилмента</span></div>
+<div style="padding:28px">
+<p style="margin:0 0 8px"><b>Компания:</b> %s</p>
+<p style="margin:0 0 8px"><b>Город:</b> %s</p>
+<p style="margin:0 0 8px"><b>Контакт:</b> %s</p>
+<p style="margin:0 0 8px"><b>Email:</b> %s</p>
+<p style="margin:0 0 8px"><b>Телефон:</b> %s</p>
+</div></div></body></html>""" % (company, city, contact_name, email, contact_phone)
+            send_email('partners@fulfillhub.ru', 'Новая заявка фулфилмента — %s' % company, partner_html, reply_to=email)
+        except Exception:
+            pass
+
         return resp(201, {
             'token': token,
             'temp_password': temp_pw,
@@ -699,7 +729,7 @@ def handle_forgot_password(body):
         """ % (user_id, code, expires))
         conn.commit()
         try:
-            send_email(email, 'Восстановление пароля — FulfillHub', reset_password_html(code, email))
+            send_noreply(email, 'Восстановление пароля — FulfillHub', reset_password_html(code, email))
         except Exception:
             pass
         return resp(200, {'ok': True})
@@ -821,10 +851,8 @@ def handle_support_request(body):
 </body>
 </html>""" % {'name': name, 'email': email, 'message': message.replace('\n', '<br>')}
 
-    smtp_email = os.environ.get('SMTP_EMAIL', '')
-    recipients = list({smtp_email, 'support@fulfillhub.ru'}) if smtp_email else ['support@fulfillhub.ru']
     try:
-        send_email(recipients, 'Обращение в поддержку от %s' % name, html)
+        send_email('support@fulfillhub.ru', 'Обращение в поддержку от %s' % name, html, reply_to=email)
     except Exception:
         pass
 
@@ -866,7 +894,7 @@ def handle_change_password(body, token):
         conn.commit()
 
         try:
-            send_email(email, 'Пароль успешно изменён — FulfillHub', password_changed_html(email))
+            send_noreply(email, 'Пароль успешно изменён — FulfillHub', password_changed_html(email))
         except Exception:
             pass
 

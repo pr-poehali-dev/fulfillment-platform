@@ -21,21 +21,34 @@ CORS_HEADERS = {
 def get_db():
     return psycopg2.connect(os.environ['DATABASE_URL'])
 
-def send_email(to: str, subject: str, html: str):
-    user = os.environ.get('SMTP_EMAIL', '')
-    password = os.environ.get('SMTP_PASSWORD', '')
-    if not user or not password:
-        return
+def _smtp_send(smtp_user, smtp_pass, from_addr, to, subject, html, reply_to=''):
+    recipients = [to] if isinstance(to, str) else list(to)
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
-    msg['From'] = 'FulfillHub <noreply@fulfillhub.ru>'
-    msg['To'] = to
+    msg['From'] = 'FulfillHub <%s>' % from_addr
+    msg['To'] = ', '.join(recipients)
+    if reply_to:
+        msg['Reply-To'] = reply_to
     msg.attach(MIMEText(html, 'html', 'utf-8'))
     with smtplib.SMTP('mail.hosting.reg.ru', 587) as s:
         s.ehlo()
         s.starttls()
-        s.login(user, password)
-        s.sendmail(user, to, msg.as_string())
+        s.login(smtp_user, smtp_pass)
+        s.sendmail(smtp_user, recipients, msg.as_string())
+
+def send_noreply(to, subject, html):
+    user = os.environ.get('SMTP_NOREPLY_EMAIL', os.environ.get('SMTP_EMAIL', ''))
+    password = os.environ.get('SMTP_NOREPLY_PASSWORD', os.environ.get('SMTP_PASSWORD', ''))
+    if not user or not password:
+        return
+    _smtp_send(user, password, user, to, subject, html)
+
+def send_email(to, subject, html, reply_to=''):
+    user = os.environ.get('SMTP_EMAIL', '')
+    password = os.environ.get('SMTP_PASSWORD', '')
+    if not user or not password:
+        return
+    _smtp_send(user, password, user, to, subject, html, reply_to)
 
 def seller_welcome_html(email: str, password: str, name: str) -> str:
     return """<!DOCTYPE html>
@@ -704,7 +717,7 @@ def handle_send_quote(body):
 
         if temp_pw:
             try:
-                send_email(email, 'Добро пожаловать на FulfillHub!', seller_welcome_html(email, temp_pw, name))
+                send_noreply(email, 'Добро пожаловать на FulfillHub!', seller_welcome_html(email, temp_pw, name))
             except Exception:
                 pass
 
@@ -1090,5 +1103,33 @@ def handler(event, context):
             return handle_admin_set_lead_price(body, token)
         if action == 'admin-mark-paid':
             return handle_admin_mark_paid(body, token)
+        if action == 'send-quick-contact':
+            return handle_quick_contact(body)
 
     return resp(404, {'error': 'Неизвестный маршрут'})
+
+
+def handle_quick_contact(body):
+    """Быстрая заявка от фулфилмента — отправка на partners@fulfillhub.ru"""
+    name = body.get('name', '').strip()
+    contact = body.get('contact', '').strip()
+    if not name or not contact:
+        return resp(400, {'error': 'Заполните все поля'})
+
+    html = """<html><body style="font-family:Arial,sans-serif;background:#f8fafc;margin:0;padding:20px">
+<div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden">
+<div style="background:#0f172a;padding:20px 28px"><span style="color:#f59e0b;font-size:18px;font-weight:800">FulfillHub</span>
+<span style="color:#64748b;font-size:13px;margin-left:12px">Быстрый контакт</span></div>
+<div style="padding:28px">
+<p style="margin:0 0 12px"><b>Имя:</b> %s</p>
+<p style="margin:0 0 12px"><b>Контакт (телефон/Telegram):</b> %s</p>
+</div>
+<div style="padding:16px 28px;border-top:1px solid #e2e8f0;text-align:center"><span style="color:#94a3b8;font-size:11px">© 2026 FulfillHub</span></div>
+</div></body></html>""" % (name, contact)
+
+    try:
+        send_email('partners@fulfillhub.ru', 'Быстрый контакт от %s' % name, html)
+    except Exception:
+        pass
+
+    return resp(200, {'ok': True})
