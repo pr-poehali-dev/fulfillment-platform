@@ -28,9 +28,11 @@ def resp(status, body):
 SMTP_LOGIN = 'noreply@fulfillhub.ru'
 
 def _smtp_send(to, subject: str, html: str, reply_to: str = ''):
+    import sys
     password = os.environ.get('SMTP_PASSWORD', '')
     if not password:
-        print('SMTP: password not set')
+        sys.stderr.write('SMTP: password not set\n')
+        sys.stderr.flush()
         return False
     recipients = [to] if isinstance(to, str) else list(to)
     msg = MIMEMultipart('alternative')
@@ -41,15 +43,17 @@ def _smtp_send(to, subject: str, html: str, reply_to: str = ''):
         msg['Reply-To'] = reply_to
     msg.attach(MIMEText(html, 'html', 'utf-8'))
     try:
-        with smtplib.SMTP('mail.hosting.reg.ru', 587) as s:
+        with smtplib.SMTP('mail.hosting.reg.ru', 587, timeout=15) as s:
             s.ehlo()
             s.starttls()
             s.login(SMTP_LOGIN, password)
             s.sendmail(SMTP_LOGIN, recipients, msg.as_string())
-        print('SMTP: sent to %s' % recipients)
+        sys.stderr.write('SMTP OK: sent to %s (subject: %s)\n' % (recipients, subject))
+        sys.stderr.flush()
         return True
     except Exception as e:
-        print('SMTP error: %s' % str(e))
+        sys.stderr.write('SMTP ERROR: %s | to=%s | login=%s\n' % (repr(e), recipients, SMTP_LOGIN))
+        sys.stderr.flush()
         return False
 
 def send_noreply(to: str, subject: str, html: str):
