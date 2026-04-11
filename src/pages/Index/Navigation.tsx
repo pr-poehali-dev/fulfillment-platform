@@ -124,7 +124,7 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
 
 // ─── HERO (COMPACT) ──────────────────────────────────────────────────────────
 
-export function HeroSection({ setActive }: { setActive: (s: string) => void }) {
+export function HeroSection({ setActive, onOpenQuiz }: { setActive: (s: string) => void; onOpenQuiz: () => void }) {
   return (
     <section id="hero" className="relative flex items-center overflow-hidden" style={{ minHeight: "38vh" }}>
       <div className="absolute inset-0 bg-navy-gradient" />
@@ -154,8 +154,8 @@ export function HeroSection({ setActive }: { setActive: (s: string) => void }) {
           Сравнивайте тарифы, фильтруйте по нужным услугам и выбирайте фулфилмент под ваш товар
         </p>
         <div className="flex flex-wrap gap-2 opacity-0 animate-fade-in delay-300">
-          <Button size="sm" className="bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold h-9 px-5" onClick={() => setActive("catalog")}>
-            <Icon name="Search" size={15} className="mr-1.5" />Найти партнёра
+          <Button size="sm" className="bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold h-9 px-5" onClick={onOpenQuiz}>
+            <Icon name="Sparkles" size={15} className="mr-1.5" />Подобрать фулфилмент за 3 минуты
           </Button>
           <a href="/for-fulfillment">
             <Button size="sm" variant="outline" className="border-gold-500/40 text-gold-400 bg-transparent hover:bg-gold-500/10 h-9 px-4">

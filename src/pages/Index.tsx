@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Navbar, HeroSection, Footer } from "./Index/Navigation";
+import QuizForSellers from "./Index/QuizForSellers";
 import { CatalogSection, ComparePage } from "./Index/Catalog";
 import { ContactsSection } from "./Index/Calculator";
 import { PartnerDetailModal, RequestQuoteModal } from "./Index/Modals";
@@ -85,6 +86,7 @@ export default function Index() {
   const [detailPartner, setDetailPartner] = useState<Partner | null>(null);
   const [quotePartners, setQuotePartners] = useState<Partner[] | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [quizOpen, setQuizOpen] = useState(false);
 
   const { favorites, toggle: toggleFavorite, has: isFavorite } = useFavorites();
 
@@ -121,7 +123,7 @@ export default function Index() {
         onOpenFavorites={handleOpenFavorites}
       />
       <div className="pt-14">
-        <HeroSection setActive={handleSetActive} />
+        <HeroSection setActive={handleSetActive} onOpenQuiz={() => setQuizOpen(true)} />
         <CatalogSection
           setActive={handleSetActive}
           compareList={compareList}
@@ -166,6 +168,8 @@ export default function Index() {
           onClose={() => setQuotePartners(null)}
         />
       )}
+
+      <QuizForSellers open={quizOpen} onClose={() => setQuizOpen(false)} />
     </div>
   );
 }
