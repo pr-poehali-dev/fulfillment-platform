@@ -27,12 +27,12 @@ def resp(status, body):
 
 SMTP_LOGIN = 'noreply@fulfillhub.ru'
 
+LAST_SMTP_ERROR = {'err': None}
+
 def _smtp_send(to, subject: str, html: str, reply_to: str = ''):
-    import sys
     password = os.environ.get('SMTP_PASSWORD', '')
     if not password:
-        sys.stderr.write('SMTP: password not set\n')
-        sys.stderr.flush()
+        LAST_SMTP_ERROR['err'] = 'SMTP_PASSWORD not set'
         return False
     recipients = [to] if isinstance(to, str) else list(to)
     msg = MIMEMultipart('alternative')
@@ -48,12 +48,10 @@ def _smtp_send(to, subject: str, html: str, reply_to: str = ''):
             s.starttls()
             s.login(SMTP_LOGIN, password)
             s.sendmail(SMTP_LOGIN, recipients, msg.as_string())
-        sys.stderr.write('SMTP OK: sent to %s (subject: %s)\n' % (recipients, subject))
-        sys.stderr.flush()
+        LAST_SMTP_ERROR['err'] = None
         return True
     except Exception as e:
-        sys.stderr.write('SMTP ERROR: %s | to=%s | login=%s\n' % (repr(e), recipients, SMTP_LOGIN))
-        sys.stderr.flush()
+        LAST_SMTP_ERROR['err'] = '%s: %s' % (type(e).__name__, str(e))
         return False
 
 def send_noreply(to: str, subject: str, html: str):
@@ -859,12 +857,9 @@ def handle_support_request(body):
 </body>
 </html>""" % {'name': name, 'email': email, 'message': message.replace('\n', '<br>')}
 
-    try:
-        send_email('support@fulfillhub.ru', 'Обращение в поддержку от %s' % name, html, reply_to=email)
-    except Exception:
-        pass
+    send_email('support@fulfillhub.ru', 'Обращение в поддержку от %s' % name, html, reply_to=email)
 
-    return resp(200, {'ok': True})
+    return resp(200, {'ok': True, 'smtp_debug': LAST_SMTP_ERROR['err']})
 
 def handle_change_password(body, token):
     """Смена пароля авторизованным пользователем"""
