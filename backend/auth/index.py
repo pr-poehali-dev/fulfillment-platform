@@ -859,7 +859,7 @@ def handle_support_request(body):
 
     send_email('support@fulfillhub.ru', 'Обращение в поддержку от %s' % name, html, reply_to=email)
 
-    return resp(200, {'ok': True, 'smtp_debug': LAST_SMTP_ERROR['err']})
+    return resp(200, {'ok': True})
 
 def handle_change_password(body, token):
     """Смена пароля авторизованным пользователем"""
