@@ -134,8 +134,11 @@ export default function QuickContactSheet({ open, onClose }: Props) {
                     : <><Icon name="Send" size={15} className="mr-2" />Жду звонка</>}
                 </Button>
 
-                <p className="text-[11px] text-gray-400 font-ibm text-center">
-                  Нажимая кнопку, вы соглашаетесь с политикой конфиденциальности
+                <p className="text-[11px] text-gray-400 font-ibm text-center leading-relaxed">
+                  Нажимая кнопку, вы соглашаетесь с{" "}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">политикой конфиденциальности</a>
+                  {" "}и{" "}
+                  <a href="/offer" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">обработкой персональных данных</a>
                 </p>
               </form>
             </>

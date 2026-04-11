@@ -261,6 +261,12 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
                 className="w-full text-xs text-gray-400 hover:text-gray-600 font-ibm transition-colors">
                 ← Вернуться к входу
               </button>
+              <p className="text-[11px] text-gray-400 font-ibm text-center leading-relaxed">
+                Нажимая кнопку, вы соглашаетесь с{" "}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">политикой конфиденциальности</a>
+                {" "}и{" "}
+                <a href="/offer" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">обработкой персональных данных</a>
+              </p>
             </form>
           ) : step === "reset-code" ? (
             /* ── RESET CODE + NEW PASSWORD ── */
@@ -433,6 +439,12 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
                     className="w-full text-center text-xs text-gray-400 hover:text-navy-600 font-ibm transition-colors">
                     Забыли пароль?
                   </button>
+                  <p className="text-[11px] text-gray-400 font-ibm text-center leading-relaxed">
+                    Нажимая кнопку, вы соглашаетесь с{" "}
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">политикой конфиденциальности</a>
+                    {" "}и{" "}
+                    <a href="/offer" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">обработкой персональных данных</a>
+                  </p>
                 </form>
               ) : (
                 /* Register form */
@@ -491,9 +503,9 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
 
               <p className="text-[11px] text-gray-400 font-ibm text-center leading-relaxed">
                 Нажимая кнопку, вы соглашаетесь с{" "}
-                <span className="text-gray-500 underline cursor-pointer hover:text-navy-600 transition-colors">
-                  политикой конфиденциальности
-                </span>
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">политикой конфиденциальности</a>
+                {" "}и{" "}
+                <a href="/offer" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">обработкой персональных данных</a>
               </p>
             </div>
           )}

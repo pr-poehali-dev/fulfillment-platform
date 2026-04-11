@@ -96,14 +96,22 @@ export default function SupportSection() {
               <p className="text-red-500 text-xs font-ibm">{error}</p>
             </div>
           )}
-          <Button onClick={handleSubmit}
-            disabled={!name.trim() || !email.trim() || !message.trim() || submitting}
-            className="bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos text-sm h-10 px-6 disabled:opacity-40">
-            {submitting
-              ? <><Icon name="Loader2" size={14} className="mr-1.5 animate-spin" />Отправка...</>
-              : <><Icon name="Send" size={14} className="mr-1.5" />Отправить</>
-            }
-          </Button>
+          <div className="flex items-center gap-4 flex-wrap">
+            <Button onClick={handleSubmit}
+              disabled={!name.trim() || !email.trim() || !message.trim() || submitting}
+              className="bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos text-sm h-10 px-6 disabled:opacity-40">
+              {submitting
+                ? <><Icon name="Loader2" size={14} className="mr-1.5 animate-spin" />Отправка...</>
+                : <><Icon name="Send" size={14} className="mr-1.5" />Отправить</>
+              }
+            </Button>
+            <p className="text-[11px] text-gray-400 font-ibm leading-relaxed">
+              Нажимая кнопку, вы соглашаетесь с{" "}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">политикой конфиденциальности</a>
+              {" "}и{" "}
+              <a href="/offer" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">обработкой персональных данных</a>
+            </p>
+          </div>
         </div>
       </div>
     </div>

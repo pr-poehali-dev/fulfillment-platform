@@ -238,8 +238,11 @@ export function RequestQuoteModal({ partners, onClose }: {
 
             {/* Footer */}
             <div className="px-5 py-4 border-t border-gray-100 flex items-center gap-3 flex-shrink-0">
-              <div className="text-xs text-gray-400 font-ibm flex-1">
-                Нажимая «Отправить», вы соглашаетесь с политикой обработки данных
+              <div className="text-xs text-gray-400 font-ibm flex-1 leading-relaxed">
+                Нажимая «Отправить», вы соглашаетесь с{" "}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">политикой конфиденциальности</a>
+                {" "}и{" "}
+                <a href="/offer" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">обработкой персональных данных</a>
               </div>
               <Button
                 onClick={handleSubmit}

@@ -322,6 +322,12 @@ export function CalculatorSection() {
                     >
                       <Icon name="Send" size={14} className="mr-1.5" />Отправить
                     </Button>
+                    <p className="text-[11px] text-gray-400 font-ibm text-center leading-relaxed">
+                      Нажимая кнопку, вы соглашаетесь с{" "}
+                      <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">политикой конфиденциальности</a>
+                      {" "}и{" "}
+                      <a href="/offer" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">обработкой персональных данных</a>
+                    </p>
                   </div>
                 </div>
               )}
@@ -398,9 +404,17 @@ export function ContactsSection() {
             </div>
             <input type="email" placeholder="Email" className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/20 mb-3" />
             <textarea rows={3} placeholder="Сообщение..." className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/20 resize-none mb-4" />
-            <Button className="bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos h-10 px-7">
-              <Icon name="Send" size={14} className="mr-2" />Отправить
-            </Button>
+            <div className="flex items-center gap-4">
+              <Button className="bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos h-10 px-7">
+                <Icon name="Send" size={14} className="mr-2" />Отправить
+              </Button>
+              <p className="text-[11px] text-gray-400 font-ibm leading-relaxed">
+                Нажимая кнопку, вы соглашаетесь с{" "}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">политикой конфиденциальности</a>
+                {" "}и{" "}
+                <a href="/offer" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">обработкой персональных данных</a>
+              </p>
+            </div>
           </div>
         </div>
       </div>
