@@ -6,6 +6,8 @@
   {"name": "My fulfillments unauthorized", "method": "GET", "path": "/?action=my-fulfillments", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
   {"name": "Seller quotes unauthorized", "method": "GET", "path": "/?action=seller-quotes", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
   {"name": "List approved", "method": "GET", "path": "/?action=approved", "expectedStatus": 200},
+  {"name": "Demo no token", "method": "GET", "path": "/?action=demo", "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+  {"name": "Demo wrong token", "method": "GET", "path": "/?action=demo&token=wrongtoken", "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
   {"name": "Send quote missing fields", "method": "POST", "path": "/?action=send-quote", "body": {}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
   {"name": "Geocode missing address", "method": "GET", "path": "/?action=geocode", "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
 ]}

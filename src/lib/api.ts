@@ -114,6 +114,9 @@ export const api = {
   listApproved: () =>
     request("fulfillment", "approved"),
 
+  listDemo: (token: string) =>
+    request("fulfillment", "demo", { params: { token } }),
+
   // ─── Quotes ─────────────────────────────────────────────────────────────
   sendQuote: (body: Record<string, unknown>) =>
     request("fulfillment", "send-quote", { method: "POST", body }),

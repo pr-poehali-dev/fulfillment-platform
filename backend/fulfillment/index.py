@@ -585,6 +585,45 @@ def handle_list_approved():
         cur.close()
         conn.close()
 
+def handle_list_demo(params: dict):
+    token = params.get('token', '')
+    expected = os.environ.get('DEMO_ACCESS_TOKEN', '')
+    if not expected or token != expected:
+        return resp(403, {'error': 'Доступ запрещён'})
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            SELECT id, company_name, city, address, warehouse_area, founded_year, description,
+                detailed_description, logo, photos, contact_name,
+                work_schemes, features, packaging_types, marketplaces,
+                storage_price, assembly_price, delivery_price, storage_rate, assembly_rate, delivery_rate,
+                min_volume, team_size, working_hours, certificates, services,
+                badge, badge_color, rating, reviews_count, specializations
+            FROM fulfillments WHERE status = 'demo'
+            ORDER BY rating DESC, reviews_count DESC
+        """)
+        rows = cur.fetchall()
+        cols = ['id', 'company_name', 'city', 'address', 'warehouse_area', 'founded_year', 'description',
+                'detailed_description', 'logo', 'photos', 'contact_name',
+                'work_schemes', 'features', 'packaging_types', 'marketplaces',
+                'storage_price', 'assembly_price', 'delivery_price', 'storage_rate', 'assembly_rate', 'delivery_rate',
+                'min_volume', 'team_size', 'working_hours', 'certificates', 'services',
+                'badge', 'badge_color', 'rating', 'reviews_count', 'specializations']
+        result = []
+        for row in rows:
+            item = {}
+            for i, c in enumerate(cols):
+                v = row[i]
+                if c in ('storage_rate', 'assembly_rate', 'delivery_rate', 'rating'):
+                    v = float(v) if v else 0
+                item[c] = v
+            result.append(item)
+        return resp(200, {'fulfillments': result})
+    finally:
+        cur.close()
+        conn.close()
+
 # ─── QUOTES ──────────────────────────────────────────────────────────────────
 
 def ensure_seller(cur, name, email, phone, company):
@@ -1010,6 +1049,8 @@ def handler(event, context):
             return handle_get_profile(token)
         if action == 'approved':
             return handle_list_approved()
+        if action == 'demo':
+            return handle_list_demo(params)
         if action == 'geocode':
             return handle_geocode(params)
         if action == 'my-quotes':
