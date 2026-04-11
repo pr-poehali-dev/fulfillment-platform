@@ -103,7 +103,9 @@ export default function ForFulfillmentLayout({ children }: ForFulfillmentLayoutP
             </div>
             <div className="flex items-center gap-4">
               <a href="/" className="hover:text-white/60 transition-colors">Каталог для селлеров</a>
-              <button className="hover:text-white/60 transition-colors">Условия использования</button>
+              <a href="/privacy" className="hover:text-white/60 transition-colors">Конфиденциальность</a>
+              <a href="/terms" className="hover:text-white/60 transition-colors">Условия использования</a>
+              <a href="/offer" className="hover:text-white/60 transition-colors">Оферта</a>
             </div>
           </div>
         </footer>

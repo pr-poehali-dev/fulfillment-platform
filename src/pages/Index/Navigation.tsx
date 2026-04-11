@@ -204,8 +204,9 @@ export function Footer({ setActive }: { setActive: (s: string) => void }) {
         <div className="border-t border-white/10 pt-5 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-white/25 font-ibm">
           <span>© 2026 FulfillHub. Все права защищены.</span>
           <div className="flex gap-4">
-            <button className="hover:text-white/50 transition-colors">Политика конфиденциальности</button>
-            <button className="hover:text-white/50 transition-colors">Условия использования</button>
+            <a href="/privacy" className="hover:text-white/50 transition-colors">Политика конфиденциальности</a>
+            <a href="/terms" className="hover:text-white/50 transition-colors">Условия использования</a>
+            <a href="/offer" className="hover:text-white/50 transition-colors">Оферта</a>
           </div>
         </div>
       </div>
