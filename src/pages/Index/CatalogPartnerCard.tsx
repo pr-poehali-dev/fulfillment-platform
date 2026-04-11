@@ -1,8 +1,34 @@
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { StarRating, BadgeChip } from "./Navigation";
 import type { Partner } from "./data";
 import { FEATURE_FILTERS, SPECIALIZATION_FILTERS } from "./data";
+
+const PREVIEW_LIMIT = 5;
+
+function CollapsibleTags({ children, total }: { children: React.ReactNode[]; total: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? children : children.slice(0, PREVIEW_LIMIT);
+  const hidden = total - PREVIEW_LIMIT;
+  return (
+    <div className="flex flex-wrap gap-1">
+      {visible}
+      {!expanded && hidden > 0 && (
+        <button onClick={(e) => { e.stopPropagation(); setExpanded(true); }}
+          className="text-[10px] font-ibm px-1.5 py-0.5 bg-gray-100 text-gray-500 hover:bg-gray-200 rounded transition-colors">
+          +{hidden}
+        </button>
+      )}
+      {expanded && hidden > 0 && (
+        <button onClick={(e) => { e.stopPropagation(); setExpanded(false); }}
+          className="text-[10px] font-ibm px-1.5 py-0.5 bg-gray-100 text-gray-500 hover:bg-gray-200 rounded transition-colors">
+          Скрыть
+        </button>
+      )}
+    </div>
+  );
+}
 
 const withRuble = (s: string) => (s && s !== "по запросу" && !s.includes("₽") ? `${s} ₽` : s);
 
@@ -75,32 +101,36 @@ export default function PartnerCard({ p, inCompare, onCompare, isFavorite, onTog
 
         {/* Features */}
         {p.features.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-2">
-            {p.features.map((fKey) => {
-              const def = FEATURE_FILTERS.find((x) => x.key === fKey);
-              if (!def) return null;
-              return (
-                <span key={fKey} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded">
-                  <Icon name={def.icon as "Camera"} size={10} className={FEATURE_COLORS[fKey] || "text-gray-400"} />
-                  {def.label}
-                </span>
-              );
-            })}
+          <div className="mb-2">
+            <CollapsibleTags total={p.features.length}>
+              {p.features.map((fKey) => {
+                const def = FEATURE_FILTERS.find((x) => x.key === fKey);
+                if (!def) return null;
+                return (
+                  <span key={fKey} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded">
+                    <Icon name={def.icon as "Camera"} size={10} className={FEATURE_COLORS[fKey] || "text-gray-400"} />
+                    {def.label}
+                  </span>
+                );
+              }).filter(Boolean) as React.ReactNode[]}
+            </CollapsibleTags>
           </div>
         )}
         {/* Specializations */}
         {(p.specializations || []).length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-2">
-            {(p.specializations || []).map((sKey) => {
-              const def = SPECIALIZATION_FILTERS.find((x) => x.key === sKey);
-              if (!def) return null;
-              return (
-                <span key={sKey} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded">
-                  <Icon name={def.icon as "Boxes"} size={10} className={SPEC_COLORS[sKey] || "text-gray-400"} />
-                  {def.label}
-                </span>
-              );
-            })}
+          <div className="mb-2">
+            <CollapsibleTags total={(p.specializations || []).length}>
+              {(p.specializations || []).map((sKey) => {
+                const def = SPECIALIZATION_FILTERS.find((x) => x.key === sKey);
+                if (!def) return null;
+                return (
+                  <span key={sKey} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded">
+                    <Icon name={def.icon as "Boxes"} size={10} className={SPEC_COLORS[sKey] || "text-gray-400"} />
+                    {def.label}
+                  </span>
+                );
+              }).filter(Boolean) as React.ReactNode[]}
+            </CollapsibleTags>
           </div>
         )}
 

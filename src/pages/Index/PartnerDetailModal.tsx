@@ -30,37 +30,6 @@ const specializationLabels: Record<string, { label: string; icon: string }> = {
   electronics: { label: "Электроника", icon: "Cpu" },
 };
 
-// ─── Collapsible tag list ─────────────────────────────────────────────────────
-
-const LIMIT = 5;
-
-function TagList({ items, renderItem }: { items: string[]; renderItem: (item: string) => React.ReactNode }) {
-  const [expanded, setExpanded] = useState(false);
-  const visible = expanded ? items : items.slice(0, LIMIT);
-  const hidden = items.length - LIMIT;
-  return (
-    <div className="flex flex-wrap gap-2">
-      {visible.map((item) => renderItem(item))}
-      {!expanded && hidden > 0 && (
-        <button
-          onClick={() => setExpanded(true)}
-          className="inline-flex items-center text-xs px-2.5 py-1.5 bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 rounded-lg font-ibm transition-colors cursor-pointer"
-        >
-          +{hidden}
-        </button>
-      )}
-      {expanded && hidden > 0 && (
-        <button
-          onClick={() => setExpanded(false)}
-          className="inline-flex items-center text-xs px-2.5 py-1.5 bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 rounded-lg font-ibm transition-colors cursor-pointer"
-        >
-          Скрыть
-        </button>
-      )}
-    </div>
-  );
-}
-
 // ─── Shared content (используется и в десктопе, и в мобилке) ─────────────────
 
 function ModalContent({ partner, activePhoto, setActivePhoto, onRequestQuote }: {
@@ -172,15 +141,14 @@ function ModalContent({ partner, activePhoto, setActivePhoto, onRequestQuote }: 
           {/* Features */}
           <section>
             <h3 className="font-golos font-bold text-navy-900 text-xs uppercase tracking-wide mb-2">Дополнительные услуги</h3>
-            <TagList
-              items={partner.features}
-              renderItem={(f) => (
+            <div className="flex flex-wrap gap-2">
+              {partner.features.map((f) => (
                 <span key={f} className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-ibm">
                   <Icon name="Check" size={11} />
                   {featureLabels[f] || f}
                 </span>
-              )}
-            />
+              ))}
+            </div>
           </section>
 
           {/* Specializations */}
@@ -204,12 +172,11 @@ function ModalContent({ partner, activePhoto, setActivePhoto, onRequestQuote }: 
           {/* Packaging */}
           <section>
             <h3 className="font-golos font-bold text-navy-900 text-xs uppercase tracking-wide mb-2">Типы упаковки</h3>
-            <TagList
-              items={partner.packagingTypes}
-              renderItem={(pk) => (
+            <div className="flex flex-wrap gap-1.5">
+              {partner.packagingTypes.map((pk) => (
                 <span key={pk} className="text-xs px-2.5 py-1 bg-gray-100 text-gray-700 rounded-lg font-ibm">{pk}</span>
-              )}
-            />
+              ))}
+            </div>
           </section>
 
           {/* Certificates */}
