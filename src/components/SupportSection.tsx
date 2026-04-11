@@ -53,7 +53,7 @@ export default function SupportSection() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
           {[
             { icon: "MessageCircle", label: "Telegram", value: "@fulfillhub_support", href: "https://t.me/fulfillhub_support" },
-            { icon: "Mail", label: "Email", value: "support@fulfillhub.ru", href: "mailto:support@fulfillhub.ru" },
+            { icon: "Mail", label: "Email", value: "hello@fulfillhub.ru", href: "mailto:hello@fulfillhub.ru" },
             { icon: "Clock", label: "Часы работы", value: "Пн–Пт, 9:00–18:00" },
           ].map((item) => (
             <div key={item.label} className="flex items-start gap-2.5 p-3 bg-gray-50 rounded-xl">
