@@ -21,34 +21,38 @@ CORS_HEADERS = {
 def get_db():
     return psycopg2.connect(os.environ['DATABASE_URL'])
 
-def _smtp_send(smtp_user, smtp_pass, from_addr, to, subject, html, reply_to=''):
+SMTP_LOGIN = 'noreply@fulfillhub.ru'
+
+def _smtp_send(to, subject, html, reply_to=''):
+    password = os.environ.get('SMTP_PASSWORD', '')
+    if not password:
+        print('SMTP: password not set')
+        return False
     recipients = [to] if isinstance(to, str) else list(to)
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
-    msg['From'] = 'FulfillHub <%s>' % from_addr
+    msg['From'] = 'FulfillHub <%s>' % SMTP_LOGIN
     msg['To'] = ', '.join(recipients)
     if reply_to:
         msg['Reply-To'] = reply_to
     msg.attach(MIMEText(html, 'html', 'utf-8'))
-    with smtplib.SMTP('mail.hosting.reg.ru', 587) as s:
-        s.ehlo()
-        s.starttls()
-        s.login(smtp_user, smtp_pass)
-        s.sendmail(smtp_user, recipients, msg.as_string())
+    try:
+        with smtplib.SMTP('mail.hosting.reg.ru', 587) as s:
+            s.ehlo()
+            s.starttls()
+            s.login(SMTP_LOGIN, password)
+            s.sendmail(SMTP_LOGIN, recipients, msg.as_string())
+        print('SMTP: sent to %s' % recipients)
+        return True
+    except Exception as e:
+        print('SMTP error: %s' % str(e))
+        return False
 
 def send_noreply(to, subject, html):
-    user = os.environ.get('SMTP_NOREPLY_EMAIL', os.environ.get('SMTP_EMAIL', ''))
-    password = os.environ.get('SMTP_NOREPLY_PASSWORD', os.environ.get('SMTP_PASSWORD', ''))
-    if not user or not password:
-        return
-    _smtp_send(user, password, user, to, subject, html)
+    return _smtp_send(to, subject, html)
 
 def send_email(to, subject, html, reply_to=''):
-    user = os.environ.get('SMTP_EMAIL', '')
-    password = os.environ.get('SMTP_PASSWORD', '')
-    if not user or not password:
-        return
-    _smtp_send(user, password, user, to, subject, html, reply_to)
+    return _smtp_send(to, subject, html, reply_to)
 
 def seller_welcome_html(email: str, password: str, name: str) -> str:
     return """<!DOCTYPE html>

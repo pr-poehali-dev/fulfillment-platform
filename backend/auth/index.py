@@ -25,34 +25,38 @@ def get_db():
 def resp(status, body):
     return {'statusCode': status, 'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'}, 'body': json.dumps(body, default=str)}
 
-def _smtp_send(smtp_user: str, smtp_pass: str, from_addr: str, to, subject: str, html: str, reply_to: str = ''):
+SMTP_LOGIN = 'noreply@fulfillhub.ru'
+
+def _smtp_send(to, subject: str, html: str, reply_to: str = ''):
+    password = os.environ.get('SMTP_PASSWORD', '')
+    if not password:
+        print('SMTP: password not set')
+        return False
     recipients = [to] if isinstance(to, str) else list(to)
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
-    msg['From'] = 'FulfillHub <%s>' % from_addr
+    msg['From'] = 'FulfillHub <%s>' % SMTP_LOGIN
     msg['To'] = ', '.join(recipients)
     if reply_to:
         msg['Reply-To'] = reply_to
     msg.attach(MIMEText(html, 'html', 'utf-8'))
-    with smtplib.SMTP('mail.hosting.reg.ru', 587) as s:
-        s.ehlo()
-        s.starttls()
-        s.login(smtp_user, smtp_pass)
-        s.sendmail(smtp_user, recipients, msg.as_string())
+    try:
+        with smtplib.SMTP('mail.hosting.reg.ru', 587) as s:
+            s.ehlo()
+            s.starttls()
+            s.login(SMTP_LOGIN, password)
+            s.sendmail(SMTP_LOGIN, recipients, msg.as_string())
+        print('SMTP: sent to %s' % recipients)
+        return True
+    except Exception as e:
+        print('SMTP error: %s' % str(e))
+        return False
 
 def send_noreply(to: str, subject: str, html: str):
-    user = os.environ.get('SMTP_NOREPLY_EMAIL', os.environ.get('SMTP_EMAIL', ''))
-    password = os.environ.get('SMTP_NOREPLY_PASSWORD', os.environ.get('SMTP_PASSWORD', ''))
-    if not user or not password:
-        return
-    _smtp_send(user, password, user, to, subject, html)
+    return _smtp_send(to, subject, html)
 
 def send_email(to, subject: str, html: str, reply_to: str = ''):
-    user = os.environ.get('SMTP_EMAIL', '')
-    password = os.environ.get('SMTP_PASSWORD', '')
-    if not user or not password:
-        return
-    _smtp_send(user, password, user, to, subject, html, reply_to)
+    return _smtp_send(to, subject, html, reply_to)
 
 def verify_email_html(code: str, email: str) -> str:
     return f"""<!DOCTYPE html>
