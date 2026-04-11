@@ -155,18 +155,24 @@ export default function Offer() {
         </div>
 
         <footer className="bg-navy-900 text-white py-8 border-t border-white/10">
-          <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-white/30 font-ibm">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-gold-500 rounded flex items-center justify-center">
-                <Icon name="Package" size={12} className="text-navy-950" />
+          <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-white/25 font-ibm">
+            <div className="flex flex-col md:flex-row items-center gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-gold-500 rounded flex items-center justify-center">
+                  <Icon name="Package" size={12} className="text-navy-950" />
+                </div>
+                <span className="text-white/50 font-golos font-bold">FulfillHub</span>
               </div>
-              <span className="text-white/50 font-golos font-bold">FulfillHub</span>
-              <span>© 2026</span>
+              <span>© 2026 FulfillHub. Все права защищены.</span>
+              <span className="hidden md:inline text-white/15">·</span>
+              <span>Самозанятый Кругов М. Г. ИНН: 772379179900</span>
+              <span className="hidden md:inline text-white/15">·</span>
+              <a href="mailto:hello@fulfillhub.ru" className="hover:text-white/50 transition-colors">hello@fulfillhub.ru</a>
             </div>
             <div className="flex items-center gap-4">
-              <a href="/privacy" className="hover:text-white/60 transition-colors">Политика конфиденциальности</a>
-              <a href="/terms" className="hover:text-white/60 transition-colors">Условия использования</a>
-              <a href="/offer" className="hover:text-white/60 transition-colors">Оферта</a>
+              <a href="/privacy" className="hover:text-white/50 transition-colors">Политика конфиденциальности</a>
+              <a href="/terms" className="hover:text-white/50 transition-colors">Условия использования</a>
+              <a href="/offer" className="hover:text-white/50 transition-colors">Оферта</a>
             </div>
           </div>
         </footer>
