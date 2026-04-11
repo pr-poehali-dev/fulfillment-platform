@@ -31,17 +31,19 @@ def send_email(to: str, subject: str, html: str):
     if not user or not password:
         return
 
+    recipients = [to] if isinstance(to, str) else to
+
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
-    msg['From'] = 'FulfillHub <noreply@fulfillhub.ru>'
-    msg['To'] = to
+    msg['From'] = 'FulfillHub <%s>' % user
+    msg['To'] = ', '.join(recipients) if isinstance(recipients, list) else recipients
     msg.attach(MIMEText(html, 'html', 'utf-8'))
 
     with smtplib.SMTP('mail.hosting.reg.ru', 587) as s:
         s.ehlo()
         s.starttls()
         s.login(user, password)
-        s.sendmail(user, to, msg.as_string())
+        s.sendmail(user, recipients, msg.as_string())
 
 def verify_email_html(code: str, email: str) -> str:
     return f"""<!DOCTYPE html>
@@ -819,9 +821,10 @@ def handle_support_request(body):
 </body>
 </html>""" % {'name': name, 'email': email, 'message': message.replace('\n', '<br>')}
 
-    support_email = os.environ.get('SMTP_EMAIL', 'hello@fulfillhub.ru')
+    smtp_email = os.environ.get('SMTP_EMAIL', '')
+    recipients = list({smtp_email, 'support@fulfillhub.ru'}) if smtp_email else ['support@fulfillhub.ru']
     try:
-        send_email(support_email, 'Обращение в поддержку от %s' % name, html)
+        send_email(recipients, 'Обращение в поддержку от %s' % name, html)
     except Exception:
         pass
 
