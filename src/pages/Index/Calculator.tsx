@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { PARTNERS, type Partner } from "./data";
+import api from "@/lib/api";
 
 // ─── CALCULATOR ──────────────────────────────────────────────────────────────
 
@@ -380,7 +381,7 @@ export function ContactsSection() {
     if (!name.trim() || !email.trim() || !message.trim()) return;
     setContactSubmitting(true);
     try {
-      await new Promise(r => setTimeout(r, 800));
+      await api.sendSupportRequest(name.trim(), email.trim(), message.trim());
       setContactSent(true);
     } finally {
       setContactSubmitting(false);
