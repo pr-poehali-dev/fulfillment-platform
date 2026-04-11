@@ -387,12 +387,6 @@ export function ContactsSection() {
     }
   };
 
-  const channels = [
-    { icon: "Mail", label: "Email", value: "hello@fulfillhub.ru", href: "mailto:hello@fulfillhub.ru", sub: "Ответим в течение 2 ч." },
-    { icon: "Send", label: "Telegram", value: "@fulfillhub_support", href: "https://t.me/fulfillhub_support", sub: "Быстрая связь" },
-    { icon: "Clock", label: "Часы работы", value: "Пн–Пт, 9:00–18:00", href: null, sub: "По московскому времени" },
-  ];
-
   const FormContent = () => sent ? (
     <div className="text-center py-6">
       <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -451,29 +445,6 @@ export function ContactsSection() {
           </div>
           <h2 className="font-golos font-black text-3xl text-navy-900">Техническая поддержка</h2>
           <p className="text-gray-400 font-ibm text-sm mt-2">Возникли вопросы или проблемы? Мы на связи.</p>
-        </div>
-
-        {/* Каналы связи */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          {channels.map((c) => (
-            <div key={c.label} className="flex items-start gap-3 bg-gray-50 border border-gray-100 rounded-xl p-4">
-              <div className="w-9 h-9 bg-navy-900 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Icon name={c.icon as "Mail"} size={16} className="text-gold-400" />
-              </div>
-              <div>
-                <div className="text-xs text-gray-400 font-ibm">{c.label}</div>
-                {c.href ? (
-                  <a href={c.href} target={c.href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer"
-                    className="font-golos font-semibold text-navy-900 text-sm hover:text-navy-600 transition-colors">
-                    {c.value}
-                  </a>
-                ) : (
-                  <div className="font-golos font-semibold text-navy-900 text-sm">{c.value}</div>
-                )}
-                <div className="text-xs text-gray-400 font-ibm mt-0.5">{c.sub}</div>
-              </div>
-            </div>
-          ))}
         </div>
 
         {/* Форма — десктоп */}
