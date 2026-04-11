@@ -205,9 +205,9 @@ export function Footer({ setActive }: { setActive: (s: string) => void }) {
           <div className="flex flex-col md:flex-row items-center gap-3">
             <span>© 2026 FulfillHub. Все права защищены.</span>
             <span className="hidden md:inline text-white/15">·</span>
-            <a href="mailto:hello@fulfillhub.ru" className="hover:text-white/50 transition-colors">hello@fulfillhub.ru</a>
+            <span>Самозанятый Кругов М. Г. ИНН: 772379179900</span>
             <span className="hidden md:inline text-white/15">·</span>
-            <a href="https://t.me/fulfillhub_support" target="_blank" rel="noopener noreferrer" className="hover:text-white/50 transition-colors">@fulfillhub_support</a>
+            <a href="mailto:hello@fulfillhub.ru" className="hover:text-white/50 transition-colors">hello@fulfillhub.ru</a>
           </div>
           <div className="flex gap-4">
             <a href="/privacy" className="hover:text-white/50 transition-colors">Политика конфиденциальности</a>
