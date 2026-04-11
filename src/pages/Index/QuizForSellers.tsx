@@ -342,7 +342,7 @@ export default function QuizForSellers({ open, onClose }: QuizForSellersProps) {
 
   const stepLabels = ["Товары", "Формат", "Объём", "Услуги", "Упаковка", "Контакты"];
 
-  const Inner = () => (
+  const innerContent = (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
@@ -366,7 +366,6 @@ export default function QuizForSellers({ open, onClose }: QuizForSellersProps) {
           {/* Progress */}
           <div className="px-6 pt-4 pb-3 flex-shrink-0">
             <ProgressBar step={step} />
-            {/* Step dots */}
             <div className="flex items-center gap-1 mt-3">
               {stepLabels.map((label, i) => (
                 <div key={i} className="flex items-center gap-1 flex-1">
@@ -428,7 +427,7 @@ export default function QuizForSellers({ open, onClose }: QuizForSellersProps) {
       <div className="hidden lg:flex fixed inset-0 z-50 items-center justify-center">
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
         <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
-          <Inner />
+          {innerContent}
         </div>
       </div>
 
@@ -439,7 +438,7 @@ export default function QuizForSellers({ open, onClose }: QuizForSellersProps) {
           <div className="flex justify-center pt-2.5 pb-0 flex-shrink-0">
             <div className="w-10 h-1 bg-gray-200 rounded-full" />
           </div>
-          <Inner />
+          {innerContent}
         </div>
       </div>
     </>
