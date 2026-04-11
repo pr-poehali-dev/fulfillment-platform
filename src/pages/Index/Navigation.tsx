@@ -201,8 +201,14 @@ export function Footer({ setActive }: { setActive: (s: string) => void }) {
             </div>
           ))}
         </div>
-        <div className="border-t border-white/10 pt-5 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-white/25 font-ibm">
-          <span>© 2026 FulfillHub. Все права защищены.</span>
+        <div className="border-t border-white/10 pt-5 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-white/25 font-ibm">
+          <div className="flex flex-col md:flex-row items-center gap-3">
+            <span>© 2026 FulfillHub. Все права защищены.</span>
+            <span className="hidden md:inline text-white/15">·</span>
+            <a href="mailto:hello@fulfillhub.ru" className="hover:text-white/50 transition-colors">hello@fulfillhub.ru</a>
+            <span className="hidden md:inline text-white/15">·</span>
+            <a href="https://t.me/fulfillhub_support" target="_blank" rel="noopener noreferrer" className="hover:text-white/50 transition-colors">@fulfillhub_support</a>
+          </div>
           <div className="flex gap-4">
             <a href="/privacy" className="hover:text-white/50 transition-colors">Политика конфиденциальности</a>
             <a href="/terms" className="hover:text-white/50 transition-colors">Условия использования</a>
