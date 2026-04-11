@@ -725,6 +725,30 @@ def handle_send_quote(body):
             except Exception:
                 pass
 
+        try:
+            cur.execute("SELECT company_name FROM fulfillments WHERE id = %d" % int(fulfillment_id))
+            ff_row = cur.fetchone()
+            ff_name = ff_row[0] if ff_row else '—'
+            req_html = """<html><body style="font-family:Arial,sans-serif;background:#f8fafc;margin:0;padding:20px">
+<div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden">
+<div style="background:#0f172a;padding:20px 28px"><span style="color:#f59e0b;font-size:18px;font-weight:800">FulfillHub</span>
+<span style="color:#64748b;font-size:13px;margin-left:12px">Новый запрос КП</span></div>
+<div style="padding:28px">
+<p style="margin:0 0 12px"><b>Фулфилмент:</b> %s (ID: %d)</p>
+<p style="margin:0 0 12px"><b>Селлер:</b> %s</p>
+<p style="margin:0 0 12px"><b>Компания:</b> %s</p>
+<p style="margin:0 0 12px"><b>Email:</b> %s</p>
+<p style="margin:0 0 12px"><b>Телефон:</b> %s</p>
+<p style="margin:0 0 12px"><b>SKU:</b> %d | <b>Заказов/мес:</b> %d</p>
+<p style="margin:0 0 12px"><b>Сообщение:</b> %s</p>
+<p style="margin:0 0 0;color:#94a3b8;font-size:12px"><b>Цена лида:</b> %s ₽</p>
+</div>
+<div style="padding:16px 28px;border-top:1px solid #e2e8f0;text-align:center"><span style="color:#94a3b8;font-size:11px">© 2026 FulfillHub</span></div>
+</div></body></html>""" % (ff_name, int(fulfillment_id), name, body.get('company', '—'), email, phone, sku, orders, body.get('message', '—'), lead_price)
+            send_email('request@fulfillhub.ru', 'Запрос КП #%d — %s → %s' % (qid, name, ff_name), req_html, reply_to=email)
+        except Exception:
+            pass
+
         return resp(201, {'ok': True, 'id': qid, 'lead_price': lead_price})
     except ValueError as e:
         conn.rollback()
