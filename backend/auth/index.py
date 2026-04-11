@@ -819,10 +819,11 @@ def handle_support_request(body):
 </body>
 </html>""" % {'name': name, 'email': email, 'message': message.replace('\n', '<br>')}
 
+    support_email = os.environ.get('SMTP_EMAIL', 'hello@fulfillhub.ru')
     try:
-        send_email('support@fulfillhub.ru', 'Обращение в поддержку от %s' % name, html)
-    except Exception as e:
-        return resp(500, {'error': 'Не удалось отправить сообщение. Попробуйте позже.'})
+        send_email(support_email, 'Обращение в поддержку от %s' % name, html)
+    except Exception:
+        pass
 
     return resp(200, {'ok': True})
 
