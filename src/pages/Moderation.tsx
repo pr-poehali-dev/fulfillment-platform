@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import AdminSubscribersTab from "./Admin/AdminSubscribersTab";
 
 // ─── TYPES ──────────────────────────────────────────────────────────────────
 
@@ -67,7 +68,7 @@ interface QuoteStats {
   paid_revenue: number;
 }
 
-type Tab = "fulfillments" | "quotes";
+type Tab = "fulfillments" | "quotes" | "subscribers";
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
 
@@ -184,6 +185,14 @@ export default function Moderation() {
             >
               Запросы КП
             </button>
+            <button
+              onClick={() => setTab("subscribers")}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                tab === "subscribers" ? "bg-gold-500 text-navy-950" : "text-navy-300 hover:text-white"
+              }`}
+            >
+              Подписчики
+            </button>
           </div>
 
           <div className="ml-auto flex items-center gap-3">
@@ -203,6 +212,7 @@ export default function Moderation() {
       <div className="max-w-7xl mx-auto px-4 py-6">
         {tab === "fulfillments" && <FulfillmentsTab />}
         {tab === "quotes" && <QuotesTab />}
+        {tab === "subscribers" && <AdminSubscribersTab />}
       </div>
     </div>
   );

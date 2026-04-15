@@ -87,7 +87,7 @@ export interface Quote {
   fulfillment_id?: number;
 }
 
-export type Tab = "profile" | "fulfillments" | "quotes" | "settings" | "support" | "subscribers";
+export type Tab = "profile" | "fulfillments" | "quotes" | "settings" | "support";
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
 
