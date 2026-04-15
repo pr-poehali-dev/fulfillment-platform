@@ -4,6 +4,7 @@ import { FEATURE_FILTERS, SPECIALIZATION_FILTERS, type Partner } from "./data";
 import CatalogFilterPanel from "./CatalogFilterPanel";
 import PartnerCard from "./CatalogPartnerCard";
 import ComparePageComponent from "./CatalogComparePage";
+import CatalogEmptyState from "./CatalogEmptyState";
 
 // ─── CATALOG WITH ADVANCED FILTERS ───────────────────────────────────────────
 
@@ -160,14 +161,7 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
             <p className="text-base">Загружаем каталог партнёров...</p>
           </div>
         ) : PARTNERS.length === 0 ? (
-          <div className="text-center py-20">
-            <Icon name="Building2" size={40} className="mx-auto mb-3 text-gray-300" />
-            <p className="font-golos font-bold text-navy-900 text-lg mb-1">Пока нет одобренных фулфилментов</p>
-            <p className="text-gray-500 font-ibm text-sm mb-4">Мы ведём модерацию новых партнёров. Загляните позже!</p>
-            <a href="/for-fulfillment" className="inline-flex items-center gap-1.5 text-sm text-gold-600 hover:text-gold-700 font-semibold font-ibm">
-              Разместить свой фулфилмент <Icon name="ArrowRight" size={13} />
-            </a>
-          </div>
+          <CatalogEmptyState />
         ) : filtered.length === 0 ? (
           <div className="text-center py-20 text-gray-400 font-ibm">
             <Icon name="SearchX" size={36} className="mx-auto mb-3 opacity-30" />
