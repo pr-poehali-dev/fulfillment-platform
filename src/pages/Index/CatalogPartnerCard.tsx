@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { StarRating, BadgeChip } from "./Navigation";
 import type { Partner } from "./data";
 import { FEATURE_FILTERS, SPECIALIZATION_FILTERS } from "./data";
+import { ymGoal } from "@/lib/ym";
 
 const PREVIEW_LIMIT = 5;
 
@@ -58,7 +59,7 @@ export default function PartnerCard({ p, inCompare, onCompare, isFavorite, onTog
   return (
     <div className="bg-white border border-gray-100 rounded-xl card-hover shadow-sm flex flex-col overflow-hidden group">
       {/* Photo header */}
-      <div className="relative aspect-[16/9] bg-gray-100 overflow-hidden cursor-pointer" onClick={onOpenDetail}>
+      <div className="relative aspect-[16/9] bg-gray-100 overflow-hidden cursor-pointer" onClick={() => { ymGoal("card_open_detail", { partner: p.name }); onOpenDetail(); }}>
         {p.photos[0] && (
           <img src={p.photos[0]} alt={p.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -167,12 +168,12 @@ export default function PartnerCard({ p, inCompare, onCompare, isFavorite, onTog
         <div className="grid grid-cols-2 gap-2">
           <Button size="sm" variant="outline"
             className="border-gray-200 text-gray-700 hover:bg-gray-50 font-ibm text-xs h-9"
-            onClick={onOpenDetail}>
+            onClick={() => { ymGoal("card_open_detail", { partner: p.name }); onOpenDetail(); }}>
             <Icon name="Eye" size={12} className="mr-1" />Подробнее
           </Button>
           <Button size="sm"
             className="bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold font-golos text-xs h-9"
-            onClick={onRequestQuote}>
+            onClick={() => { ymGoal("card_request_quote", { partner: p.name }); onRequestQuote(); }}>
             <Icon name="Send" size={12} className="mr-1" />Запросить КП
           </Button>
         </div>

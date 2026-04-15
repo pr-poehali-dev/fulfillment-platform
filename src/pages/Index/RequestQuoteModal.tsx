@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import type { Partner } from "./data";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { ymGoal } from "@/lib/ym";
 
 const inputCls = "w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/20";
 
@@ -26,6 +27,7 @@ export function RequestQuoteModal({ partners, onClose }: {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    ymGoal("quote_modal_open", { partners_count: partners.length });
     const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", esc);
     document.body.style.overflow = "hidden";
@@ -33,7 +35,7 @@ export function RequestQuoteModal({ partners, onClose }: {
       document.removeEventListener("keydown", esc);
       document.body.style.overflow = "";
     };
-  }, [onClose]);
+  }, [onClose, partners.length]);
 
   const canSubmit = name.trim() && email.trim() && phone.trim() && !submitting;
 
@@ -60,6 +62,7 @@ export function RequestQuoteModal({ partners, onClose }: {
         setSubmitting(false);
         return;
       }
+      ymGoal("quote_submit", { partners_count: partners.length });
       setSent(true);
     } catch {
       setError("Ошибка сети. Проверьте подключение.");

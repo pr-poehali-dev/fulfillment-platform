@@ -1,6 +1,7 @@
 import { useState } from "react";
 import api, { setToken } from "@/lib/api";
 import { toast } from "sonner";
+import { ymGoal } from "@/lib/ym";
 
 import RegistrationFormSuccess from "./RegistrationFormSuccess";
 import RegistrationFormStepper from "./RegistrationFormStepper";
@@ -70,6 +71,7 @@ export default function RegistrationForm() {
       });
       setToken(data.token);
       setTempPassword(data.temp_password || "");
+      ymGoal("fulfillment_registration_submit");
       setDone(true);
       toast.success("Заявка отправлена и аккаунт создан!");
     } catch (err: unknown) {
@@ -131,7 +133,7 @@ export default function RegistrationForm() {
         canNext={canNext()}
         submitting={submitting}
         onBack={() => setStep((s) => Math.max(1, s - 1))}
-        onNext={() => canNext() && setStep((s) => s + 1)}
+        onNext={() => { if (canNext()) { ymGoal(`fulfillment_step_${step + 1}`); setStep((s) => s + 1); } }}
         onSubmit={handleSubmit}
       />
     </>

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { FEATURE_FILTERS, PACKAGING_FILTERS } from "./data";
 import api from "@/lib/api";
+import { ymGoal } from "@/lib/ym";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -295,6 +296,10 @@ export default function QuizForSellers({ open, onClose }: QuizForSellersProps) {
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if (open) ymGoal("quiz_open");
+  }, [open]);
+
   const set = (patch: Partial<QuizAnswers>) => setAnswers(prev => ({ ...prev, ...patch }));
 
   const canNext = () => {
@@ -308,7 +313,11 @@ export default function QuizForSellers({ open, onClose }: QuizForSellersProps) {
   };
 
   const handleNext = async () => {
-    if (step < TOTAL_STEPS) { setStep(s => s + 1); return; }
+    if (step < TOTAL_STEPS) {
+      ymGoal(`quiz_step_${step + 1}`);
+      setStep(s => s + 1);
+      return;
+    }
     setError("");
     setSubmitting(true);
     try {
@@ -325,6 +334,7 @@ export default function QuizForSellers({ open, onClose }: QuizForSellersProps) {
         answers.email.trim(),
         `📋 Квиз подбора фулфилмента\n\n${text}\n\nТелефон: ${answers.phone.trim()}`
       );
+      ymGoal("quiz_submit");
       setDone(true);
     } catch {
       setError("Не удалось отправить заявку. Попробуйте позже.");

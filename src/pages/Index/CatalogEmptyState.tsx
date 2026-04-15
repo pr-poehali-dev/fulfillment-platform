@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
+import { ymGoal } from "@/lib/ym";
 
 const SUBSCRIBE_URL = "https://functions.poehali.dev/91f8b089-0115-4e67-921c-8243417a3853";
 
@@ -77,6 +78,7 @@ export default function CatalogEmptyState() {
         const data = await res.json();
         setError(data.error || "Ошибка, попробуйте ещё раз");
       } else {
+        ymGoal("email_subscribe");
         setSent(true);
       }
     } catch {

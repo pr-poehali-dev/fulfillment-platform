@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
+import { ymGoal } from "@/lib/ym";
 
 const inputCls =
   "w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/20 placeholder:text-gray-400 transition-all";
@@ -18,6 +19,7 @@ export default function QuickContactSheet({ open, onClose }: Props) {
 
   useEffect(() => {
     if (!open) return;
+    ymGoal("quick_contact_open");
     document.body.style.overflow = "hidden";
     const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", esc);
@@ -39,6 +41,7 @@ export default function QuickContactSheet({ open, onClose }: Props) {
         body: JSON.stringify({ name: name.trim(), contact: contact.trim() }),
       });
     } catch { /* ignore */ }
+    ymGoal("quick_contact_submit");
     setSent(true);
     setSubmitting(false);
   };
