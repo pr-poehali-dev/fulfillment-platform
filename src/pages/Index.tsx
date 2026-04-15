@@ -139,7 +139,6 @@ export default function Index() {
           partners={partners}
           loading={loadingPartners}
         />
-        <ContactsSection />
         <Footer setActive={handleSetActive} />
       </div>
 
