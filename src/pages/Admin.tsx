@@ -14,6 +14,7 @@ import AdminFulfillmentList from "./Admin/AdminFulfillmentList";
 import AdminFulfillmentEdit from "./Admin/AdminFulfillmentEdit";
 import AdminQuotesTab from "./Admin/AdminQuotesTab";
 import AdminSettingsTab from "./Admin/AdminSettingsTab";
+import AdminSubscribersTab from "./Admin/AdminSubscribersTab";
 import SupportSection from "@/components/SupportSection";
 
 export default function Admin() {
@@ -192,6 +193,7 @@ export default function Admin() {
     profile:      { title: "Мой профиль",            sub: "Ваши персональные данные" },
     fulfillments: { title: "Мои фулфилменты",        sub: editingFulfillment ? `Редактирование: ${editingFulfillment.company_name || "без названия"}` : "Управление складами и услугами" },
     quotes:       { title: "Заявки на КП",            sub: "Входящие запросы от селлеров" },
+    subscribers:  { title: "Подписчики",               sub: "Email-адреса из формы ожидания" },
     settings:     { title: "Настройки",               sub: "Управление аккаунтом" },
     support:      { title: "Техническая поддержка",   sub: "Мы всегда готовы помочь" },
   };
@@ -274,6 +276,8 @@ export default function Admin() {
           {tab === "quotes" && (
             <AdminQuotesTab quotes={quotes} quotesLoading={quotesLoading} onReload={loadQuotes} />
           )}
+
+          {tab === "subscribers" && <AdminSubscribersTab />}
 
           {tab === "settings" && (
             <AdminSettingsTab
