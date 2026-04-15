@@ -1,6 +1,7 @@
 const URLS = {
   auth: "https://functions.poehali.dev/4af79c82-10b3-4a5a-9b91-0b6a70f754a2",
   fulfillment: "https://functions.poehali.dev/65cffefd-e88e-4f9c-a0be-769cb5345a17",
+  getSubscribers: "https://functions.poehali.dev/3187f111-ddb1-43eb-adc8-e0d8a950adba",
 };
 
 function getToken(): string {
@@ -149,6 +150,10 @@ export const api = {
 
   adminMarkPaid: (quoteId: number) =>
     request("fulfillment", "admin-mark-paid", { method: "POST", body: { quote_id: quoteId } }),
+
+  // ─── Subscribers ────────────────────────────────────────────────────────
+  getSubscribers: () =>
+    fetch(URLS.getSubscribers, { headers: { "Authorization": `Bearer ${getToken()}` } }).then((r) => r.json()),
 };
 
 export default api;
