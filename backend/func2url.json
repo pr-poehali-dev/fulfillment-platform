@@ -1,4 +1,5 @@
 {
+  "subscribe-email": "https://functions.poehali.dev/91f8b089-0115-4e67-921c-8243417a3853",
   "auth": "https://functions.poehali.dev/4af79c82-10b3-4a5a-9b91-0b6a70f754a2",
   "fulfillment": "https://functions.poehali.dev/65cffefd-e88e-4f9c-a0be-769cb5345a17"
 }

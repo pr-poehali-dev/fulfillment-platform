@@ -2,22 +2,25 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 
+const SUBSCRIBE_URL = "https://functions.poehali.dev/91f8b089-0115-4e67-921c-8243417a3853";
+
 const MOCK_CARDS = [
   { name: "МегаФулфилмент", city: "Москва", schemes: ["FBS", "FBO"], mps: ["Wildberries", "Ozon"], storage: "от 8 ₽", assembly: "от 15 ₽" },
   { name: "СкладПро", city: "Санкт-Петербург", schemes: ["FBS", "DBS"], mps: ["Яндекс Маркет", "Wildberries"], storage: "от 10 ₽", assembly: "от 18 ₽" },
   { name: "LogiHub", city: "Екатеринбург", schemes: ["FBO"], mps: ["Ozon", "СберМегаМаркет"], storage: "от 7 ₽", assembly: "от 12 ₽" },
   { name: "FastStock", city: "Новосибирск", schemes: ["FBS", "FBO", "DBS"], mps: ["Wildberries", "Ali"], storage: "от 9 ₽", assembly: "от 20 ₽" },
+  { name: "ЛогоСклад", city: "Казань", schemes: ["FBS"], mps: ["Ozon", "Wildberries"], storage: "от 6 ₽", assembly: "от 14 ₽" },
+  { name: "ПримаЛог", city: "Краснодар", schemes: ["FBO", "DBS"], mps: ["Яндекс Маркет", "СберМегаМаркет"], storage: "от 11 ₽", assembly: "от 16 ₽" },
+  { name: "UralFulf", city: "Челябинск", schemes: ["FBS", "FBO"], mps: ["Wildberries", "Ozon"], storage: "от 8 ₽", assembly: "от 13 ₽" },
+  { name: "ВолгаСток", city: "Самара", schemes: ["FBS", "DBS"], mps: ["Ali", "Lamoda"], storage: "от 9 ₽", assembly: "от 17 ₽" },
 ];
 
 function MockCard({ name, city, schemes, mps, storage, assembly }: typeof MOCK_CARDS[0]) {
   return (
     <div className="relative rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden select-none">
-      {/* Blur overlay */}
       <div className="absolute inset-0 z-10 backdrop-blur-[3px] bg-white/40 flex flex-col items-center justify-center gap-2">
         <span className="bg-navy-900 text-white text-xs font-semibold font-golos px-3 py-1 rounded-full shadow">Скоро</span>
       </div>
-
-      {/* Card content (blurred behind overlay) */}
       <div className="h-28 bg-gradient-to-br from-gray-100 to-gray-200" />
       <div className="p-4 space-y-3">
         <div>
@@ -57,14 +60,30 @@ export default function CatalogEmptyState() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setLoading(false);
-    setSent(true);
+    setError("");
+    try {
+      const res = await fetch(SUBSCRIBE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Ошибка, попробуйте ещё раз");
+      } else {
+        setSent(true);
+      }
+    } catch {
+      setError("Нет соединения, попробуйте ещё раз");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -95,7 +114,7 @@ export default function CatalogEmptyState() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setError(""); }}
                 placeholder="Ваш email"
                 required
                 className="flex-1 px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 font-ibm text-sm focus:outline-none focus:border-white/50 focus:bg-white/15 transition-all"
@@ -112,6 +131,9 @@ export default function CatalogEmptyState() {
                 )}
               </Button>
             </form>
+          )}
+          {error && (
+            <p className="mt-2 text-red-300 text-xs font-ibm">{error}</p>
           )}
         </div>
       </div>
