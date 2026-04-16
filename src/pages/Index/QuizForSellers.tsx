@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { FEATURE_FILTERS, PACKAGING_FILTERS } from "./data";
 import api from "@/lib/api";
 import { ymGoal } from "@/lib/ym";
+import ConsentCheckboxes from "@/components/ConsentCheckboxes";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -218,11 +219,17 @@ function Step5({ answers, set }: { answers: QuizAnswers; set: (a: Partial<QuizAn
   );
 }
 
-function Step6({ answers, set, submitting, error }: {
+function Step6({ answers, set, submitting, error, consentPersonal, consentTerms, marketingConsent, setConsentPersonal, setConsentTerms, setMarketingConsent }: {
   answers: QuizAnswers;
   set: (a: Partial<QuizAnswers>) => void;
   submitting: boolean;
   error: string;
+  consentPersonal: boolean;
+  consentTerms: boolean;
+  marketingConsent: boolean;
+  setConsentPersonal: (v: boolean) => void;
+  setConsentTerms: (v: boolean) => void;
+  setMarketingConsent: (v: boolean) => void;
 }) {
   const inputCls = "w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/20";
   return (
@@ -253,12 +260,14 @@ function Step6({ answers, set, submitting, error }: {
             <p className="text-red-500 text-xs font-ibm">{error}</p>
           </div>
         )}
-        <p className="text-[11px] text-gray-400 font-ibm leading-relaxed">
-          Нажимая кнопку, вы соглашаетесь с{" "}
-          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">политикой конфиденциальности</a>
-          {" "}и{" "}
-          <a href="/offer" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">обработкой персональных данных</a>
-        </p>
+        <ConsentCheckboxes
+          consentPersonal={consentPersonal}
+          consentTerms={consentTerms}
+          marketingConsent={marketingConsent}
+          onConsentPersonalChange={setConsentPersonal}
+          onConsentTermsChange={setConsentTerms}
+          onMarketingConsentChange={setMarketingConsent}
+        />
       </div>
     </div>
   );
@@ -295,6 +304,9 @@ export default function QuizForSellers({ open, onClose }: QuizForSellersProps) {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
+  const [consentPersonal, setConsentPersonal] = useState(false);
+  const [consentTerms,    setConsentTerms]    = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   useEffect(() => {
     if (open) ymGoal("quiz_open");
@@ -308,7 +320,7 @@ export default function QuizForSellers({ open, onClose }: QuizForSellersProps) {
     if (step === 3) return answers.volume !== "";
     if (step === 4) return true;
     if (step === 5) return answers.packaging.length > 0;
-    if (step === 6) return answers.name.trim() !== "" && answers.phone.trim() !== "" && answers.email.trim() !== "";
+    if (step === 6) return answers.name.trim() !== "" && answers.phone.trim() !== "" && answers.email.trim() !== "" && consentPersonal && consentTerms;
     return true;
   };
 
@@ -345,7 +357,7 @@ export default function QuizForSellers({ open, onClose }: QuizForSellersProps) {
 
   const handleClose = () => {
     onClose();
-    setTimeout(() => { setStep(1); setAnswers(EMPTY_ANSWERS); setDone(false); setError(""); }, 300);
+    setTimeout(() => { setStep(1); setAnswers(EMPTY_ANSWERS); setDone(false); setError(""); setConsentPersonal(false); setConsentTerms(false); setMarketingConsent(false); }, 300);
   };
 
   if (!open) return null;
@@ -399,7 +411,9 @@ export default function QuizForSellers({ open, onClose }: QuizForSellersProps) {
             {step === 3 && <Step3 answers={answers} set={set} />}
             {step === 4 && <Step4 answers={answers} set={set} />}
             {step === 5 && <Step5 answers={answers} set={set} />}
-            {step === 6 && <Step6 answers={answers} set={set} submitting={submitting} error={error} />}
+            {step === 6 && <Step6 answers={answers} set={set} submitting={submitting} error={error}
+              consentPersonal={consentPersonal} consentTerms={consentTerms} marketingConsent={marketingConsent}
+              setConsentPersonal={setConsentPersonal} setConsentTerms={setConsentTerms} setMarketingConsent={setMarketingConsent} />}
           </div>
 
           {/* Footer nav */}
