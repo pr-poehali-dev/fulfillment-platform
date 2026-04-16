@@ -10,14 +10,14 @@ def handler(event: dict, context) -> dict:
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, email, created_at FROM t_p18520385_fulfillment_platform.subscriber_emails ORDER BY created_at DESC"
+        "SELECT id, email, name, created_at FROM t_p18520385_fulfillment_platform.subscriber_emails ORDER BY created_at DESC"
     )
     rows = cur.fetchall()
     cur.close()
     conn.close()
 
     subscribers = [
-        {"id": r[0], "email": r[1], "created_at": r[2].isoformat() if r[2] else None}
+        {"id": r[0], "email": r[1], "name": r[2], "created_at": r[3].isoformat() if r[3] else None}
         for r in rows
     ]
 

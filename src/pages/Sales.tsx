@@ -1,5 +1,8 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
+import { ymGoal } from "@/lib/ym";
+
+const SUBSCRIBE_URL = "https://functions.poehali.dev/91f8b089-0115-4e67-921c-8243417a3853";
 
 const BENEFITS = [
   {
@@ -44,6 +47,27 @@ const OBJECTIONS = [
 
 export default function Sales() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [contactStatus, setContactStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!contactEmail || !contactName) return;
+    setContactStatus("loading");
+    try {
+      const res = await fetch(SUBSCRIBE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: contactEmail, name: contactName }),
+      });
+      if (!res.ok) throw new Error();
+      ymGoal("sales_contact_submit");
+      setContactStatus("done");
+    } catch {
+      setContactStatus("error");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 font-golos">
@@ -326,6 +350,73 @@ export default function Sales() {
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── CONTACT FORM ── */}
+        <section className="py-16 bg-gray-50">
+          <div className="max-w-xl mx-auto px-4">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+              <div className="text-center mb-6">
+                <div className="w-11 h-11 bg-navy-50 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Icon name="Mail" size={20} className="text-navy-700" />
+                </div>
+                <h2 className="font-golos font-black text-2xl text-navy-900 mb-2">
+                  Остались вопросы?
+                </h2>
+                <p className="text-gray-500 font-ibm text-sm">
+                  Оставьте контакт — мы свяжемся и расскажем подробнее о работе с платформой
+                </p>
+              </div>
+
+              {contactStatus === "done" ? (
+                <div className="text-center py-6">
+                  <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Icon name="CheckCircle" size={22} className="text-emerald-500" />
+                  </div>
+                  <p className="font-golos font-bold text-navy-900 text-base mb-1">Заявка получена!</p>
+                  <p className="text-gray-400 font-ibm text-sm">Свяжемся с вами в течение рабочего дня</p>
+                </div>
+              ) : (
+                <form onSubmit={handleContactSubmit} className="space-y-3">
+                  <input
+                    type="text"
+                    placeholder="Ваше имя"
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-ibm text-navy-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-navy-900/20 focus:border-navy-300 transition-all"
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email для связи"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-ibm text-navy-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-navy-900/20 focus:border-navy-300 transition-all"
+                  />
+                  {contactStatus === "error" && (
+                    <p className="text-red-500 font-ibm text-xs">Не удалось отправить. Попробуйте ещё раз.</p>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={contactStatus === "loading"}
+                    className="w-full flex items-center justify-center gap-2 py-3 bg-navy-950 hover:bg-navy-900 disabled:opacity-60 text-white rounded-xl text-sm font-bold font-golos transition-all"
+                  >
+                    {contactStatus === "loading" ? (
+                      <Icon name="Loader2" size={15} className="animate-spin" />
+                    ) : (
+                      <Icon name="Send" size={15} />
+                    )}
+                    {contactStatus === "loading" ? "Отправляем..." : "Отправить заявку"}
+                  </button>
+                  <p className="text-center text-xs text-gray-400 font-ibm">
+                    Нажимая кнопку, вы соглашаетесь с{" "}
+                    <a href="/privacy" className="underline hover:text-gray-600 transition-colors">политикой конфиденциальности</a>
+                  </p>
+                </form>
+              )}
             </div>
           </div>
         </section>

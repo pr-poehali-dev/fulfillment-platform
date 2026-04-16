@@ -6,6 +6,7 @@ import { toast } from "sonner";
 interface Subscriber {
   id: number;
   email: string;
+  name: string | null;
   created_at: string | null;
 }
 
@@ -125,7 +126,10 @@ export default function AdminSubscribersTab() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-ibm text-navy-900 truncate">{s.email}</div>
-                  <div className="text-xs text-gray-400 font-ibm">{formatDate(s.created_at)}</div>
+                  <div className="text-xs text-gray-400 font-ibm">
+                    {s.name && <span className="text-navy-500 font-medium mr-1.5">{s.name}</span>}
+                    {formatDate(s.created_at)}
+                  </div>
                 </div>
                 <div className="text-xs text-gray-300 font-ibm flex-shrink-0">#{i + 1}</div>
                 <button
