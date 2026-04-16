@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import AuthModal from "@/components/AuthModal";
+import { useNavigate } from "react-router-dom";
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -45,11 +46,24 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
-  const { user, fulfillment, loading: authLoading } = useAuth();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const { user, fulfillment, loading: authLoading, logout } = useAuth();
+  const navigate = useNavigate();
   const isLoggedIn = !authLoading && !!user;
   const isSeller = user?.role === "seller";
   const cabinetHref = isSeller ? "/seller" : "/admin";
   const displayName = fulfillment?.company_name || user?.email?.split("@")[0] || "";
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   return (
     <>
@@ -80,13 +94,38 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
             Разместить сервис
           </a>
           {isLoggedIn ? (
-            <a href={cabinetHref} className="flex items-center gap-2 px-3.5 py-1.5 bg-white/10 hover:bg-white/15 border border-white/15 rounded-lg text-sm font-medium text-white transition-all">
-              <div className="w-6 h-6 bg-gold-500 rounded-full flex items-center justify-center text-navy-950 text-xs font-black font-golos">
-                {displayName.charAt(0).toUpperCase()}
-              </div>
-              <span className="max-w-[120px] truncate">{displayName}</span>
-              <Icon name="ChevronRight" size={13} className="text-white/40" />
-            </a>
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setDropdownOpen((v) => !v)}
+                className="flex items-center gap-2 px-3.5 py-1.5 bg-white/10 hover:bg-white/15 border border-white/15 rounded-lg text-sm font-medium text-white transition-all"
+              >
+                <div className="w-6 h-6 bg-gold-500 rounded-full flex items-center justify-center text-navy-950 text-xs font-black font-golos">
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+                <span className="max-w-[120px] truncate">{displayName}</span>
+                <Icon name="ChevronDown" size={13} className={`text-white/40 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+              {dropdownOpen && (
+                <div className="absolute right-0 top-full mt-1.5 w-48 bg-navy-900 border border-white/10 rounded-xl shadow-xl overflow-hidden z-50">
+                  <a
+                    href={cabinetHref}
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-white hover:bg-white/10 transition-colors"
+                  >
+                    <Icon name="LayoutDashboard" size={14} className="text-gold-400" />
+                    Личный кабинет
+                  </a>
+                  <div className="border-t border-white/10" />
+                  <button
+                    onClick={() => { logout(); navigate("/"); setDropdownOpen(false); }}
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                  >
+                    <Icon name="LogOut" size={14} />
+                    Выйти
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <button onClick={() => setAuthOpen(true)} className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gold-500 hover:bg-gold-400 text-navy-950 rounded-lg text-sm font-bold font-golos transition-all">
               <Icon name="LogIn" size={14} />
@@ -102,12 +141,22 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
         <div className="md:hidden bg-navy-950 border-t border-white/10 px-4 py-3 flex flex-col gap-1">
           <a href="/for-fulfillment" className="px-3 py-2 rounded text-sm text-gold-400 hover:bg-gold-500/10">Разместить сервис</a>
           {isLoggedIn ? (
-            <a href={cabinetHref} className="px-3 py-2 rounded text-sm text-white font-bold hover:bg-white/10 flex items-center gap-2">
-              <div className="w-5 h-5 bg-gold-500 rounded-full flex items-center justify-center text-navy-950 text-[10px] font-black font-golos">
-                {displayName.charAt(0).toUpperCase()}
-              </div>
-              <span className="truncate">{displayName}</span>
-            </a>
+            <>
+              <a href={cabinetHref} onClick={() => setMobileOpen(false)} className="px-3 py-2 rounded text-sm text-white font-bold hover:bg-white/10 flex items-center gap-2">
+                <div className="w-5 h-5 bg-gold-500 rounded-full flex items-center justify-center text-navy-950 text-[10px] font-black font-golos">
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+                <span className="truncate">{displayName}</span>
+                <Icon name="LayoutDashboard" size={13} className="text-white/40 ml-auto" />
+              </a>
+              <button
+                onClick={() => { logout(); navigate("/"); setMobileOpen(false); }}
+                className="px-3 py-2 rounded text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 w-full text-left"
+              >
+                <Icon name="LogOut" size={14} />
+                Выйти
+              </button>
+            </>
           ) : (
             <button onClick={() => { setMobileOpen(false); setAuthOpen(true); }} className="px-3 py-2 rounded text-sm text-white font-bold hover:bg-white/10 flex items-center gap-1.5 w-full text-left">
               <Icon name="LogIn" size={14} />Вход / Регистрация
