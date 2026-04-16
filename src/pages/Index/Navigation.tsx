@@ -234,8 +234,8 @@ export function Footer({ setActive }: { setActive: (s: string) => void }) {
             <p className="text-white/50 text-xs font-ibm leading-relaxed">B2B маркетплейс фулфилмент-партнёров для селлеров</p>
           </div>
           {[
-            { title: "Для селлеров", links: [{ label: "Каталог партнёров", id: "catalog" }, { label: "Контакты", id: "contacts" }] },
-            { title: "Для фулфилмента", links: [{ label: "Разместить сервис →", id: "", href: "/for-fulfillment" }] as { label: string; id: string; href?: string }[] },
+            { title: "Для селлеров", links: [{ label: "Каталог партнёров", id: "catalog" }, { label: "Фулфилмент для Wildberries", id: "", href: "/fulfillment/wildberries" }, { label: "Фулфилмент для Ozon", id: "", href: "/fulfillment/ozon" }, { label: "Контакты", id: "contacts" }] as { label: string; id: string; href?: string }[] },
+            { title: "Для фулфилмента", links: [{ label: "Разместить сервис →", id: "", href: "/for-fulfillment" }, { label: "Партнёрская программа", id: "", href: "/sales" }] as { label: string; id: string; href?: string }[] },
             { title: "Компания", links: [{ label: "О платформе", id: "hero" }, { label: "Контакты", id: "contacts" }] },
           ].map((col) => (
             <div key={col.title}>
