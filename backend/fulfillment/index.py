@@ -1100,6 +1100,16 @@ def handler(event, context):
             return handle_admin_list(token, params)
         if action == 'admin-quotes':
             return handle_admin_all_quotes(token)
+        if action == 'admin-dashboard':
+            return handle_admin_dashboard(token)
+        if action == 'admin-users':
+            return handle_admin_users(token, params)
+        if action == 'admin-notes':
+            return handle_admin_notes_get(token, params)
+        if action == 'admin-reviews':
+            return handle_admin_reviews_get(token, params)
+        if action == 'admin-balance-history':
+            return handle_admin_balance_history(token, params)
 
     if method == 'POST':
         if action == 'update-owner-profile':
@@ -1131,10 +1141,448 @@ def handler(event, context):
             return handle_admin_set_lead_price(body, token)
         if action == 'admin-mark-paid':
             return handle_admin_mark_paid(body, token)
+        if action == 'admin-block-user':
+            return handle_admin_block_user(body, token)
+        if action == 'admin-notes-add':
+            return handle_admin_notes_add(body, token)
+        if action == 'admin-send-email':
+            return handle_admin_send_email(body, token)
+        if action == 'admin-reviews-save':
+            return handle_admin_reviews_save(body, token)
+        if action == 'admin-reviews-toggle':
+            return handle_admin_reviews_toggle(body, token)
+        if action == 'admin-balance-adjust':
+            return handle_admin_balance_adjust(body, token)
+        if action == 'admin-update-quote-status':
+            return handle_admin_update_quote_status(body, token)
         if action == 'send-quick-contact':
             return handle_quick_contact(body)
 
     return resp(404, {'error': 'Неизвестный маршрут'})
+
+
+def handle_admin_dashboard(token):
+    """Сводная статистика для дашборда администратора"""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user or user[2] != 'admin':
+            return resp(403, {'error': 'Доступ запрещён'})
+
+        cur.execute("SELECT COUNT(*) FROM fulfillments")
+        total_ff = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM fulfillments WHERE status = 'pending'")
+        pending_ff = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM fulfillments WHERE status = 'approved'")
+        approved_ff = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM fulfillments WHERE status = 'rejected'")
+        rejected_ff = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM fulfillments WHERE created_at >= NOW() - INTERVAL '7 days'")
+        new_ff_week = cur.fetchone()[0]
+
+        cur.execute("SELECT COUNT(*) FROM quote_requests")
+        total_quotes = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM quote_requests WHERE status = 'new'")
+        new_quotes = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM quote_requests WHERE created_at >= NOW() - INTERVAL '7 days'")
+        new_quotes_week = cur.fetchone()[0]
+        cur.execute("SELECT COALESCE(SUM(lead_price),0) FROM quote_requests")
+        total_revenue = float(cur.fetchone()[0])
+        cur.execute("SELECT COALESCE(SUM(lead_price),0) FROM quote_requests WHERE payment_status = 'paid'")
+        paid_revenue = float(cur.fetchone()[0])
+        cur.execute("SELECT COALESCE(SUM(lead_price),0) FROM quote_requests WHERE payment_status = 'unpaid'")
+        unpaid_revenue = float(cur.fetchone()[0])
+
+        cur.execute("SELECT COUNT(*) FROM users WHERE role != 'admin'")
+        total_users = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '7 days' AND role != 'admin'")
+        new_users_week = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM users WHERE is_blocked = TRUE")
+        blocked_users = cur.fetchone()[0]
+
+        cur.execute("SELECT COUNT(*) FROM subscriber_emails")
+        total_subs = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT DATE(created_at), COUNT(*) FROM quote_requests
+            WHERE created_at >= NOW() - INTERVAL '30 days'
+            GROUP BY DATE(created_at) ORDER BY DATE(created_at)
+        """)
+        quotes_by_day = [{'date': str(r[0]), 'count': r[1]} for r in cur.fetchall()]
+
+        cur.execute("""
+            SELECT DATE(created_at), COUNT(*) FROM fulfillments
+            WHERE created_at >= NOW() - INTERVAL '30 days'
+            GROUP BY DATE(created_at) ORDER BY DATE(created_at)
+        """)
+        ff_by_day = [{'date': str(r[0]), 'count': r[1]} for r in cur.fetchall()]
+
+        return resp(200, {
+            'fulfillments': {
+                'total': total_ff, 'pending': pending_ff, 'approved': approved_ff,
+                'rejected': rejected_ff, 'new_this_week': new_ff_week,
+            },
+            'quotes': {
+                'total': total_quotes, 'new': new_quotes, 'new_this_week': new_quotes_week,
+                'total_revenue': total_revenue, 'paid_revenue': paid_revenue, 'unpaid_revenue': unpaid_revenue,
+            },
+            'users': {
+                'total': total_users, 'new_this_week': new_users_week, 'blocked': blocked_users,
+            },
+            'subscribers': {'total': total_subs},
+            'charts': {'quotes_by_day': quotes_by_day, 'ff_by_day': ff_by_day},
+        })
+    finally:
+        cur.close()
+        conn.close()
+
+
+def handle_admin_users(token, params):
+    """Список всех пользователей для управления"""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user or user[2] != 'admin':
+            return resp(403, {'error': 'Доступ запрещён'})
+
+        role_filter = params.get('role', '')
+        blocked_filter = params.get('blocked', '')
+
+        where = "WHERE role != 'admin'"
+        if role_filter:
+            where += " AND role = '%s'" % role_filter.replace("'", "''")
+        if blocked_filter == 'true':
+            where += " AND is_blocked = TRUE"
+
+        cur.execute("""
+            SELECT id, email, role, email_verified, is_blocked, block_reason, blocked_at, created_at
+            FROM users %s ORDER BY created_at DESC
+        """ % where)
+        rows = cur.fetchall()
+        result = []
+        for r in rows:
+            result.append({
+                'id': r[0], 'email': r[1], 'role': r[2], 'email_verified': r[3],
+                'is_blocked': r[4], 'block_reason': r[5], 'blocked_at': str(r[6]) if r[6] else None,
+                'created_at': str(r[7]),
+            })
+        return resp(200, {'users': result})
+    finally:
+        cur.close()
+        conn.close()
+
+
+def handle_admin_block_user(body, token):
+    """Заблокировать или разблокировать пользователя"""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user or user[2] != 'admin':
+            return resp(403, {'error': 'Доступ запрещён'})
+
+        uid = body.get('user_id')
+        action = body.get('action', 'block')
+        reason = str(body.get('reason', '')).replace("'", "''")
+        if not uid:
+            return resp(400, {'error': 'user_id обязателен'})
+
+        if action == 'block':
+            cur.execute("""
+                UPDATE users SET is_blocked = TRUE, block_reason = '%s', blocked_at = NOW()
+                WHERE id = %d AND role != 'admin'
+            """ % (reason, int(uid)))
+        else:
+            cur.execute("""
+                UPDATE users SET is_blocked = FALSE, block_reason = NULL, blocked_at = NULL
+                WHERE id = %d
+            """ % int(uid))
+        conn.commit()
+        return resp(200, {'ok': True})
+    finally:
+        cur.close()
+        conn.close()
+
+
+def handle_admin_notes_get(token, params):
+    """Получить заметки модератора для фулфилмента"""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user or user[2] != 'admin':
+            return resp(403, {'error': 'Доступ запрещён'})
+
+        fid = params.get('fulfillment_id', '0')
+        cur.execute("""
+            SELECT id, admin_email, note, created_at FROM moderator_notes
+            WHERE fulfillment_id = %d ORDER BY created_at DESC
+        """ % int(fid))
+        rows = cur.fetchall()
+        notes = [{'id': r[0], 'admin_email': r[1], 'note': r[2], 'created_at': str(r[3])} for r in rows]
+        return resp(200, {'notes': notes})
+    finally:
+        cur.close()
+        conn.close()
+
+
+def handle_admin_notes_add(body, token):
+    """Добавить заметку модератора к фулфилменту"""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user or user[2] != 'admin':
+            return resp(403, {'error': 'Доступ запрещён'})
+
+        fid = body.get('fulfillment_id')
+        note = str(body.get('note', '')).strip().replace("'", "''")
+        if not fid or not note:
+            return resp(400, {'error': 'fulfillment_id и note обязательны'})
+
+        admin_email = str(user[1]).replace("'", "''")
+        cur.execute("""
+            INSERT INTO moderator_notes (fulfillment_id, admin_email, note)
+            VALUES (%d, '%s', '%s')
+        """ % (int(fid), admin_email, note))
+        conn.commit()
+        return resp(200, {'ok': True})
+    finally:
+        cur.close()
+        conn.close()
+
+
+def handle_admin_send_email(body, token):
+    """Отправить письмо пользователю вручную из панели модерации"""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user or user[2] != 'admin':
+            return resp(403, {'error': 'Доступ запрещён'})
+
+        to_email = str(body.get('to', '')).strip()
+        subject = str(body.get('subject', '')).strip()
+        message = str(body.get('message', '')).strip()
+        if not to_email or not subject or not message:
+            return resp(400, {'error': 'to, subject и message обязательны'})
+
+        safe_msg = message.replace('\n', '<br>')
+        html = """<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#0f172a;font-family:'Helvetica Neue',Arial,sans-serif">
+<table width="100%%" cellpadding="0" cellspacing="0" style="background:#0f172a;padding:40px 20px">
+<tr><td align="center">
+<table width="480" cellpadding="0" cellspacing="0" style="background:#1e293b;border-radius:16px;overflow:hidden">
+<tr><td style="background:linear-gradient(135deg,#1e3a5f,#0f172a);padding:32px;text-align:center">
+<div style="display:inline-block;background:#f59e0b;border-radius:8px;padding:10px 14px;margin-bottom:16px">
+<span style="color:#0f172a;font-size:20px">📦</span></div>
+<h1 style="color:#ffffff;font-size:24px;margin:0;font-weight:800">FulfillHub</h1>
+</td></tr>
+<tr><td style="padding:32px">
+<p style="color:#e2e8f0;font-size:15px;line-height:1.7;margin:0">%s</p>
+</td></tr>
+<tr><td style="padding:16px 32px;border-top:1px solid #334155;text-align:center">
+<p style="color:#475569;font-size:11px;margin:0">© 2026 FulfillHub · %s</p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body></html>""" % (safe_msg, to_email)
+
+        sent = send_noreply(to_email, subject, html)
+        if not sent:
+            return resp(500, {'error': 'Не удалось отправить письмо'})
+        return resp(200, {'ok': True})
+    finally:
+        cur.close()
+        conn.close()
+
+
+def handle_admin_reviews_get(token, params):
+    """Получить отзывы для фулфилмента или все сразу"""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user or user[2] != 'admin':
+            return resp(403, {'error': 'Доступ запрещён'})
+
+        fid = params.get('fulfillment_id', '')
+        where = 'WHERE fr.fulfillment_id = %d' % int(fid) if fid else ''
+        cur.execute("""
+            SELECT fr.id, fr.fulfillment_id, f.company_name, fr.author_name, fr.author_company,
+                fr.rating, fr.text, fr.is_visible, fr.created_at
+            FROM fulfillment_reviews fr
+            JOIN fulfillments f ON f.id = fr.fulfillment_id
+            %s ORDER BY fr.created_at DESC
+        """ % where)
+        rows = cur.fetchall()
+        reviews = [{
+            'id': r[0], 'fulfillment_id': r[1], 'fulfillment_name': r[2],
+            'author_name': r[3], 'author_company': r[4], 'rating': r[5],
+            'text': r[6], 'is_visible': r[7], 'created_at': str(r[8]),
+        } for r in rows]
+        return resp(200, {'reviews': reviews})
+    finally:
+        cur.close()
+        conn.close()
+
+
+def handle_admin_reviews_save(body, token):
+    """Создать или обновить отзыв (управление вручную)"""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user or user[2] != 'admin':
+            return resp(403, {'error': 'Доступ запрещён'})
+
+        review_id = body.get('id')
+        fid = body.get('fulfillment_id')
+        author_name = str(body.get('author_name', '')).replace("'", "''")
+        author_company = str(body.get('author_company', '')).replace("'", "''")
+        rating = int(body.get('rating', 5))
+        text = str(body.get('text', '')).replace("'", "''")
+        is_visible = body.get('is_visible', True)
+
+        if review_id:
+            cur.execute("""
+                UPDATE fulfillment_reviews SET author_name='%s', author_company='%s',
+                rating=%d, text='%s', is_visible=%s
+                WHERE id=%d
+            """ % (author_name, author_company, rating, text, 'TRUE' if is_visible else 'FALSE', int(review_id)))
+        else:
+            if not fid:
+                return resp(400, {'error': 'fulfillment_id обязателен'})
+            cur.execute("""
+                INSERT INTO fulfillment_reviews (fulfillment_id, author_name, author_company, rating, text, is_visible)
+                VALUES (%d, '%s', '%s', %d, '%s', %s)
+            """ % (int(fid), author_name, author_company, rating, text, 'TRUE' if is_visible else 'FALSE'))
+            cur.execute("UPDATE fulfillments SET reviews_count = reviews_count + 1 WHERE id = %d" % int(fid))
+            cur.execute("UPDATE fulfillments SET rating = (SELECT AVG(rating) FROM fulfillment_reviews WHERE fulfillment_id = %d AND is_visible = TRUE) WHERE id = %d" % (int(fid), int(fid)))
+        conn.commit()
+        return resp(200, {'ok': True})
+    finally:
+        cur.close()
+        conn.close()
+
+
+def handle_admin_reviews_toggle(body, token):
+    """Скрыть/показать отзыв"""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user or user[2] != 'admin':
+            return resp(403, {'error': 'Доступ запрещён'})
+
+        rid = body.get('review_id')
+        visible = body.get('is_visible', True)
+        if not rid:
+            return resp(400, {'error': 'review_id обязателен'})
+
+        cur.execute("UPDATE fulfillment_reviews SET is_visible = %s WHERE id = %d" % (
+            'TRUE' if visible else 'FALSE', int(rid)))
+        cur.execute("""
+            UPDATE fulfillments SET rating = (
+                SELECT COALESCE(AVG(rating), 0) FROM fulfillment_reviews
+                WHERE fulfillment_id = fulfillments.id AND is_visible = TRUE
+            )
+        """)
+        conn.commit()
+        return resp(200, {'ok': True})
+    finally:
+        cur.close()
+        conn.close()
+
+
+def handle_admin_balance_adjust(body, token):
+    """Ручная корректировка баланса фулфилмента"""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user or user[2] != 'admin':
+            return resp(403, {'error': 'Доступ запрещён'})
+
+        fid = body.get('fulfillment_id')
+        amount = body.get('amount')
+        tx_type = str(body.get('type', 'credit'))
+        description = str(body.get('description', '')).replace("'", "''")
+        if not fid or amount is None:
+            return resp(400, {'error': 'fulfillment_id и amount обязательны'})
+
+        admin_email = str(user[1]).replace("'", "''")
+        amt = float(amount)
+        if tx_type == 'debit':
+            cur.execute("UPDATE fulfillments SET balance = COALESCE(balance, 0) - %s WHERE id = %d" % (amt, int(fid)))
+        else:
+            cur.execute("UPDATE fulfillments SET balance = COALESCE(balance, 0) + %s WHERE id = %d" % (amt, int(fid)))
+
+        cur.execute("""
+            INSERT INTO balance_transactions (fulfillment_id, amount, type, description, admin_email)
+            VALUES (%d, %s, '%s', '%s', '%s')
+        """ % (int(fid), amt, tx_type.replace("'", "''"), description, admin_email))
+        conn.commit()
+        return resp(200, {'ok': True})
+    finally:
+        cur.close()
+        conn.close()
+
+
+def handle_admin_balance_history(token, params):
+    """История транзакций баланса для фулфилмента"""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user or user[2] != 'admin':
+            return resp(403, {'error': 'Доступ запрещён'})
+
+        fid = params.get('fulfillment_id', '')
+        where = 'WHERE bt.fulfillment_id = %d' % int(fid) if fid else ''
+        cur.execute("""
+            SELECT bt.id, bt.fulfillment_id, f.company_name, bt.amount, bt.type,
+                bt.description, bt.admin_email, bt.created_at
+            FROM balance_transactions bt
+            JOIN fulfillments f ON f.id = bt.fulfillment_id
+            %s ORDER BY bt.created_at DESC LIMIT 200
+        """ % where)
+        rows = cur.fetchall()
+        txs = [{
+            'id': r[0], 'fulfillment_id': r[1], 'company_name': r[2],
+            'amount': float(r[3]), 'type': r[4], 'description': r[5],
+            'admin_email': r[6], 'created_at': str(r[7]),
+        } for r in rows]
+        return resp(200, {'transactions': txs})
+    finally:
+        cur.close()
+        conn.close()
+
+
+def handle_admin_update_quote_status(body, token):
+    """Изменить статус запроса КП из панели модерации"""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user or user[2] != 'admin':
+            return resp(403, {'error': 'Доступ запрещён'})
+
+        qid = body.get('quote_id')
+        status = body.get('status')
+        if not qid or status not in ('new', 'in_progress', 'answered', 'closed'):
+            return resp(400, {'error': 'quote_id и корректный status обязательны'})
+
+        cur.execute("UPDATE quote_requests SET status = '%s' WHERE id = %d" % (status, int(qid)))
+        conn.commit()
+        return resp(200, {'ok': True})
+    finally:
+        cur.close()
+        conn.close()
 
 
 def handle_quick_contact(body):

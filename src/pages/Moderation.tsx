@@ -6,6 +6,10 @@ import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import AdminSubscribersTab from "./Admin/AdminSubscribersTab";
+import DashboardTab from "./Moderation/DashboardTab";
+import UsersTab from "./Moderation/UsersTab";
+import BalanceTab from "./Moderation/BalanceTab";
+import ReviewsTab from "./Moderation/ReviewsTab";
 
 // ─── TYPES ──────────────────────────────────────────────────────────────────
 
@@ -68,7 +72,7 @@ interface QuoteStats {
   paid_revenue: number;
 }
 
-type Tab = "fulfillments" | "quotes" | "subscribers";
+type Tab = "dashboard" | "fulfillments" | "quotes" | "users" | "balance" | "reviews" | "subscribers";
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
 
@@ -96,7 +100,7 @@ const FEATURE_LABELS: Record<string, string> = {
 export default function Moderation() {
   const navigate = useNavigate();
   const { user, loading, logout } = useAuth();
-  const [tab, setTab] = useState<Tab>("fulfillments");
+  const [tab, setTab] = useState<Tab>("dashboard");
 
   // ─── AUTH GUARD ─────────────────────────────────────────────────────────
 
@@ -159,68 +163,69 @@ export default function Moderation() {
     <div className="min-h-screen bg-gray-50 font-golos">
       {/* Header */}
       <header className="bg-navy-950 border-b border-navy-800/50">
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-2 group flex-shrink-0">
-            <div className="w-7 h-7 bg-gold-500 rounded flex items-center justify-center">
-              <Icon name="Package" size={14} className="text-navy-950" />
+        <div className="max-w-7xl mx-auto px-4">
+          {/* Top row */}
+          <div className="h-14 flex items-center gap-4">
+            <Link to="/" className="flex items-center gap-2 group flex-shrink-0">
+              <div className="w-7 h-7 bg-gold-500 rounded flex items-center justify-center">
+                <Icon name="Package" size={14} className="text-navy-950" />
+              </div>
+              <span className="text-sm font-bold text-white group-hover:text-gold-400 transition-colors hidden sm:inline">
+                Fulfill<span className="text-gold-400 group-hover:text-gold-300">Hub</span>
+              </span>
+            </Link>
+            <div className="h-5 w-px bg-navy-700 flex-shrink-0" />
+            <div className="flex items-center gap-1.5">
+              <Icon name="Shield" size={14} className="text-gold-400" />
+              <span className="text-sm font-bold text-white">Панель администратора</span>
             </div>
-            <span className="text-sm font-bold text-white group-hover:text-gold-400 transition-colors hidden sm:inline">
-              Fulfill<span className="text-gold-400 group-hover:text-gold-300">Hub</span>
-            </span>
-          </Link>
-
-          <div className="h-5 w-px bg-navy-700 flex-shrink-0" />
-
-          <div className="flex items-center gap-1.5">
-            <Icon name="Shield" size={14} className="text-gold-400" />
-            <span className="text-sm font-bold text-white">Панель модерации</span>
-          </div>
-
-          {/* Tabs in header */}
-          <div className="ml-6 flex gap-1 bg-navy-900 rounded-lg p-0.5">
-            <button
-              onClick={() => setTab("fulfillments")}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                tab === "fulfillments" ? "bg-gold-500 text-navy-950" : "text-navy-300 hover:text-white"
-              }`}
-            >
-              Фулфилменты
-            </button>
-            <button
-              onClick={() => setTab("quotes")}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                tab === "quotes" ? "bg-gold-500 text-navy-950" : "text-navy-300 hover:text-white"
-              }`}
-            >
-              Запросы КП
-            </button>
-            <button
-              onClick={() => setTab("subscribers")}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                tab === "subscribers" ? "bg-gold-500 text-navy-950" : "text-navy-300 hover:text-white"
-              }`}
-            >
-              Подписчики
-            </button>
-          </div>
-
-          <div className="ml-auto flex items-center gap-3">
-            <span className="text-xs text-navy-400 font-ibm hidden sm:block">{user.email}</span>
-            <div className="w-7 h-7 bg-gold-500/20 text-gold-400 rounded-full flex items-center justify-center font-golos font-bold text-xs">
-              {user.email[0].toUpperCase()}
+            <div className="ml-auto flex items-center gap-3">
+              <span className="text-xs text-navy-400 font-ibm hidden sm:block">{user.email}</span>
+              <div className="w-7 h-7 bg-gold-500/20 text-gold-400 rounded-full flex items-center justify-center font-golos font-bold text-xs">
+                {user.email[0].toUpperCase()}
+              </div>
+              <button onClick={() => { logout(); navigate("/auth"); }}
+                className="text-navy-400 hover:text-red-400 transition-colors" title="Выйти">
+                <Icon name="LogOut" size={16} />
+              </button>
             </div>
-            <button onClick={() => { logout(); navigate("/auth"); }}
-              className="text-navy-400 hover:text-red-400 transition-colors" title="Выйти">
-              <Icon name="LogOut" size={16} />
-            </button>
+          </div>
+          {/* Tabs row */}
+          <div className="flex gap-1 pb-0 overflow-x-auto scrollbar-none">
+            {([
+              { key: "dashboard", label: "Дашборд", icon: "LayoutDashboard" },
+              { key: "fulfillments", label: "Фулфилменты", icon: "Building2" },
+              { key: "quotes", label: "Запросы КП", icon: "FileText" },
+              { key: "users", label: "Пользователи", icon: "Users" },
+              { key: "balance", label: "Балансы", icon: "Wallet" },
+              { key: "reviews", label: "Отзывы", icon: "Star" },
+              { key: "subscribers", label: "Подписчики", icon: "Mail" },
+            ] as { key: Tab; label: string; icon: string }[]).map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium whitespace-nowrap border-b-2 transition-all ${
+                  tab === t.key
+                    ? "border-gold-400 text-gold-400"
+                    : "border-transparent text-navy-400 hover:text-white hover:border-navy-500"
+                }`}
+              >
+                <Icon name={t.icon} size={13} />
+                {t.label}
+              </button>
+            ))}
           </div>
         </div>
       </header>
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
+        {tab === "dashboard" && <DashboardTab onNavigate={(t) => setTab(t as Tab)} />}
         {tab === "fulfillments" && <FulfillmentsTab />}
         {tab === "quotes" && <QuotesTab />}
+        {tab === "users" && <UsersTab />}
+        {tab === "balance" && <BalanceTab />}
+        {tab === "reviews" && <ReviewsTab />}
         {tab === "subscribers" && <AdminSubscribersTab />}
       </div>
     </div>
@@ -527,6 +532,42 @@ function FulfillmentDetailModal({ item, onClose, onModerate }: {
 }) {
   const [rejectComment, setRejectComment] = useState(item.moderation_comment || "");
   const [showReject, setShowReject] = useState(false);
+  const [notes, setNotes] = useState<{ id: number; admin_email: string; note: string; created_at: string }[]>([]);
+  const [newNote, setNewNote] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+  useEffect(() => {
+    api.adminNotesGet(item.id).then((d) => setNotes(d.notes || [])).catch(() => {});
+  }, [item.id]);
+
+  const addNote = async () => {
+    if (!newNote.trim()) return;
+    setSavingNote(true);
+    try {
+      await api.adminNotesAdd(item.id, newNote.trim());
+      const d = await api.adminNotesGet(item.id);
+      setNotes(d.notes || []);
+      setNewNote("");
+      toast.success("Заметка добавлена");
+    } catch { toast.error("Не удалось сохранить заметку"); }
+    finally { setSavingNote(false); }
+  };
+
+  const sendEmail = async () => {
+    if (!emailSubject.trim() || !emailMessage.trim()) { toast.error("Заполните тему и текст письма"); return; }
+    setSendingEmail(true);
+    try {
+      await api.adminSendEmail(item.contact_email || item.user_email, emailSubject, emailMessage);
+      toast.success("Письмо отправлено");
+      setShowEmailForm(false);
+      setEmailSubject(""); setEmailMessage("");
+    } catch { toast.error("Не удалось отправить письмо"); }
+    finally { setSendingEmail(false); }
+  };
 
   const st = STATUS_CFG[item.status] || STATUS_CFG.draft;
 
@@ -686,6 +727,79 @@ function FulfillmentDetailModal({ item, onClose, onModerate }: {
             </div>
           )}
 
+          {/* Internal notes */}
+          <div>
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide font-ibm mb-2 flex items-center gap-2">
+              <Icon name="StickyNote" size={13} />
+              Внутренние заметки
+            </div>
+            {notes.length > 0 && (
+              <div className="space-y-2 mb-3">
+                {notes.map((n) => (
+                  <div key={n.id} className="bg-amber-50 border border-amber-100 rounded-lg p-3">
+                    <div className="text-xs text-amber-600 font-ibm mb-1">{n.admin_email} · {new Date(n.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</div>
+                    <p className="text-sm text-amber-900 font-ibm">{n.note}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <textarea
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                rows={2}
+                placeholder="Добавить заметку (видна только администраторам)..."
+                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-xs font-ibm bg-white focus:outline-none focus:ring-1 focus:ring-navy-300 resize-none"
+              />
+              <button
+                onClick={addNote}
+                disabled={savingNote || !newNote.trim()}
+                className="px-3 py-2 bg-navy-900 text-white rounded-lg text-xs font-medium disabled:opacity-50 hover:bg-navy-700 transition-colors"
+              >
+                {savingNote ? <Icon name="Loader2" size={14} className="animate-spin" /> : "Добавить"}
+              </button>
+            </div>
+          </div>
+
+          {/* Send email */}
+          <div>
+            <button
+              onClick={() => setShowEmailForm(!showEmailForm)}
+              className="flex items-center gap-1.5 text-xs text-navy-600 hover:text-navy-900 font-medium font-ibm transition-colors"
+            >
+              <Icon name="Mail" size={13} />
+              {showEmailForm ? "Скрыть форму письма" : `Написать письмо (${item.contact_email || item.user_email})`}
+            </button>
+            {showEmailForm && (
+              <div className="mt-3 bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-3">
+                <input
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  placeholder="Тема письма..."
+                  className="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-1 focus:ring-blue-300"
+                />
+                <textarea
+                  value={emailMessage}
+                  onChange={(e) => setEmailMessage(e.target.value)}
+                  rows={4}
+                  placeholder="Текст письма..."
+                  className="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-1 focus:ring-blue-300 resize-none"
+                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={sendEmail}
+                    disabled={sendingEmail}
+                    className="bg-navy-900 hover:bg-navy-700 text-white font-golos text-sm h-9 px-5"
+                  >
+                    {sendingEmail ? <Icon name="Loader2" size={14} className="animate-spin mr-1.5" /> : <Icon name="Send" size={14} className="mr-1.5" />}
+                    Отправить
+                  </Button>
+                  <button onClick={() => setShowEmailForm(false)} className="text-sm text-gray-500 hover:text-gray-700 font-ibm">Отмена</button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Reject form */}
           {showReject && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
@@ -800,6 +914,17 @@ function QuotesTab() {
     } catch (err: unknown) {
       const e = err as { error?: string };
       toast.error(e.error || "Не удалось обновить");
+    }
+  };
+
+  const changeStatus = async (quoteId: number, status: string) => {
+    try {
+      await api.adminUpdateQuoteStatus(quoteId, status);
+      toast.success("Статус обновлён");
+      load();
+    } catch (err: unknown) {
+      const e = err as { error?: string };
+      toast.error(e.error || "Не удалось обновить статус");
     }
   };
 
@@ -921,6 +1046,7 @@ function QuotesTab() {
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Отправитель</th>
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Контакт</th>
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Фулфилмент</th>
+                    <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Статус</th>
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Дата</th>
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Цена лида</th>
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Оплата</th>
@@ -945,6 +1071,18 @@ function QuotesTab() {
                           <span className="text-xs font-medium text-navy-700 bg-navy-50 px-2 py-0.5 rounded font-ibm">
                             {q.fulfillment_name || `ID: ${q.fulfillment_id}`}
                           </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <select
+                            value={q.status}
+                            onChange={(e) => changeStatus(q.id, e.target.value)}
+                            className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700 font-ibm focus:outline-none focus:ring-1 focus:ring-navy-300"
+                          >
+                            <option value="new">Новая</option>
+                            <option value="in_progress">В работе</option>
+                            <option value="answered">Отвечено</option>
+                            <option value="closed">Закрыта</option>
+                          </select>
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-400 font-ibm whitespace-nowrap">{formatDate(q.created_at)}</td>
                         <td className="px-4 py-3">

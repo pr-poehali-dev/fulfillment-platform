@@ -151,6 +151,42 @@ export const api = {
   adminMarkPaid: (quoteId: number) =>
     request("fulfillment", "admin-mark-paid", { method: "POST", body: { quote_id: quoteId } }),
 
+  adminDashboard: () =>
+    request("fulfillment", "admin-dashboard"),
+
+  adminUsers: (params?: { role?: string; blocked?: string }) =>
+    request("fulfillment", "admin-users", { params: params as Record<string, string> | undefined }),
+
+  adminBlockUser: (userId: number, action: "block" | "unblock", reason?: string) =>
+    request("fulfillment", "admin-block-user", { method: "POST", body: { user_id: userId, action, reason: reason || "" } }),
+
+  adminNotesGet: (fulfillmentId: number) =>
+    request("fulfillment", "admin-notes", { params: { fulfillment_id: String(fulfillmentId) } }),
+
+  adminNotesAdd: (fulfillmentId: number, note: string) =>
+    request("fulfillment", "admin-notes-add", { method: "POST", body: { fulfillment_id: fulfillmentId, note } }),
+
+  adminSendEmail: (to: string, subject: string, message: string) =>
+    request("fulfillment", "admin-send-email", { method: "POST", body: { to, subject, message } }),
+
+  adminReviewsGet: (fulfillmentId?: number) =>
+    request("fulfillment", "admin-reviews", { params: fulfillmentId ? { fulfillment_id: String(fulfillmentId) } : {} }),
+
+  adminReviewsSave: (body: Record<string, unknown>) =>
+    request("fulfillment", "admin-reviews-save", { method: "POST", body }),
+
+  adminReviewsToggle: (reviewId: number, isVisible: boolean) =>
+    request("fulfillment", "admin-reviews-toggle", { method: "POST", body: { review_id: reviewId, is_visible: isVisible } }),
+
+  adminBalanceAdjust: (fulfillmentId: number, amount: number, type: "credit" | "debit", description: string) =>
+    request("fulfillment", "admin-balance-adjust", { method: "POST", body: { fulfillment_id: fulfillmentId, amount, type, description } }),
+
+  adminBalanceHistory: (fulfillmentId?: number) =>
+    request("fulfillment", "admin-balance-history", { params: fulfillmentId ? { fulfillment_id: String(fulfillmentId) } : {} }),
+
+  adminUpdateQuoteStatus: (quoteId: number, status: string) =>
+    request("fulfillment", "admin-update-quote-status", { method: "POST", body: { quote_id: quoteId, status } }),
+
   // ─── Subscribers ────────────────────────────────────────────────────────
   getSubscribers: () =>
     fetch(URLS.getSubscribers, { headers: { "Authorization": `Bearer ${getToken()}` } }).then((r) => r.json()),
