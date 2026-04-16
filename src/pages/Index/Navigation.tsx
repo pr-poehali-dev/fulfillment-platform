@@ -234,9 +234,9 @@ export function Footer({ setActive }: { setActive: (s: string) => void }) {
             <p className="text-white/50 text-xs font-ibm leading-relaxed">B2B маркетплейс фулфилмент-партнёров для селлеров</p>
           </div>
           {[
-            { title: "Для селлеров", links: [{ label: "Каталог партнёров", id: "catalog" }, { label: "Фулфилмент для Wildberries", id: "", href: "/fulfillment/wildberries" }, { label: "Фулфилмент для Ozon", id: "", href: "/fulfillment/ozon" }, { label: "Контакты", id: "contacts" }] as { label: string; id: string; href?: string }[] },
+            { title: "Для селлеров", links: [{ label: "Каталог партнёров", id: "catalog" }, { label: "Фулфилмент для Wildberries", id: "", href: "/fulfillment/wildberries" }, { label: "Фулфилмент для Ozon", id: "", href: "/fulfillment/ozon" }, { label: "Фулфилмент в Москве", id: "", href: "/fulfillment/moskva" }, { label: "Фулфилмент в Петербурге", id: "", href: "/fulfillment/sankt-peterburg" }, { label: "Контакты", id: "contacts" }] as { label: string; id: string; href?: string }[] },
             { title: "Для фулфилмента", links: [{ label: "Разместить сервис →", id: "", href: "/for-fulfillment" }, { label: "Партнёрская программа", id: "", href: "/sales" }] as { label: string; id: string; href?: string }[] },
-            { title: "Компания", links: [{ label: "О платформе", id: "hero" }, { label: "Контакты", id: "contacts" }] },
+            { title: "Полезное", links: [{ label: "Что такое фулфилмент", id: "", href: "/chto-takoe-fulfillment" }, { label: "FBO vs FBS", id: "", href: "/fbo-vs-fbs" }, { label: "Калькулятор стоимости", id: "", href: "/kalkulator-fulfillmenta" }, { label: "О платформе", id: "hero" }] as { label: string; id: string; href?: string }[] },
           ].map((col) => (
             <div key={col.title}>
               <div className="font-golos font-bold text-xs mb-2.5 text-white/70 uppercase tracking-wide">{col.title}</div>
