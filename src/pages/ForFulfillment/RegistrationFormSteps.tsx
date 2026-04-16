@@ -34,6 +34,7 @@ export interface FormState {
   contactPhone: string; setContactPhone: (v: string) => void;
   contactTg: string;    setContactTg: (v: string) => void;
   agree: boolean;       setAgree: (v: boolean) => void;
+  marketingConsent: boolean; setMarketingConsent: (v: boolean) => void;
 }
 
 interface RegistrationFormStepsProps {
@@ -99,6 +100,7 @@ export default function RegistrationFormSteps({ step, state, canNext, submitting
           contactPhone={s.contactPhone} setContactPhone={s.setContactPhone}
           contactTg={s.contactTg}       setContactTg={s.setContactTg}
           agree={s.agree}               setAgree={s.setAgree}
+          marketingConsent={s.marketingConsent} setMarketingConsent={s.setMarketingConsent}
           companyName={s.companyName}
           city={s.city}
           schemes={s.schemes}

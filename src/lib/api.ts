@@ -36,8 +36,8 @@ async function request(fn: keyof typeof URLS, action: string, opts?: { method?: 
 
 export const api = {
   // ─── Auth ───────────────────────────────────────────────────────────────
-  register: (email: string, password: string, phone: string) =>
-    request("auth", "register", { method: "POST", body: { email, password, phone } }),
+  register: (email: string, password: string, phone: string, consentPersonalData = false, consentTerms = false, marketingConsent = false) =>
+    request("auth", "register", { method: "POST", body: { email, password, phone, consent_personal_data: consentPersonalData, consent_terms: consentTerms, marketing_consent: marketingConsent } }),
 
   login: (email: string, password: string) =>
     request("auth", "login", { method: "POST", body: { email, password } }),

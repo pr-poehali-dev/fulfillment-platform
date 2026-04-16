@@ -15,6 +15,9 @@ interface AdminUser {
   block_reason: string | null;
   blocked_at: string | null;
   created_at: string;
+  marketing_consent: boolean;
+  consent_personal_data: boolean;
+  consent_terms: boolean;
 }
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -473,6 +476,7 @@ export default function UsersTab() {
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Верификация</th>
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Дата рег.</th>
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Статус</th>
+                    <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide" title="Согласие на рекламные материалы">Реклама</th>
                     <th className="px-4 py-2.5 font-semibold text-gray-500 font-ibm text-xs uppercase tracking-wide">Действия</th>
                   </tr>
                 </thead>
@@ -519,6 +523,19 @@ export default function UsersTab() {
                           <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-700">
                             <Icon name="CheckCircle" size={10} />
                             Активен
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {u.marketing_consent ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-ibm">
+                            <Icon name="CheckCircle" size={13} className="text-emerald-500" />
+                            Да
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs text-gray-400 font-ibm">
+                            <Icon name="XCircle" size={13} className="text-gray-300" />
+                            Нет
                           </span>
                         )}
                       </td>

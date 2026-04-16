@@ -268,11 +268,15 @@ def handle_register(body):
             return resp(409, {'error': 'Пользователь с таким email уже существует'})
 
         pw_hash = hash_password(password)
+        consent_personal = 'TRUE' if body.get('consent_personal_data') else 'FALSE'
+        consent_terms = 'TRUE' if body.get('consent_terms') else 'FALSE'
+        marketing = 'TRUE' if body.get('marketing_consent') else 'FALSE'
         cur.execute("""
-            INSERT INTO users (email, password_hash, phone, role)
-            VALUES ('%s', '%s', '%s', 'fulfillment')
+            INSERT INTO users (email, password_hash, phone, role, consent_personal_data, consent_terms, marketing_consent, consent_at)
+            VALUES ('%s', '%s', '%s', 'fulfillment', %s, %s, %s, NOW())
             RETURNING id
-        """ % (email.replace("'", "''"), pw_hash.replace("'", "''"), phone.replace("'", "''")))
+        """ % (email.replace("'", "''"), pw_hash.replace("'", "''"), phone.replace("'", "''"),
+               consent_personal, consent_terms, marketing))
         user_id = cur.fetchone()[0]
 
         cur.execute("""
@@ -459,11 +463,12 @@ def handle_register_from_form(body):
         temp_pw = secrets.token_urlsafe(12)
         pw_hash = hash_password(temp_pw)
 
+        marketing = 'TRUE' if body.get('marketing_consent') else 'FALSE'
         cur.execute("""
-            INSERT INTO users (email, password_hash, phone, role, email_verified)
-            VALUES ('%s', '%s', '%s', 'fulfillment', TRUE)
+            INSERT INTO users (email, password_hash, phone, role, email_verified, consent_personal_data, consent_terms, marketing_consent, consent_at)
+            VALUES ('%s', '%s', '%s', 'fulfillment', TRUE, TRUE, TRUE, %s, NOW())
             RETURNING id
-        """ % (email.replace("'", "''"), pw_hash.replace("'", "''"), phone.replace("'", "''")))
+        """ % (email.replace("'", "''"), pw_hash.replace("'", "''"), phone.replace("'", "''"), marketing))
         user_id = cur.fetchone()[0]
 
         company = body.get('companyName', '').replace("'", "''")

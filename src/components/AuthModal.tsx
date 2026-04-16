@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import api, { setToken } from "@/lib/api";
 import TelegramLoginButton from "@/components/TelegramLoginButton";
+import ConsentCheckboxes from "@/components/ConsentCheckboxes";
 
 type Tab  = "login" | "register";
 type Step = "form" | "verify" | "reset-email" | "reset-code" | "reset-done";
@@ -36,6 +37,9 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
   const [submitting, setSubmitting] = useState(false);
   const [resendCD,   setResendCD]   = useState(0);
   const [emailExists, setEmailExists] = useState(false);
+  const [consentPersonal, setConsentPersonal] = useState(false);
+  const [consentTerms,    setConsentTerms]    = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   const codeRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -102,9 +106,11 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
     e.preventDefault(); setError(""); setEmailExists(false);
     if (!email.trim())       { setError("Введите email"); return; }
     if (password.length < 6) { setError("Пароль — минимум 6 символов"); return; }
+    if (!consentPersonal)    { setError("Необходимо дать согласие на обработку персональных данных"); return; }
+    if (!consentTerms)       { setError("Необходимо принять политику конфиденциальности и условия использования"); return; }
     setSubmitting(true);
     try {
-      const data = await api.register(email.trim(), password, phone.trim());
+      const data = await api.register(email.trim(), password, phone.trim(), consentPersonal, consentTerms, marketingConsent);
       setToken(data.token); setStep("verify");
     } catch (err: unknown) {
       const e = err as { message?: string; detail?: string; status?: number };
@@ -492,7 +498,17 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
                     </div>
                   )}
 
-                  <Button type="submit" disabled={submitting}
+                  <ConsentCheckboxes
+                    consentPersonal={consentPersonal}
+                    consentTerms={consentTerms}
+                    marketingConsent={marketingConsent}
+                    onConsentPersonalChange={setConsentPersonal}
+                    onConsentTermsChange={setConsentTerms}
+                    onMarketingConsentChange={setMarketingConsent}
+                    className="mt-1"
+                  />
+
+                  <Button type="submit" disabled={submitting || !consentPersonal || !consentTerms}
                     className="w-full bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos rounded-xl h-10 mt-1 disabled:opacity-40">
                     {submitting
                       ? <><Icon name="Loader2" size={14} className="mr-1.5 animate-spin" />Создание...</>
@@ -500,13 +516,6 @@ export default function AuthModal({ open, onClose, defaultTab = "login" }: AuthM
                   </Button>
                 </form>
               )}
-
-              <p className="text-[11px] text-gray-400 font-ibm text-center leading-relaxed">
-                Нажимая кнопку, вы соглашаетесь с{" "}
-                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">политикой конфиденциальности</a>
-                {" "}и{" "}
-                <a href="/offer" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">обработкой персональных данных</a>
-              </p>
             </div>
           )}
         </div>

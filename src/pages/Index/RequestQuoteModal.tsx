@@ -6,6 +6,7 @@ import type { Partner } from "./data";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { ymGoal } from "@/lib/ym";
+import ConsentCheckboxes from "@/components/ConsentCheckboxes";
 
 const inputCls = "w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/20";
 
@@ -25,6 +26,9 @@ export function RequestQuoteModal({ partners, onClose }: {
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [consentPersonal, setConsentPersonal] = useState(false);
+  const [consentTerms,    setConsentTerms]    = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   useEffect(() => {
     ymGoal("quote_modal_open", { partners_count: partners.length });
@@ -37,7 +41,7 @@ export function RequestQuoteModal({ partners, onClose }: {
     };
   }, [onClose, partners.length]);
 
-  const canSubmit = name.trim() && email.trim() && phone.trim() && !submitting;
+  const canSubmit = name.trim() && email.trim() && phone.trim() && !submitting && consentPersonal && consentTerms;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -240,17 +244,19 @@ export function RequestQuoteModal({ partners, onClose }: {
             </div>
 
             {/* Footer */}
-            <div className="px-5 py-4 border-t border-gray-100 flex items-center gap-3 flex-shrink-0">
-              <div className="text-xs text-gray-400 font-ibm flex-1 leading-relaxed">
-                Нажимая «Отправить», вы соглашаетесь с{" "}
-                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">политикой конфиденциальности</a>
-                {" "}и{" "}
-                <a href="/offer" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">обработкой персональных данных</a>
-              </div>
+            <div className="px-5 py-4 border-t border-gray-100 space-y-3 flex-shrink-0">
+              <ConsentCheckboxes
+                consentPersonal={consentPersonal}
+                consentTerms={consentTerms}
+                marketingConsent={marketingConsent}
+                onConsentPersonalChange={setConsentPersonal}
+                onConsentTermsChange={setConsentTerms}
+                onMarketingConsentChange={setMarketingConsent}
+              />
               <Button
                 onClick={handleSubmit}
                 disabled={!canSubmit}
-                className="bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos h-10 px-6 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos h-10 px-6 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {submitting ? (
                   <><Icon name="Loader2" size={14} className="mr-1.5 animate-spin" />Отправка...</>

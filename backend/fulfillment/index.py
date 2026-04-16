@@ -1257,7 +1257,8 @@ def handle_admin_users(token, params):
             where += " AND is_blocked = TRUE"
 
         cur.execute("""
-            SELECT id, email, role, email_verified, is_blocked, block_reason, blocked_at, created_at
+            SELECT id, email, role, email_verified, is_blocked, block_reason, blocked_at, created_at,
+                   marketing_consent, consent_personal_data, consent_terms
             FROM users %s ORDER BY created_at DESC
         """ % where)
         rows = cur.fetchall()
@@ -1267,6 +1268,7 @@ def handle_admin_users(token, params):
                 'id': r[0], 'email': r[1], 'role': r[2], 'email_verified': r[3],
                 'is_blocked': r[4], 'block_reason': r[5], 'blocked_at': str(r[6]) if r[6] else None,
                 'created_at': str(r[7]),
+                'marketing_consent': r[8], 'consent_personal_data': r[9], 'consent_terms': r[10],
             })
         return resp(200, {'users': result})
     finally:

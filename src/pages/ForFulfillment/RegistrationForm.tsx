@@ -43,6 +43,7 @@ export default function RegistrationForm() {
   const [contactPhone, setContactPhone] = useState("");
   const [contactTg, setContactTg] = useState("");
   const [agree, setAgree] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   const toggle = <T,>(arr: T[], val: T, set: (v: T[]) => void) =>
     set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
@@ -68,6 +69,7 @@ export default function RegistrationForm() {
         schemes, features, packaging, marketplaces,
         storagePrice, assemblyPrice, deliveryPrice, minVolume, hasTrial,
         contactName, contactEmail, contactPhone, contactTg,
+        marketing_consent: marketingConsent,
       });
       setToken(data.token);
       setTempPassword(data.temp_password || "");
@@ -122,6 +124,7 @@ export default function RegistrationForm() {
     contactPhone, setContactPhone,
     contactTg,    setContactTg,
     agree,        setAgree,
+    marketingConsent, setMarketingConsent,
   };
 
   return (

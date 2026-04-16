@@ -2,6 +2,7 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
+import ConsentCheckboxes from "@/components/ConsentCheckboxes";
 
 export default function SupportSection() {
   const [name, setName] = useState("");
@@ -10,6 +11,9 @@ export default function SupportSection() {
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [consentPersonal, setConsentPersonal] = useState(false);
+  const [consentTerms,    setConsentTerms]    = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   const inputCls = "w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/20";
 
@@ -96,21 +100,23 @@ export default function SupportSection() {
               <p className="text-red-500 text-xs font-ibm">{error}</p>
             </div>
           )}
+          <ConsentCheckboxes
+            consentPersonal={consentPersonal}
+            consentTerms={consentTerms}
+            marketingConsent={marketingConsent}
+            onConsentPersonalChange={setConsentPersonal}
+            onConsentTermsChange={setConsentTerms}
+            onMarketingConsentChange={setMarketingConsent}
+          />
           <div className="flex items-center gap-4 flex-wrap">
             <Button onClick={handleSubmit}
-              disabled={!name.trim() || !email.trim() || !message.trim() || submitting}
+              disabled={!name.trim() || !email.trim() || !message.trim() || !consentPersonal || !consentTerms || submitting}
               className="bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos text-sm h-10 px-6 disabled:opacity-40">
               {submitting
                 ? <><Icon name="Loader2" size={14} className="mr-1.5 animate-spin" />Отправка...</>
                 : <><Icon name="Send" size={14} className="mr-1.5" />Отправить</>
               }
             </Button>
-            <p className="text-[11px] text-gray-400 font-ibm leading-relaxed">
-              Нажимая кнопку, вы соглашаетесь с{" "}
-              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">политикой конфиденциальности</a>
-              {" "}и{" "}
-              <a href="/offer" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">обработкой персональных данных</a>
-            </p>
           </div>
         </div>
       </div>

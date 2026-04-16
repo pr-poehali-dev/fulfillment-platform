@@ -9,6 +9,7 @@ export interface Step4Props {
   contactPhone: string; setContactPhone: (v: string) => void;
   contactTg: string;    setContactTg: (v: string) => void;
   agree: boolean;       setAgree: (v: boolean) => void;
+  marketingConsent?: boolean; setMarketingConsent?: (v: boolean) => void;
   companyName: string;
   city: string;
   schemes: string[];
@@ -17,7 +18,7 @@ export interface Step4Props {
   hasTrial: boolean;
 }
 
-export default function Step4Contacts({ contactName, setContactName, contactEmail, setContactEmail, contactPhone, setContactPhone, contactTg, setContactTg, agree, setAgree, companyName, city, schemes, marketplaces, storagePrice, hasTrial }: Step4Props) {
+export default function Step4Contacts({ contactName, setContactName, contactEmail, setContactEmail, contactPhone, setContactPhone, contactTg, setContactTg, agree, setAgree, marketingConsent = false, setMarketingConsent, companyName, city, schemes, marketplaces, storagePrice, hasTrial }: Step4Props) {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -93,6 +94,23 @@ export default function Step4Contacts({ contactName, setContactName, contactEmai
             </a>
             {" "}FulfillHub.
           </span>
+        </span>
+      </div>
+
+      {/* Marketing consent */}
+      <div
+        className="flex items-start gap-3 p-4 rounded-xl border border-gray-200 bg-white cursor-pointer hover:border-gray-300 transition-colors"
+        onClick={() => setMarketingConsent && setMarketingConsent(!marketingConsent)}
+      >
+        <div
+          className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
+            marketingConsent ? "bg-navy-900 border-navy-900" : "bg-white border-gray-300"
+          }`}
+        >
+          {marketingConsent && <Icon name="Check" size={11} className="text-white" />}
+        </div>
+        <span className="text-xs font-ibm text-gray-500 leading-relaxed select-none">
+          Я согласен получать рекламно-информационные материалы от FulfillHub
         </span>
       </div>
     </div>

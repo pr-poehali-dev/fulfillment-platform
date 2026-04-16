@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { ymGoal } from "@/lib/ym";
+import ConsentCheckboxes from "@/components/ConsentCheckboxes";
 
 const inputCls =
   "w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/20 placeholder:text-gray-400 transition-all";
@@ -16,6 +17,9 @@ export default function QuickContactSheet({ open, onClose }: Props) {
   const [contact, setContact] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [consentPersonal, setConsentPersonal] = useState(false);
+  const [consentTerms,    setConsentTerms]    = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -127,22 +131,25 @@ export default function QuickContactSheet({ open, onClose }: Props) {
                   />
                 </div>
 
+                <ConsentCheckboxes
+                  consentPersonal={consentPersonal}
+                  consentTerms={consentTerms}
+                  marketingConsent={marketingConsent}
+                  onConsentPersonalChange={setConsentPersonal}
+                  onConsentTermsChange={setConsentTerms}
+                  onMarketingConsentChange={setMarketingConsent}
+                  className="mt-1"
+                />
+
                 <Button
                   type="submit"
-                  disabled={!name.trim() || !contact.trim() || submitting}
+                  disabled={!name.trim() || !contact.trim() || !consentPersonal || !consentTerms || submitting}
                   className="w-full bg-navy-900 hover:bg-navy-800 text-white font-bold font-golos h-12 rounded-xl mt-2 disabled:opacity-40"
                 >
                   {submitting
                     ? <><Icon name="Loader2" size={15} className="mr-2 animate-spin" />Отправка...</>
                     : <><Icon name="Send" size={15} className="mr-2" />Жду звонка</>}
                 </Button>
-
-                <p className="text-[11px] text-gray-400 font-ibm text-center leading-relaxed">
-                  Нажимая кнопку, вы соглашаетесь с{" "}
-                  <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">политикой конфиденциальности</a>
-                  {" "}и{" "}
-                  <a href="/offer" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">обработкой персональных данных</a>
-                </p>
               </form>
             </>
           )}
