@@ -16,6 +16,8 @@ import Terms from "./pages/Terms";
 import Offer from "./pages/Offer";
 import Demo from "./pages/Demo";
 import Sales from "./pages/Sales";
+import FulfillmentWildberries from "./pages/FulfillmentWildberries";
+import FulfillmentOzon from "./pages/FulfillmentOzon";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +41,8 @@ const App = () => (
             <Route path="/offer" element={<Offer />} />
             <Route path="/demo" element={<Demo />} />
             <Route path="/sales" element={<Sales />} />
+            <Route path="/fulfillment/wildberries" element={<FulfillmentWildberries />} />
+            <Route path="/fulfillment/ozon" element={<FulfillmentOzon />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
