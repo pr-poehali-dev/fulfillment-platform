@@ -117,6 +117,15 @@ export default function Admin() {
     if (tab === "quotes" && user?.email_verified) loadQuotes();
   }, [tab, user, loadQuotes]);
 
+  useEffect(() => {
+    const meta = document.createElement("meta");
+    meta.name = "robots";
+    meta.content = "noindex, nofollow";
+    meta.id = "noindex-admin";
+    document.head.appendChild(meta);
+    return () => { document.getElementById("noindex-admin")?.remove(); };
+  }, []);
+
   // ─── Resend cooldown ──────────────────────────────────────────────────────
 
   useEffect(() => {

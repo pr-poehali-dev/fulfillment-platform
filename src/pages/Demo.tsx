@@ -101,6 +101,15 @@ export default function Demo() {
       .finally(() => setLoading(false));
   }, [token]);
 
+  useEffect(() => {
+    const meta = document.createElement("meta");
+    meta.name = "robots";
+    meta.content = "noindex, nofollow";
+    meta.id = "noindex-demo";
+    document.head.appendChild(meta);
+    return () => { document.getElementById("noindex-demo")?.remove(); };
+  }, []);
+
   if (!loading && forbidden) {
     return (
       <div className="min-h-screen bg-navy-900 flex flex-col items-center justify-center gap-6 px-4">

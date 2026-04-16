@@ -160,6 +160,15 @@ export default function Seller() {
     if (user) loadQuotes();
   }, [user, loadQuotes]);
 
+  useEffect(() => {
+    const meta = document.createElement("meta");
+    meta.name = "robots";
+    meta.content = "noindex, nofollow";
+    meta.id = "noindex-seller";
+    document.head.appendChild(meta);
+    return () => { document.getElementById("noindex-seller")?.remove(); };
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-navy-950 flex items-center justify-center">

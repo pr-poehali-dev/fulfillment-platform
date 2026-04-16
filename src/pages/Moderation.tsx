@@ -106,6 +106,15 @@ export default function Moderation() {
     }
   }, [user, loading, navigate]);
 
+  useEffect(() => {
+    const meta = document.createElement("meta");
+    meta.name = "robots";
+    meta.content = "noindex, nofollow";
+    meta.id = "noindex-moderation";
+    document.head.appendChild(meta);
+    return () => { document.getElementById("noindex-moderation")?.remove(); };
+  }, []);
+
   // ─── LOADING ────────────────────────────────────────────────────────────
 
   if (loading) {
