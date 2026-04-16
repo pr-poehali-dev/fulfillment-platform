@@ -18,6 +18,11 @@ import Demo from "./pages/Demo";
 import Sales from "./pages/Sales";
 import FulfillmentWildberries from "./pages/FulfillmentWildberries";
 import FulfillmentOzon from "./pages/FulfillmentOzon";
+import FulfillmentMoskva from "./pages/FulfillmentMoskva";
+import FulfillmentSpb from "./pages/FulfillmentSpb";
+import ChtoTakoeFulfillment from "./pages/ChtoTakoeFulfillment";
+import FboVsFbs from "./pages/FboVsFbs";
+import KalkulyatorFulfillmenta from "./pages/KalkulyatorFulfillmenta";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +48,11 @@ const App = () => (
             <Route path="/sales" element={<Sales />} />
             <Route path="/fulfillment/wildberries" element={<FulfillmentWildberries />} />
             <Route path="/fulfillment/ozon" element={<FulfillmentOzon />} />
+            <Route path="/fulfillment/moskva" element={<FulfillmentMoskva />} />
+            <Route path="/fulfillment/sankt-peterburg" element={<FulfillmentSpb />} />
+            <Route path="/chto-takoe-fulfillment" element={<ChtoTakoeFulfillment />} />
+            <Route path="/fbo-vs-fbs" element={<FboVsFbs />} />
+            <Route path="/kalkulator-fulfillmenta" element={<KalkulyatorFulfillmenta />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
