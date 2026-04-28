@@ -193,6 +193,9 @@ export const api = {
   adminGetFulfillment: (id: number) =>
     request("fulfillment", "admin-get-fulfillment", { params: { id: String(id) } }),
 
+  adminCreateFulfillment: (body: { company_name?: string; owner_email?: string }) =>
+    request("fulfillment", "admin-create-fulfillment", { method: "POST", body }),
+
   // ─── Subscribers ────────────────────────────────────────────────────────
   getSubscribers: () =>
     fetch(URLS.getSubscribers, { headers: { "Authorization": `Bearer ${getToken()}` } }).then((r) => r.json()),

@@ -5,7 +5,7 @@ import api from "@/lib/api";
 import { toast } from "sonner";
 import type { Fulfillment } from "@/pages/Admin/types";
 import { EMPTY_FULFILLMENT } from "@/pages/Admin/types";
-import FulfillmentEditTabs, { type EditTab, EDIT_TABS } from "@/pages/Admin/FulfillmentEditTabs";
+import FulfillmentEditTabs, { type EditTab } from "@/pages/Admin/FulfillmentEditTabs";
 import { useReadinessCheck } from "@/pages/Admin/FulfillmentReadinessChecklist";
 
 interface ModerationEditModalProps {
@@ -152,32 +152,6 @@ export default function ModerationEditModal({ fulfillmentId, onClose, onSaved }:
             <Icon name="X" size={18} />
           </button>
         </div>
-
-        {/* Tabs nav */}
-        {!loading && form && (
-          <div className="flex gap-1 px-6 pt-3 pb-0 border-b border-gray-100 flex-shrink-0 overflow-x-auto">
-            {EDIT_TABS.map((tab) => {
-              const missing = tabMissingCount(tab.id);
-              const active = editTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setEditTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-lg whitespace-nowrap transition-colors relative
-                    ${active ? "bg-navy-900 text-white" : "text-gray-500 hover:bg-gray-100"}`}
-                >
-                  <Icon name={tab.icon as Parameters<typeof Icon>[0]["name"]} size={13} />
-                  {tab.label}
-                  {missing > 0 && (
-                    <span className="w-4 h-4 bg-amber-400 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-                      {missing}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        )}
 
         {/* Body */}
         <div className="flex-1 overflow-auto p-6">

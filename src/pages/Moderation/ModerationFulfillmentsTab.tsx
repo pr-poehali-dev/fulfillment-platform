@@ -341,12 +341,116 @@ function FulfillmentDetailModal({ item, onClose, onModerate, onEdit }: {
 
 // ─── FULFILLMENTS TAB ───────────────────────────────────────────────────────
 
+function CreateFulfillmentModal({ onClose, onCreated }: {
+  onClose: () => void;
+  onCreated: (id: number) => void;
+}) {
+  const [companyName, setCompanyName] = useState("");
+  const [ownerEmail, setOwnerEmail] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  const handleCreate = async () => {
+    if (!companyName.trim()) {
+      toast.error("Укажите название компании");
+      return;
+    }
+    setCreating(true);
+    try {
+      const res = await api.adminCreateFulfillment({
+        company_name: companyName.trim(),
+        owner_email: ownerEmail.trim() || undefined,
+      });
+      toast.success("Фулфилмент создан");
+      onCreated(res.id);
+    } catch (err: unknown) {
+      const e = err as { error?: string };
+      toast.error(e.error || "Не удалось создать фулфилмент");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+      >
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
+          <div className="w-10 h-10 bg-navy-900 text-white rounded-xl flex items-center justify-center">
+            <Icon name="Plus" size={16} />
+          </div>
+          <div className="flex-1">
+            <div className="font-golos font-black text-navy-900">Новый фулфилмент</div>
+            <div className="text-xs text-gray-400 font-ibm">Создаётся как черновик</div>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-navy-900 transition-colors">
+            <Icon name="X" size={18} />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="text-xs font-semibold text-gray-600 font-ibm block mb-1.5">
+              Название компании <span className="text-red-500">*</span>
+            </label>
+            <input
+              autoFocus
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+              placeholder="ООО «Складской партнёр»"
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/20"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-gray-600 font-ibm block mb-1.5">
+              Email владельца <span className="text-gray-400 font-normal">(опционально)</span>
+            </label>
+            <input
+              type="email"
+              value={ownerEmail}
+              onChange={(e) => setOwnerEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+              placeholder="owner@example.com"
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-navy-900/20"
+            />
+            <p className="text-[11px] text-gray-400 font-ibm mt-1.5">
+              Если оставить пустым — фулфилмент будет привязан к вашему аккаунту. Указанный email должен принадлежать зарегистрированному пользователю.
+            </p>
+          </div>
+        </div>
+
+        <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
+          <Button variant="outline" onClick={onClose} disabled={creating}>
+            Отмена
+          </Button>
+          <Button
+            onClick={handleCreate}
+            disabled={creating || !companyName.trim()}
+            className="bg-navy-900 hover:bg-navy-800 text-white"
+          >
+            {creating ? (
+              <><Icon name="Loader2" size={14} className="animate-spin mr-2" />Создаю...</>
+            ) : (
+              <><Icon name="Plus" size={14} className="mr-2" />Создать и редактировать</>
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 export default function ModerationFulfillmentsTab() {
   const [items, setItems] = useState<FulfillmentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
   const [selected, setSelected] = useState<FulfillmentItem | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -442,7 +546,15 @@ export default function ModerationFulfillmentsTab() {
               <span className={`ml-1.5 ${filter === f.key ? "text-white/70" : "text-gray-400"}`}>{f.count}</span>
             </button>
           ))}
-          <button onClick={load} className="ml-auto text-gray-400 hover:text-navy-700 transition-colors p-1.5 rounded-lg hover:bg-gray-100" title="Обновить">
+          <button
+            onClick={() => setCreating(true)}
+            className="ml-auto inline-flex items-center gap-1.5 text-xs font-semibold font-golos px-3 py-1.5 rounded-lg bg-navy-900 hover:bg-navy-800 text-white transition-colors"
+            title="Создать новый фулфилмент"
+          >
+            <Icon name="Plus" size={13} />
+            Добавить
+          </button>
+          <button onClick={load} className="text-gray-400 hover:text-navy-700 transition-colors p-1.5 rounded-lg hover:bg-gray-100" title="Обновить">
             <Icon name="RefreshCw" size={14} />
           </button>
         </div>
@@ -621,6 +733,18 @@ export default function ModerationFulfillmentsTab() {
           fulfillmentId={editingId}
           onClose={() => setEditingId(null)}
           onSaved={load}
+        />
+      )}
+
+      {/* Create modal */}
+      {creating && (
+        <CreateFulfillmentModal
+          onClose={() => setCreating(false)}
+          onCreated={(newId) => {
+            setCreating(false);
+            load();
+            setEditingId(newId);
+          }}
         />
       )}
     </div>

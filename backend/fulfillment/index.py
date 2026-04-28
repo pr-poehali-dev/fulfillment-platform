@@ -354,6 +354,53 @@ def handle_create_fulfillment(body, token):
         cur.close()
         conn.close()
 
+def handle_admin_create_fulfillment(body, token):
+    """Создание фулфилмента администратором.
+    Может указать email владельца — если такой пользователь существует, привязывает к нему.
+    Иначе создаёт от имени самого админа.
+    """
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        admin = get_user_by_token(cur, token)
+        if not admin or admin[2] != 'admin':
+            return resp(403, {'error': 'Доступ запрещён'})
+
+        owner_email = (body.get('owner_email') or '').strip().lower()
+        owner_user_id = admin[0]
+
+        if owner_email:
+            safe_email = owner_email.replace("'", "''")
+            cur.execute("SELECT id FROM users WHERE LOWER(email) = '%s'" % safe_email)
+            row = cur.fetchone()
+            if row:
+                owner_user_id = row[0]
+            else:
+                return resp(400, {'error': 'Пользователь с таким email не найден. Попросите его зарегистрироваться или оставьте поле пустым.'})
+
+        name = str(body.get('company_name') or 'Новый фулфилмент').replace("'", "''")
+        cur.execute("""
+            INSERT INTO fulfillments (user_id, company_name, status)
+            VALUES (%d, '%s', 'draft')
+            RETURNING id
+        """ % (owner_user_id, name))
+        new_id = cur.fetchone()[0]
+
+        cur.execute("SELECT id FROM owner_profiles WHERE user_id = %d" % owner_user_id)
+        op = cur.fetchone()
+        if op:
+            cur.execute("UPDATE fulfillments SET owner_profile_id = %d WHERE id = %d" % (op[0], new_id))
+
+        conn.commit()
+        return resp(201, {'ok': True, 'id': new_id, 'owner_user_id': owner_user_id})
+    except Exception as e:
+        conn.rollback()
+        return resp(500, {'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+
 def handle_update_fulfillment(body, token):
     conn = get_db()
     cur = conn.cursor()
@@ -1139,6 +1186,8 @@ def handler(event, context):
             return handle_update_owner_profile(body, token)
         if action == 'create-fulfillment':
             return handle_create_fulfillment(body, token)
+        if action == 'admin-create-fulfillment':
+            return handle_admin_create_fulfillment(body, token)
         if action == 'update-fulfillment':
             return handle_update_fulfillment(body, token)
         if action == 'submit-fulfillment':
