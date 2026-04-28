@@ -7,6 +7,7 @@ import api from "@/lib/api";
 import { toast } from "sonner";
 import AdminSubscribersTab from "./Admin/AdminSubscribersTab";
 import DashboardTab from "./Moderation/DashboardTab";
+import ModerationFulfillmentsTab from "./Moderation/ModerationFulfillmentsTab";
 import UsersTab from "./Moderation/UsersTab";
 import BalanceTab from "./Moderation/BalanceTab";
 import ReviewsTab from "./Moderation/ReviewsTab";
@@ -221,7 +222,7 @@ export default function Moderation() {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         {tab === "dashboard" && <DashboardTab onNavigate={(t) => setTab(t as Tab)} />}
-        {tab === "fulfillments" && <FulfillmentsTab />}
+        {tab === "fulfillments" && <ModerationFulfillmentsTab />}
         {tab === "quotes" && <QuotesTab />}
         {tab === "users" && <UsersTab />}
         {tab === "balance" && <BalanceTab />}
