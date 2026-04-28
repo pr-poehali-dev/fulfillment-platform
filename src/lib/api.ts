@@ -187,6 +187,12 @@ export const api = {
   adminUpdateQuoteStatus: (quoteId: number, status: string) =>
     request("fulfillment", "admin-update-quote-status", { method: "POST", body: { quote_id: quoteId, status } }),
 
+  adminUpdateFulfillment: (body: Record<string, unknown>) =>
+    request("fulfillment", "admin-update-fulfillment", { method: "POST", body }),
+
+  adminGetFulfillment: (id: number) =>
+    request("fulfillment", "get-fulfillment", { params: { id: String(id) } }),
+
   // ─── Subscribers ────────────────────────────────────────────────────────
   getSubscribers: () =>
     fetch(URLS.getSubscribers, { headers: { "Authorization": `Bearer ${getToken()}` } }).then((r) => r.json()),

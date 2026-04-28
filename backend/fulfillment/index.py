@@ -1137,6 +1137,8 @@ def handler(event, context):
             return handle_update_quote_status(body, token)
         if action == 'admin-moderate':
             return handle_admin_moderate(body, token)
+        if action == 'admin-update-fulfillment':
+            return handle_admin_update_fulfillment(body, token)
         if action == 'admin-set-lead-price':
             return handle_admin_set_lead_price(body, token)
         if action == 'admin-mark-paid':
@@ -1582,6 +1584,73 @@ def handle_admin_update_quote_status(body, token):
         cur.execute("UPDATE quote_requests SET status = '%s' WHERE id = %d" % (status, int(qid)))
         conn.commit()
         return resp(200, {'ok': True})
+    finally:
+        cur.close()
+        conn.close()
+
+
+def handle_admin_update_fulfillment(body, token):
+    """Обновить любое поле фулфилмента от имени модератора/администратора"""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user or user[2] != 'admin':
+            return resp(403, {'error': 'Доступ запрещён'})
+
+        fid = body.get('id')
+        if not fid:
+            return resp(400, {'error': 'id обязателен'})
+
+        cur.execute("SELECT id FROM fulfillments WHERE id = %d" % int(fid))
+        if not cur.fetchone():
+            return resp(404, {'error': 'Фулфилмент не найден'})
+
+        allowed = ['company_name', 'inn', 'city', 'address', 'warehouse_area', 'founded_year', 'description',
+                   'detailed_description', 'logo', 'contact_name', 'contact_email', 'contact_phone', 'contact_tg',
+                   'storage_price', 'assembly_price', 'delivery_price', 'storage_rate', 'assembly_rate', 'delivery_rate',
+                   'min_volume', 'has_trial', 'team_size', 'working_hours', 'badge', 'badge_color']
+        array_fields = ['work_schemes', 'features', 'packaging_types', 'marketplaces', 'certificates', 'photos', 'specializations']
+        json_fields = ['services']
+        numeric_fields = {'warehouse_area', 'founded_year', 'storage_rate', 'assembly_rate', 'delivery_rate', 'team_size'}
+
+        updates = []
+        for k in allowed:
+            if k in body:
+                v = body[k]
+                if v is None:
+                    if k in numeric_fields:
+                        updates.append("%s = NULL" % k)
+                elif isinstance(v, bool):
+                    updates.append("%s = %s" % (k, 'TRUE' if v else 'FALSE'))
+                elif isinstance(v, (int, float)):
+                    updates.append("%s = %s" % (k, v))
+                else:
+                    updates.append("%s = '%s'" % (k, str(v).replace("'", "''")))
+
+        for k in array_fields:
+            if k in body:
+                arr = body[k]
+                if not arr:
+                    updates.append("%s = '{}'" % k)
+                else:
+                    escaped = ','.join('"' + str(x).replace('"', '\\"') + '"' for x in arr)
+                    updates.append("%s = '{%s}'" % (k, escaped))
+
+        for k in json_fields:
+            if k in body:
+                updates.append("%s = '%s'" % (k, json.dumps(body[k]).replace("'", "''")))
+
+        if not updates:
+            return resp(400, {'error': 'Нечего обновлять'})
+
+        updates.append("updated_at = NOW()")
+        cur.execute("UPDATE fulfillments SET %s WHERE id = %d" % (', '.join(updates), int(fid)))
+        conn.commit()
+        return resp(200, {'ok': True})
+    except Exception as e:
+        conn.rollback()
+        return resp(500, {'error': str(e)})
     finally:
         cur.close()
         conn.close()

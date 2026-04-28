@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { type FulfillmentItem, STATUS_CFG, FEATURE_LABELS } from "./ModerationTypes";
+import ModerationEditModal from "./ModerationEditModal";
 
 // ─── INFO FIELD HELPER ──────────────────────────────────────────────────────
 
@@ -90,10 +91,11 @@ function LeadPriceEditor({ fulfillmentId, initialPrice, onSaved }: {
 
 // ─── FULFILLMENT DETAIL MODAL ───────────────────────────────────────────────
 
-function FulfillmentDetailModal({ item, onClose, onModerate }: {
+function FulfillmentDetailModal({ item, onClose, onModerate, onEdit }: {
   item: FulfillmentItem;
   onClose: () => void;
   onModerate: (id: number, status: string, comment?: string) => void;
+  onEdit: (id: number) => void;
 }) {
   const [rejectComment, setRejectComment] = useState(item.moderation_comment || "");
   const [showReject, setShowReject] = useState(false);
@@ -318,7 +320,15 @@ function FulfillmentDetailModal({ item, onClose, onModerate }: {
               На модерацию
             </Button>
           )}
-          <button onClick={onClose} className="ml-auto text-sm text-gray-500 hover:text-gray-700 transition-colors font-ibm">
+          <Button
+            variant="outline"
+            onClick={() => { onClose(); onEdit(item.id); }}
+            className="ml-auto border-blue-200 text-blue-600 hover:bg-blue-50 font-golos text-sm h-9 px-4"
+          >
+            <Icon name="Pencil" size={14} className="mr-1.5" />
+            Редактировать
+          </Button>
+          <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700 transition-colors font-ibm">
             Закрыть
           </button>
         </div>
@@ -327,6 +337,8 @@ function FulfillmentDetailModal({ item, onClose, onModerate }: {
   );
 }
 
+
+
 // ─── FULFILLMENTS TAB ───────────────────────────────────────────────────────
 
 export default function ModerationFulfillmentsTab() {
@@ -334,6 +346,7 @@ export default function ModerationFulfillmentsTab() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
   const [selected, setSelected] = useState<FulfillmentItem | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -517,6 +530,12 @@ export default function ModerationFulfillmentsTab() {
                               </button>
                             )}
                             <button
+                              onClick={() => setEditingId(item.id)}
+                              className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 transition-colors" title="Редактировать карточку"
+                            >
+                              <Icon name="Pencil" size={14} />
+                            </button>
+                            <button
                               onClick={() => setSelected(item)}
                               className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-navy-700 transition-colors" title="Подробнее"
                             >
@@ -569,8 +588,12 @@ export default function ModerationFulfillmentsTab() {
                           <Icon name="RotateCcw" size={12} className="mr-1" /> Pending
                         </Button>
                       )}
+                      <button onClick={() => setEditingId(item.id)}
+                        className="ml-auto text-xs text-blue-500 hover:text-blue-700 transition-colors font-medium flex items-center gap-1">
+                        <Icon name="Pencil" size={11} /> Ред.
+                      </button>
                       <button onClick={() => setSelected(item)}
-                        className="ml-auto text-xs text-gray-400 hover:text-navy-700 transition-colors underline">
+                        className="text-xs text-gray-400 hover:text-navy-700 transition-colors underline">
                         Подробнее
                       </button>
                     </div>
@@ -588,6 +611,16 @@ export default function ModerationFulfillmentsTab() {
           item={selected}
           onClose={() => setSelected(null)}
           onModerate={handleModerate}
+          onEdit={(id) => setEditingId(id)}
+        />
+      )}
+
+      {/* Edit modal */}
+      {editingId !== null && (
+        <ModerationEditModal
+          fulfillmentId={editingId}
+          onClose={() => setEditingId(null)}
+          onSaved={load}
         />
       )}
     </div>
