@@ -302,6 +302,25 @@ def handle_get_fulfillment(token, fid):
         cur.close()
         conn.close()
 
+def handle_admin_get_fulfillment(token, fid):
+    """Получить любой фулфилмент по ID для администратора"""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user or user[2] != 'admin':
+            return resp(403, {'error': 'Доступ запрещён'})
+
+        cur.execute("SELECT %s FROM fulfillments WHERE id = %d" % (', '.join(FULFILLMENT_COLS), int(fid)))
+        row = cur.fetchone()
+        if not row:
+            return resp(404, {'error': 'Фулфилмент не найден'})
+        return resp(200, {'fulfillment': row_to_fulfillment(row)})
+    finally:
+        cur.close()
+        conn.close()
+
+
 def handle_create_fulfillment(body, token):
     conn = get_db()
     cur = conn.cursor()
@@ -1098,6 +1117,9 @@ def handler(event, context):
             return handle_my_quotes(token)
         if action == 'admin-list':
             return handle_admin_list(token, params)
+        if action == 'admin-get-fulfillment':
+            fid = params.get('id', '0')
+            return handle_admin_get_fulfillment(token, fid)
         if action == 'admin-quotes':
             return handle_admin_all_quotes(token)
         if action == 'admin-dashboard':

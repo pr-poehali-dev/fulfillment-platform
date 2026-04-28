@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
@@ -32,7 +32,7 @@ export default function ModerationEditModal({ fulfillmentId, onClose, onSaved }:
     }
   }, [fulfillmentId, onClose]);
 
-  useState(() => { load(); });
+  useEffect(() => { load(); }, [load]);
 
   const set = (key: keyof Fulfillment, val: unknown) => {
     setForm((prev) => prev ? { ...prev, [key]: val } : prev);

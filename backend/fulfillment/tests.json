@@ -17,5 +17,6 @@
   {"name": "Admin block user unauthorized", "method": "POST", "path": "/?action=admin-block-user", "body": {"user_id": 1}, "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
   {"name": "Admin send email unauthorized", "method": "POST", "path": "/?action=admin-send-email", "body": {}, "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
   {"name": "Admin balance adjust unauthorized", "method": "POST", "path": "/?action=admin-balance-adjust", "body": {}, "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
-  {"name": "Admin update fulfillment unauthorized", "method": "POST", "path": "/?action=admin-update-fulfillment", "body": {"id": 1}, "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
+  {"name": "Admin update fulfillment unauthorized", "method": "POST", "path": "/?action=admin-update-fulfillment", "body": {"id": 1}, "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+  {"name": "Admin get fulfillment unauthorized", "method": "GET", "path": "/?action=admin-get-fulfillment&id=1", "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
 ]}

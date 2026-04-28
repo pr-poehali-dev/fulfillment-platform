@@ -191,7 +191,7 @@ export const api = {
     request("fulfillment", "admin-update-fulfillment", { method: "POST", body }),
 
   adminGetFulfillment: (id: number) =>
-    request("fulfillment", "get-fulfillment", { params: { id: String(id) } }),
+    request("fulfillment", "admin-get-fulfillment", { params: { id: String(id) } }),
 
   // ─── Subscribers ────────────────────────────────────────────────────────
   getSubscribers: () =>
