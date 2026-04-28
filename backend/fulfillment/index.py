@@ -252,7 +252,8 @@ FULFILLMENT_COLS = [
     'storage_rate', 'assembly_rate', 'delivery_rate',
     'min_volume', 'has_trial', 'team_size', 'working_hours', 'certificates', 'services',
     'badge', 'badge_color', 'rating', 'reviews_count', 'status', 'moderation_comment',
-    'specializations', 'created_at', 'updated_at',
+    'specializations', 'contact_name', 'contact_email', 'contact_phone', 'contact_tg',
+    'created_at', 'updated_at',
 ]
 
 def row_to_fulfillment(row):

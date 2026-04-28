@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import type { Fulfillment } from "@/pages/Admin/types";
+import { EMPTY_FULFILLMENT } from "@/pages/Admin/types";
 import FulfillmentEditTabs, { type EditTab, EDIT_TABS } from "@/pages/Admin/FulfillmentEditTabs";
 import { useReadinessCheck } from "@/pages/Admin/FulfillmentReadinessChecklist";
 
@@ -11,6 +12,33 @@ interface ModerationEditModalProps {
   fulfillmentId: number;
   onClose: () => void;
   onSaved: () => void;
+}
+
+// Нормализация данных с бэкенда: числа -> строки (для FulfillmentEditTabs)
+function normalize(raw: Record<string, unknown>): Fulfillment {
+  return {
+    ...EMPTY_FULFILLMENT,
+    ...raw,
+    id: Number(raw.id || 0),
+    warehouse_area: raw.warehouse_area != null ? String(raw.warehouse_area) : "",
+    founded_year: raw.founded_year != null ? String(raw.founded_year) : "",
+    storage_price: raw.storage_price != null ? String(raw.storage_price) : "",
+    assembly_price: raw.assembly_price != null ? String(raw.assembly_price) : "",
+    delivery_price: raw.delivery_price != null ? String(raw.delivery_price) : "",
+    min_volume: raw.min_volume != null ? String(raw.min_volume) : "",
+    team_size: raw.team_size != null ? String(raw.team_size) : "",
+    work_schemes: (raw.work_schemes as string[]) || [],
+    features: (raw.features as string[]) || [],
+    packaging_types: (raw.packaging_types as string[]) || [],
+    marketplaces: (raw.marketplaces as string[]) || [],
+    specializations: (raw.specializations as string[]) || [],
+    photos: (raw.photos as string[]) || [],
+    certificates: (raw.certificates as string[]) || [],
+    services: (raw.services as unknown[]) || [],
+    has_trial: !!raw.has_trial,
+    created_at: String(raw.created_at || ""),
+    updated_at: String(raw.updated_at || ""),
+  } as Fulfillment;
 }
 
 export default function ModerationEditModal({ fulfillmentId, onClose, onSaved }: ModerationEditModalProps) {
@@ -23,9 +51,12 @@ export default function ModerationEditModal({ fulfillmentId, onClose, onSaved }:
     setLoading(true);
     try {
       const data = await api.adminGetFulfillment(fulfillmentId);
-      setForm(data.fulfillment || data);
-    } catch {
-      toast.error("Не удалось загрузить данные");
+      const raw = (data.fulfillment || data) as Record<string, unknown>;
+      setForm(normalize(raw));
+    } catch (err: unknown) {
+      const e = err as { error?: string; status?: number };
+      console.error("ModerationEditModal load error:", err);
+      toast.error(e.error || `Не удалось загрузить данные${e.status ? ` (${e.status})` : ""}`);
       onClose();
     } finally {
       setLoading(false);
@@ -49,18 +80,10 @@ export default function ModerationEditModal({ fulfillmentId, onClose, onSaved }:
     });
   };
 
-  const readiness = useReadinessCheck(form || ({} as Fulfillment));
+  const readiness = useReadinessCheck(form || (EMPTY_FULFILLMENT as Fulfillment));
 
   const tabMissingCount = (tab: EditTab): number => {
-    if (!readiness) return 0;
-    const map: Record<EditTab, (keyof typeof readiness.fields)[]> = {
-      info: ["company_name", "city", "description"],
-      services: ["work_schemes", "marketplaces"],
-      pricing: ["storage_price"],
-      photos: [],
-      preview: [],
-    };
-    return (map[tab] || []).filter((k) => !readiness.fields[k]).length;
+    return readiness.items.filter((i) => i.tab === tab && !i.done).length;
   };
 
   const handleSave = async () => {
