@@ -46,6 +46,9 @@ export default function ModerationEditModal({ fulfillmentId, onClose, onSaved }:
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editTab, setEditTab] = useState<EditTab>("info");
+  const [ownerEmail, setOwnerEmail] = useState("");
+  const [currentOwnerEmail, setCurrentOwnerEmail] = useState("");
+  const [showModeratorPanel, setShowModeratorPanel] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -53,6 +56,9 @@ export default function ModerationEditModal({ fulfillmentId, onClose, onSaved }:
       const data = await api.adminGetFulfillment(fulfillmentId);
       const raw = (data.fulfillment || data) as Record<string, unknown>;
       setForm(normalize(raw));
+      const oe = (data.owner_email as string) || "";
+      setCurrentOwnerEmail(oe);
+      setOwnerEmail(oe);
     } catch (err: unknown) {
       const e = err as { error?: string; status?: number };
       console.error("ModerationEditModal load error:", err);
@@ -90,7 +96,7 @@ export default function ModerationEditModal({ fulfillmentId, onClose, onSaved }:
     if (!form) return;
     setSaving(true);
     try {
-      await api.adminUpdateFulfillment({
+      const payload: Record<string, unknown> = {
         id: form.id,
         company_name: form.company_name,
         inn: form.inn,
@@ -119,7 +125,14 @@ export default function ModerationEditModal({ fulfillmentId, onClose, onSaved }:
         photos: form.photos,
         badge: form.badge,
         badge_color: form.badge_color,
-      });
+        website_url: form.website_url || "",
+        og_image: form.og_image || "",
+      };
+      const trimmedOwner = ownerEmail.trim().toLowerCase();
+      if (trimmedOwner && trimmedOwner !== currentOwnerEmail.toLowerCase()) {
+        payload.owner_email = trimmedOwner;
+      }
+      await api.adminUpdateFulfillment(payload);
       toast.success("Карточка сохранена");
       onSaved();
       onClose();
@@ -160,14 +173,110 @@ export default function ModerationEditModal({ fulfillmentId, onClose, onSaved }:
               <Icon name="Loader2" size={28} className="animate-spin text-navy-400" />
             </div>
           ) : form ? (
-            <FulfillmentEditTabs
-              form={form}
-              editTab={editTab}
-              setEditTab={setEditTab}
-              tabMissingCount={tabMissingCount}
-              set={set}
-              toggleArr={toggleArr}
-            />
+            <>
+              {/* Модераторская панель */}
+              <div className="mb-5 bg-amber-50/60 border border-amber-200 rounded-xl overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowModeratorPanel((v) => !v)}
+                  className="w-full px-4 py-3 flex items-center gap-2 hover:bg-amber-100/60 transition-colors"
+                >
+                  <Icon name="Shield" size={14} className="text-amber-700" />
+                  <span className="text-xs font-bold font-golos text-amber-900 uppercase tracking-wide">
+                    Поля модератора
+                  </span>
+                  <span className="text-[11px] text-amber-700 font-ibm">видны только админам</span>
+                  <Icon
+                    name={showModeratorPanel ? "ChevronUp" : "ChevronDown"}
+                    size={14}
+                    className="ml-auto text-amber-700"
+                  />
+                </button>
+                {showModeratorPanel && (
+                  <div className="px-4 pb-4 pt-1 space-y-3">
+                    {/* Сайт */}
+                    <div>
+                      <label className="text-xs font-semibold text-amber-900 font-ibm block mb-1.5">
+                        Сайт фулфилмента
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="url"
+                          value={form.website_url || ""}
+                          onChange={(e) => set("website_url", e.target.value)}
+                          placeholder="https://example.com"
+                          className="flex-1 px-3 py-2 border border-amber-300 rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                        />
+                        {form.website_url && (
+                          <a
+                            href={form.website_url.startsWith("http") ? form.website_url : `https://${form.website_url}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-2 bg-white border border-amber-300 text-amber-800 hover:bg-amber-50 rounded-lg text-xs font-medium font-golos flex items-center gap-1"
+                          >
+                            <Icon name="ExternalLink" size={12} />
+                          </a>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-amber-700 font-ibm mt-1">
+                        OG-картинка с сайта подгрузится автоматически при сохранении и будет использована,
+                        если не загружено ни одного фото.
+                      </p>
+                      {form.og_image && (
+                        <div className="mt-2 flex items-center gap-2 bg-white border border-amber-200 rounded-lg p-2">
+                          <img
+                            src={form.og_image}
+                            alt="OG preview"
+                            className="w-16 h-16 object-cover rounded-md flex-shrink-0"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[11px] font-bold text-amber-900 font-golos">OG-картинка</div>
+                            <div className="text-[10px] text-amber-700 font-ibm truncate" title={form.og_image}>
+                              {form.og_image}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => set("og_image", "")}
+                            className="p-1 text-amber-500 hover:text-red-500 transition-colors"
+                            title="Удалить OG"
+                          >
+                            <Icon name="X" size={14} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Владелец */}
+                    <div>
+                      <label className="text-xs font-semibold text-amber-900 font-ibm block mb-1.5">
+                        Email владельца
+                      </label>
+                      <input
+                        type="email"
+                        value={ownerEmail}
+                        onChange={(e) => setOwnerEmail(e.target.value)}
+                        placeholder="owner@example.com"
+                        className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm font-ibm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                      />
+                      <p className="text-[11px] text-amber-700 font-ibm mt-1">
+                        Текущий: <span className="font-semibold">{currentOwnerEmail || "не задан"}</span>.
+                        Чтобы передать карточку, введите email уже зарегистрированного пользователя.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <FulfillmentEditTabs
+                form={form}
+                editTab={editTab}
+                setEditTab={setEditTab}
+                tabMissingCount={tabMissingCount}
+                set={set}
+                toggleArr={toggleArr}
+              />
+            </>
           ) : null}
         </div>
 

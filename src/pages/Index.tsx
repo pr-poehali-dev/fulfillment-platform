@@ -39,6 +39,7 @@ interface ApiFulfillment {
   reviews_count: number;
   specializations?: string[];
   address?: string;
+  og_image?: string;
 }
 
 function mapToPartner(f: ApiFulfillment): Partner {
@@ -63,7 +64,11 @@ function mapToPartner(f: ApiFulfillment): Partner {
     features: f.features || [],
     packagingTypes: f.packaging_types || [],
     workSchemes: f.work_schemes || [],
-    photos: (f.photos && f.photos.length > 0) ? f.photos : ["https://cdn.poehali.dev/projects/2ad3c041-f607-4d31-bfee-ec63231b2c3d/files/8256f2c4-241c-42d2-8230-d5bfc2500632.jpg"],
+    photos: (f.photos && f.photos.length > 0)
+      ? f.photos
+      : (f.og_image
+        ? [f.og_image]
+        : ["https://cdn.poehali.dev/projects/2ad3c041-f607-4d31-bfee-ec63231b2c3d/files/8256f2c4-241c-42d2-8230-d5bfc2500632.jpg"]),
     detailedDescription: f.detailed_description || f.description || "",
     services: f.services || [],
     foundedYear: f.founded_year || new Date().getFullYear(),

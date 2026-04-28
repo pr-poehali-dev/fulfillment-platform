@@ -36,14 +36,15 @@ const SPEC_ICONS: Record<string, string> = {
 const withRuble = (s: string) => (s && s !== "по запросу" && !s.includes("₽") ? `${s} ₽` : s || "по запросу");
 
 export default function FulfillmentCardPreview({ form }: { form: Fulfillment }) {
-  const hasPhoto = form.photos.length > 0;
+  const cover = form.photos[0] || form.og_image || "";
+  const hasPhoto = !!cover;
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col overflow-hidden ring-2 ring-navy-900/5">
       {/* Photo header */}
       <div className="relative aspect-[16/9] bg-gray-100 overflow-hidden">
         {hasPhoto ? (
-          <img src={form.photos[0]} alt={form.company_name} className="w-full h-full object-cover" />
+          <img src={cover} alt={form.company_name} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-navy-50 to-gray-100">
             <Icon name="Image" size={28} className="text-gray-300" />

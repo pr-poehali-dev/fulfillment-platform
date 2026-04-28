@@ -1,0 +1,3 @@
+ALTER TABLE fulfillments
+  ADD COLUMN IF NOT EXISTS website_url TEXT DEFAULT '',
+  ADD COLUMN IF NOT EXISTS og_image TEXT DEFAULT '';

@@ -50,6 +50,12 @@ export interface Fulfillment {
   reviews_count: number;
   status: string;
   moderation_comment: string;
+  contact_name?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  contact_tg?: string;
+  website_url?: string;
+  og_image?: string;
   created_at: string;
   updated_at: string;
 }
@@ -63,6 +69,8 @@ export const EMPTY_FULFILLMENT: Omit<Fulfillment, "id" | "created_at" | "updated
   min_volume: "", has_trial: false, team_size: "", working_hours: "",
   certificates: [], services: [], badge: "", badge_color: "blue",
   rating: 0, reviews_count: 0, status: "draft", moderation_comment: "",
+  contact_name: "", contact_email: "", contact_phone: "", contact_tg: "",
+  website_url: "", og_image: "",
 };
 
 // ─── LEGACY (for compatibility) ───────────────────────────────────────────────

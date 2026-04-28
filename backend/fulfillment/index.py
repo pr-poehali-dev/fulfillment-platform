@@ -23,6 +23,58 @@ def get_db():
 
 SMTP_LOGIN = 'noreply@fulfillhub.ru'
 
+
+def fetch_og_image(url):
+    """Скачивает HTML страницы и пытается извлечь og:image / twitter:image.
+    Возвращает абсолютный URL или пустую строку при ошибке.
+    """
+    if not url:
+        return ''
+    try:
+        if not url.startswith(('http://', 'https://')):
+            url = 'https://' + url
+        req = urllib.request.Request(
+            url,
+            headers={
+                'User-Agent': 'Mozilla/5.0 (compatible; FulfillHubBot/1.0)',
+                'Accept': 'text/html,application/xhtml+xml',
+            }
+        )
+        with urllib.request.urlopen(req, timeout=8) as r:
+            raw = r.read(300_000)
+            ctype = r.headers.get('Content-Type', '')
+            charset = 'utf-8'
+            if 'charset=' in ctype:
+                charset = ctype.split('charset=')[-1].split(';')[0].strip() or 'utf-8'
+            try:
+                html = raw.decode(charset, errors='ignore')
+            except Exception:
+                html = raw.decode('utf-8', errors='ignore')
+
+        import re
+        patterns = [
+            r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']',
+            r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']',
+            r'<meta[^>]+name=["\']twitter:image["\'][^>]+content=["\']([^"\']+)["\']',
+            r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+name=["\']twitter:image["\']',
+        ]
+        for p in patterns:
+            m = re.search(p, html, re.IGNORECASE)
+            if m:
+                img = m.group(1).strip()
+                if img.startswith('//'):
+                    img = 'https:' + img
+                elif img.startswith('/'):
+                    parsed = urllib.parse.urlparse(url)
+                    img = '%s://%s%s' % (parsed.scheme, parsed.netloc, img)
+                elif not img.startswith(('http://', 'https://')):
+                    parsed = urllib.parse.urlparse(url)
+                    img = '%s://%s/%s' % (parsed.scheme, parsed.netloc, img.lstrip('/'))
+                return img
+        return ''
+    except Exception:
+        return ''
+
 def _smtp_send(to, subject, html, reply_to=''):
     password = os.environ.get('SMTP_PASSWORD', '')
     if not password:
@@ -253,6 +305,7 @@ FULFILLMENT_COLS = [
     'min_volume', 'has_trial', 'team_size', 'working_hours', 'certificates', 'services',
     'badge', 'badge_color', 'rating', 'reviews_count', 'status', 'moderation_comment',
     'specializations', 'contact_name', 'contact_email', 'contact_phone', 'contact_tg',
+    'website_url', 'og_image',
     'created_at', 'updated_at',
 ]
 
@@ -316,7 +369,12 @@ def handle_admin_get_fulfillment(token, fid):
         row = cur.fetchone()
         if not row:
             return resp(404, {'error': 'Фулфилмент не найден'})
-        return resp(200, {'fulfillment': row_to_fulfillment(row)})
+
+        cur.execute("SELECT u.email FROM fulfillments f JOIN users u ON u.id = f.user_id WHERE f.id = %d" % int(fid))
+        owner_row = cur.fetchone()
+        owner_email = owner_row[0] if owner_row else ''
+
+        return resp(200, {'fulfillment': row_to_fulfillment(row), 'owner_email': owner_email})
     finally:
         cur.close()
         conn.close()
@@ -1681,7 +1739,38 @@ def handle_admin_update_fulfillment(body, token):
         allowed = ['company_name', 'inn', 'city', 'address', 'warehouse_area', 'founded_year', 'description',
                    'detailed_description', 'logo', 'contact_name', 'contact_email', 'contact_phone', 'contact_tg',
                    'storage_price', 'assembly_price', 'delivery_price', 'storage_rate', 'assembly_rate', 'delivery_rate',
-                   'min_volume', 'has_trial', 'team_size', 'working_hours', 'badge', 'badge_color']
+                   'min_volume', 'has_trial', 'team_size', 'working_hours', 'badge', 'badge_color',
+                   'website_url', 'og_image']
+
+        # ── Смена владельца по email ────────────────────────────────────────
+        new_owner_email = (body.get('owner_email') or '').strip().lower()
+        if new_owner_email:
+            safe_email = new_owner_email.replace("'", "''")
+            cur.execute("SELECT id FROM users WHERE LOWER(email) = '%s'" % safe_email)
+            row = cur.fetchone()
+            if not row:
+                return resp(400, {'error': 'Пользователь с таким email не найден'})
+            new_user_id = row[0]
+            cur.execute("UPDATE fulfillments SET user_id = %d WHERE id = %d" % (new_user_id, int(fid)))
+            # переподвязываем owner_profile_id
+            cur.execute("SELECT id FROM owner_profiles WHERE user_id = %d" % new_user_id)
+            op = cur.fetchone()
+            if op:
+                cur.execute("UPDATE fulfillments SET owner_profile_id = %d WHERE id = %d" % (op[0], int(fid)))
+            else:
+                cur.execute("UPDATE fulfillments SET owner_profile_id = NULL WHERE id = %d" % int(fid))
+
+        # ── Авто-загрузка OG-картинки при смене website_url ─────────────────
+        if 'website_url' in body and body.get('website_url'):
+            new_url = str(body.get('website_url') or '').strip()
+            cur.execute("SELECT website_url, og_image FROM fulfillments WHERE id = %d" % int(fid))
+            cur_row = cur.fetchone()
+            old_url = (cur_row[0] or '') if cur_row else ''
+            old_og = (cur_row[1] or '') if cur_row else ''
+            if new_url and (new_url != old_url or not old_og):
+                fetched = fetch_og_image(new_url)
+                if fetched:
+                    body['og_image'] = fetched
         array_fields = ['work_schemes', 'features', 'packaging_types', 'marketplaces', 'certificates', 'photos', 'specializations']
         json_fields = ['services']
         numeric_fields = {'warehouse_area', 'founded_year', 'storage_rate', 'assembly_rate', 'delivery_rate', 'team_size'}
