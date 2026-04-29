@@ -103,6 +103,8 @@ export default function DashboardTab({
 }) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [ogRunning, setOgRunning] = useState(false);
+  const [ogResult, setOgResult] = useState<{ updated: number; failed: number[]; total: number } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -300,6 +302,49 @@ export default function DashboardTab({
               <Icon name="ArrowRight" size={13} />
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* OG batch fetch */}
+      <div>
+        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide font-ibm mb-3">
+          Служебные действия
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Icon name="Image" size={17} className="text-indigo-600" />
+            </div>
+            <div>
+              <div className="font-golos font-bold text-navy-950 text-sm">OG-изображения</div>
+              <div className="text-xs text-gray-400 font-ibm mt-0.5">
+                {ogResult
+                  ? `Обновлено: ${ogResult.updated} из ${ogResult.total}. Не удалось: ${ogResult.failed.length}`
+                  : "Спарсить og:image для всех карточек с сайтом но без картинки"}
+              </div>
+            </div>
+          </div>
+          <button
+            disabled={ogRunning}
+            onClick={async () => {
+              setOgRunning(true);
+              setOgResult(null);
+              try {
+                const res = await api.adminRefetchOg() as { updated: number; failed: number[]; total: number };
+                setOgResult(res);
+                if (res.updated > 0) toast.success(`OG обновлено: ${res.updated} из ${res.total}`);
+                else toast.info(`Не удалось спарсить ни одного OG из ${res.total} сайтов`);
+              } catch {
+                toast.error("Ошибка при парсинге OG");
+              } finally {
+                setOgRunning(false);
+              }
+            }}
+            className="shrink-0 px-4 py-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold font-golos transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {ogRunning ? <Icon name="Loader2" size={13} className="animate-spin" /> : <Icon name="RefreshCw" size={13} />}
+            {ogRunning ? "Парсинг..." : "Запустить"}
+          </button>
         </div>
       </div>
     </div>

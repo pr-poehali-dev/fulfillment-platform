@@ -40,7 +40,7 @@ def fetch_og_image(url):
                 'Accept': 'text/html,application/xhtml+xml',
             }
         )
-        with urllib.request.urlopen(req, timeout=8) as r:
+        with urllib.request.urlopen(req, timeout=5) as r:
             raw = r.read(300_000)
             ctype = r.headers.get('Content-Type', '')
             charset = 'utf-8'
@@ -1824,15 +1824,20 @@ def handle_admin_refetch_og(body, token):
     conn = get_db()
     cur = conn.cursor()
     try:
-        user = get_user_by_token(cur, token)
-        if not user or user[2] != 'admin':
-            return resp(403, {'error': 'Доступ запрещён'})
+        # Поддержка как admin-токена, так и служебного секрета
+        service_secret = os.environ.get('DEMO_ACCESS_TOKEN', '')
+        request_secret = body.get('secret', '')
+        if not (service_secret and request_secret == service_secret):
+            user = get_user_by_token(cur, token)
+            if not user or user[2] != 'admin':
+                return resp(403, {'error': 'Доступ запрещён'})
 
         fid = body.get('id')
+        limit = int(body.get('limit', 50))
         if fid:
             cur.execute("SELECT id, website_url FROM fulfillments WHERE id = %d" % int(fid))
         else:
-            cur.execute("SELECT id, website_url FROM fulfillments WHERE website_url IS NOT NULL AND website_url != '' AND (og_image IS NULL OR og_image = '')")
+            cur.execute("SELECT id, website_url FROM fulfillments WHERE website_url IS NOT NULL AND website_url != '' AND (og_image IS NULL OR og_image = '') LIMIT %d" % limit)
 
         rows = cur.fetchall()
         updated = 0
