@@ -44,6 +44,7 @@ function ModalContent({ partner, activePhoto, setActivePhoto, onRequestQuote }: 
       <div className="relative bg-gray-100 flex-shrink-0">
         <div className="aspect-[16/7] md:aspect-[16/6] overflow-hidden">
           <img src={partner.photos[activePhoto]} alt={partner.name}
+            referrerPolicy="no-referrer"
             className="w-full h-full object-cover transition-opacity" />
         </div>
         {partner.photos.length > 1 && (

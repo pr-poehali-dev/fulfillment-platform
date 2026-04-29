@@ -54,6 +54,7 @@ export default function PartnerCard({ p, inCompare, onCompare, isFavorite, onTog
       <div className="relative aspect-[16/9] bg-gray-100 overflow-hidden cursor-pointer" onClick={() => { ymGoal("card_open_detail", { partner: p.name }); onOpenDetail(); }}>
         {p.photos[0] && (
           <img src={p.photos[0]} alt={p.name}
+            referrerPolicy="no-referrer"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-black/20" />
