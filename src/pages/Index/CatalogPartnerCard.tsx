@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { StarRating, BadgeChip } from "./Navigation";
@@ -6,10 +6,21 @@ import type { Partner } from "./data";
 import { FEATURE_FILTERS, SPECIALIZATION_FILTERS } from "./data";
 import { ymGoal } from "@/lib/ym";
 
-function AllTags({ children }: { children: React.ReactNode[] }) {
+const PREVIEW_LIMIT = 4;
+
+function CollapsibleTags({ items }: { items: React.ReactNode[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? items : items.slice(0, PREVIEW_LIMIT);
+  const hidden = items.length - PREVIEW_LIMIT;
   return (
     <div className="flex flex-wrap gap-1">
-      {children}
+      {visible}
+      {!expanded && hidden > 0 && (
+        <button onClick={(e) => { e.stopPropagation(); setExpanded(true); }}
+          className="text-[10px] font-ibm px-1.5 py-0.5 bg-gray-100 text-gray-500 hover:bg-gray-200 rounded transition-colors">
+          +{hidden}
+        </button>
+      )}
     </div>
   );
 }
@@ -82,35 +93,50 @@ export default function PartnerCard({ p, inCompare, onCompare, isFavorite, onTog
         {/* Features */}
         {p.features.length > 0 && (
           <div className="mb-2">
-            <AllTags>
-              {p.features.map((fKey) => {
-                const def = FEATURE_FILTERS.find((x) => x.key === fKey);
-                if (!def) return null;
-                return (
-                  <span key={fKey} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded">
-                    <Icon name={def.icon as "Camera"} size={10} className={FEATURE_COLORS[fKey] || "text-gray-400"} />
-                    {def.label}
-                  </span>
-                );
-              }).filter(Boolean) as React.ReactNode[]}
-            </AllTags>
+            <CollapsibleTags items={p.features.map((fVal) => {
+              const def = FEATURE_FILTERS.find((x) => x.key === fVal || x.label === fVal);
+              if (!def) return (
+                <span key={fVal} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded">
+                  {fVal}
+                </span>
+              );
+              return (
+                <span key={fVal} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded">
+                  <Icon name={def.icon as "Camera"} size={10} className={FEATURE_COLORS[def.key] || "text-gray-400"} />
+                  {def.label}
+                </span>
+              );
+            })} />
+          </div>
+        )}
+        {/* Packaging types */}
+        {(p.packagingTypes || []).length > 0 && (
+          <div className="mb-2">
+            <CollapsibleTags items={(p.packagingTypes || []).map((pkg) => (
+              <span key={pkg} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-purple-50 border border-purple-100 px-1.5 py-0.5 rounded">
+                <Icon name="Package" size={10} className="text-purple-400" />
+                {pkg}
+              </span>
+            ))} />
           </div>
         )}
         {/* Specializations */}
         {(p.specializations || []).length > 0 && (
           <div className="mb-2">
-            <AllTags>
-              {(p.specializations || []).map((sKey) => {
-                const def = SPECIALIZATION_FILTERS.find((x) => x.key === sKey);
-                if (!def) return null;
-                return (
-                  <span key={sKey} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded">
-                    <Icon name={def.icon as "Boxes"} size={10} className={SPEC_COLORS[sKey] || "text-gray-400"} />
-                    {def.label}
-                  </span>
-                );
-              }).filter(Boolean) as React.ReactNode[]}
-            </AllTags>
+            <CollapsibleTags items={(p.specializations || []).map((sVal) => {
+              const def = SPECIALIZATION_FILTERS.find((x) => x.key === sVal || x.label === sVal);
+              if (!def) return (
+                <span key={sVal} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded">
+                  {sVal}
+                </span>
+              );
+              return (
+                <span key={sVal} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded">
+                  <Icon name={def.icon as "Boxes"} size={10} className={SPEC_COLORS[def.key] || "text-gray-400"} />
+                  {def.label}
+                </span>
+              );
+            })} />
           </div>
         )}
 
