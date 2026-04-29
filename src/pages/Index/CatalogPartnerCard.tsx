@@ -6,7 +6,7 @@ import type { Partner } from "./data";
 import { FEATURE_FILTERS, SPECIALIZATION_FILTERS } from "./data";
 import { ymGoal } from "@/lib/ym";
 
-const PREVIEW_LIMIT = 3;
+const PREVIEW_LIMIT = 5;
 
 function CollapsibleTags({ items }: { items: React.ReactNode[] }) {
   const [expanded, setExpanded] = useState(false);
@@ -81,45 +81,52 @@ export default function PartnerCard({ p, inCompare, onCompare, isFavorite, onTog
       <div className="p-4 flex-1 flex flex-col">
 
         {/* Work schemes + marketplaces */}
-        <div className="min-h-[44px] flex flex-wrap gap-1 mb-2 content-start">
+        <div className="flex flex-wrap gap-1 mb-2">
           {p.workSchemes.map((s) => (
-            <span key={s} className="text-xs px-2 py-0.5 bg-navy-900 text-white rounded font-ibm font-medium h-fit">{s}</span>
+            <span key={s} className="text-xs px-2 py-0.5 bg-navy-900 text-white rounded font-ibm font-medium">{s}</span>
           ))}
           {p.tags.map((t) => (
-            <span key={t} className="text-xs px-2 py-0.5 bg-navy-50 text-navy-700 rounded font-ibm h-fit">{t}</span>
+            <span key={t} className="text-xs px-2 py-0.5 bg-navy-50 text-navy-700 rounded font-ibm">{t}</span>
           ))}
         </div>
 
         {/* Features */}
-        <div className="min-h-[44px] mb-1 content-start">
-          <CollapsibleTags items={p.features.map((fVal) => {
-            const def = FEATURE_FILTERS.find((x) => x.key === fVal || x.label === fVal);
-            if (!def) return (
-              <span key={fVal} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded">
-                {fVal}
-              </span>
-            );
-            return (
-              <span key={fVal} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded">
-                <Icon name={def.icon as "Camera"} size={10} className={FEATURE_COLORS[def.key] || "text-gray-400"} />
-                {def.label}
-              </span>
-            );
-          })} />
-        </div>
+        {p.features.length > 0 && (
+          <div className="mb-1">
+            <CollapsibleTags items={p.features.map((fVal) => {
+              const def = FEATURE_FILTERS.find((x) => x.key === fVal || x.label === fVal);
+              if (!def) return (
+                <span key={fVal} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded">
+                  {fVal}
+                </span>
+              );
+              return (
+                <span key={fVal} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded">
+                  <Icon name={def.icon as "Camera"} size={10} className={FEATURE_COLORS[def.key] || "text-gray-400"} />
+                  {def.label}
+                </span>
+              );
+            })} />
+          </div>
+        )}
 
         {/* Packaging types */}
-        <div className="min-h-[36px] mb-1 content-start">
-          <CollapsibleTags items={(p.packagingTypes || []).map((pkg) => (
-            <span key={pkg} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-purple-50 border border-purple-100 px-1.5 py-0.5 rounded">
-              <Icon name="Package" size={10} className="text-purple-400" />
-              {pkg}
-            </span>
-          ))} />
-        </div>
+        {(p.packagingTypes || []).length > 0 && (
+          <div className="mb-1">
+            <CollapsibleTags items={(p.packagingTypes || []).map((pkg) => (
+              <span key={pkg} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-purple-50 border border-purple-100 px-1.5 py-0.5 rounded">
+                <Icon name="Package" size={10} className="text-purple-400" />
+                {pkg}
+              </span>
+            ))} />
+          </div>
+        )}
+
+        {/* Spacer — тарифы и кнопки всегда внизу */}
+        <div className="flex-1" />
 
         {/* Rates */}
-        <div className="grid grid-cols-3 gap-1 bg-gray-50 rounded-lg p-2 mb-3 mt-2">
+        <div className="grid grid-cols-3 gap-1 bg-gray-50 rounded-lg p-2 mt-3 mb-3">
           <div className="text-center">
             <div className="text-xs text-gray-400 font-ibm">Хранение</div>
             <div className="text-xs font-semibold text-navy-900">{p.storage || "по запросу"}</div>
@@ -133,8 +140,8 @@ export default function PartnerCard({ p, inCompare, onCompare, isFavorite, onTog
             <div className="text-xs font-semibold text-navy-900">{p.delivery || "по запросу"}</div>
           </div>
         </div>
-        <div className="flex-1" />
-        <div className="flex items-center justify-between pt-2 border-t border-gray-100 mb-3 mt-3">
+
+        <div className="flex items-center justify-between pt-2 border-t border-gray-100 mb-3">
           <div className="flex items-center gap-1.5">
             <StarRating rating={p.rating} size={12} />
             <span className="text-sm font-semibold text-navy-900">{p.rating}</span>
