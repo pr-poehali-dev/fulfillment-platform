@@ -60,17 +60,18 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
     areaFrom, areaTo, minRating, resetVisible,
   ]);
 
-  // Infinite scroll через IntersectionObserver
+  // Infinite scroll через scroll на window
   useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
+    const onScroll = () => {
+      const el = sentinelRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight + 300) {
         setVisibleCount((c) => c + PAGE_SIZE);
       }
-    }, { rootMargin: "200px" });
-    observer.observe(el);
-    return () => observer.disconnect();
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, [PAGE_SIZE]);
 
   const numStorageFrom = parseFloat(storageFrom) || 0;
@@ -210,8 +211,9 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
               ))}
             </div>
             {/* Sentinel для infinite scroll */}
+            <div ref={sentinelRef} className="py-1" />
             {visibleCount < filtered.length && (
-              <div ref={sentinelRef} className="flex justify-center py-8">
+              <div className="flex justify-center py-6">
                 <Icon name="Loader2" size={24} className="animate-spin text-navy-300" />
               </div>
             )}
