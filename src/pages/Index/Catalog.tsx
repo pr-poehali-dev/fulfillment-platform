@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { FEATURE_FILTERS, SPECIALIZATION_FILTERS, type Partner } from "./data";
 import CatalogFilterPanel from "./CatalogFilterPanel";
@@ -23,7 +23,10 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
   partners: Partner[];
   loading: boolean;
 }) {
+  const PAGE_SIZE = 12;
   const PARTNERS = partners;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const [selectedMp, setSelectedMp] = useState<string[]>([]);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [selectedSchemes, setSelectedSchemes] = useState<string[]>([]);
@@ -47,6 +50,28 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
 
   const toggleArr = <T,>(arr: T[], val: T, set: (v: T[]) => void) =>
     set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
+
+  // Сброс пагинации при смене любого фильтра
+  const resetVisible = useCallback(() => setVisibleCount(PAGE_SIZE), [PAGE_SIZE]);
+  useEffect(() => { resetVisible(); }, [
+    selectedMp, selectedFeatures, selectedSchemes, selectedPackaging,
+    selectedCities, selectedCerts, selectedSpecs, sortBy, showFavoritesOnly,
+    storageFrom, storageTo, assemblyFrom, assemblyTo, deliveryFrom, deliveryTo,
+    areaFrom, areaTo, minRating, resetVisible,
+  ]);
+
+  // Infinite scroll через IntersectionObserver
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setVisibleCount((c) => c + PAGE_SIZE);
+      }
+    }, { rootMargin: "200px" });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [PAGE_SIZE]);
 
   const numStorageFrom = parseFloat(storageFrom) || 0;
   const numStorageTo = parseFloat(storageTo) || 0;
@@ -169,20 +194,28 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
             <button onClick={clearAll} className="mt-2 text-sm text-navy-700 hover:underline">Сбросить все фильтры</button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
-            {filtered.map((p) => (
-              <PartnerCard
-                key={p.id}
-                p={p}
-                inCompare={compareList.includes(p.id)}
-                onCompare={() => toggleCompare(p.id)}
-                isFavorite={isFavorite(p.id)}
-                onToggleFavorite={() => onToggleFavorite(p.id)}
-                onOpenDetail={() => onOpenDetail(p)}
-                onRequestQuote={() => onRequestQuote(p)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
+              {filtered.slice(0, visibleCount).map((p) => (
+                <PartnerCard
+                  key={p.id}
+                  p={p}
+                  inCompare={compareList.includes(p.id)}
+                  onCompare={() => toggleCompare(p.id)}
+                  isFavorite={isFavorite(p.id)}
+                  onToggleFavorite={() => onToggleFavorite(p.id)}
+                  onOpenDetail={() => onOpenDetail(p)}
+                  onRequestQuote={() => onRequestQuote(p)}
+                />
+              ))}
+            </div>
+            {/* Sentinel для infinite scroll */}
+            {visibleCount < filtered.length && (
+              <div ref={sentinelRef} className="flex justify-center py-8">
+                <Icon name="Loader2" size={24} className="animate-spin text-navy-300" />
+              </div>
+            )}
+          </>
         )}
       </div>
     </section>
