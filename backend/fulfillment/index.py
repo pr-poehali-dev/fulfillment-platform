@@ -702,7 +702,7 @@ def handle_list_approved():
                 work_schemes, features, packaging_types, marketplaces,
                 storage_price, assembly_price, delivery_price, storage_rate, assembly_rate, delivery_rate,
                 min_volume, team_size, working_hours, certificates, services,
-                badge, badge_color, rating, reviews_count, specializations
+                badge, badge_color, rating, reviews_count, specializations, og_image
             FROM fulfillments WHERE status IN ('approved', 'active')
             ORDER BY rating DESC, reviews_count DESC
         """)
@@ -712,7 +712,7 @@ def handle_list_approved():
                 'work_schemes', 'features', 'packaging_types', 'marketplaces',
                 'storage_price', 'assembly_price', 'delivery_price', 'storage_rate', 'assembly_rate', 'delivery_rate',
                 'min_volume', 'team_size', 'working_hours', 'certificates', 'services',
-                'badge', 'badge_color', 'rating', 'reviews_count', 'specializations']
+                'badge', 'badge_color', 'rating', 'reviews_count', 'specializations', 'og_image']
         result = []
         for row in rows:
             item = {}
@@ -741,7 +741,7 @@ def handle_list_demo(params: dict):
                 work_schemes, features, packaging_types, marketplaces,
                 storage_price, assembly_price, delivery_price, storage_rate, assembly_rate, delivery_rate,
                 min_volume, team_size, working_hours, certificates, services,
-                badge, badge_color, rating, reviews_count, specializations
+                badge, badge_color, rating, reviews_count, specializations, og_image
             FROM fulfillments WHERE status = 'demo'
             ORDER BY rating DESC, reviews_count DESC
         """)
@@ -751,7 +751,7 @@ def handle_list_demo(params: dict):
                 'work_schemes', 'features', 'packaging_types', 'marketplaces',
                 'storage_price', 'assembly_price', 'delivery_price', 'storage_rate', 'assembly_rate', 'delivery_rate',
                 'min_volume', 'team_size', 'working_hours', 'certificates', 'services',
-                'badge', 'badge_color', 'rating', 'reviews_count', 'specializations']
+                'badge', 'badge_color', 'rating', 'reviews_count', 'specializations', 'og_image']
         result = []
         for row in rows:
             item = {}
