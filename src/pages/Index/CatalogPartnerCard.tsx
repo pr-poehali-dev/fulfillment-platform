@@ -140,6 +140,22 @@ export default function PartnerCard({ p, inCompare, onCompare, isFavorite, onTog
           </div>
         )}
 
+        {/* Rates */}
+        <div className="grid grid-cols-3 gap-1 bg-gray-50 rounded-lg p-2 mb-3 mt-2">
+          <div className="text-center">
+            <div className="text-xs text-gray-400 font-ibm">Хранение</div>
+            <div className="text-xs font-semibold text-navy-900">{p.storage || "по запросу"}</div>
+          </div>
+          <div className="text-center border-x border-gray-200">
+            <div className="text-xs text-gray-400 font-ibm">Сборка</div>
+            <div className="text-xs font-semibold text-navy-900">{p.assembly || "по запросу"}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-gray-400 font-ibm">Доставка</div>
+            <div className="text-xs font-semibold text-navy-900">{p.delivery || "по запросу"}</div>
+          </div>
+        </div>
+
         {/* Rating + compare */}
         <div className="flex-1" />
         <div className="flex items-center justify-between pt-2 border-t border-gray-100 mb-3 mt-3">
