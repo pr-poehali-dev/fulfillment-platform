@@ -6,7 +6,7 @@ import type { Partner } from "./data";
 import { FEATURE_FILTERS, SPECIALIZATION_FILTERS } from "./data";
 import { ymGoal } from "@/lib/ym";
 
-const PREVIEW_LIMIT = 4;
+const PREVIEW_LIMIT = 3;
 
 function CollapsibleTags({ items }: { items: React.ReactNode[] }) {
   const [expanded, setExpanded] = useState(false);
@@ -49,7 +49,7 @@ const SPEC_COLORS: Record<string, string> = {
 export default function PartnerCard({ p, inCompare, onCompare, isFavorite, onToggleFavorite, onOpenDetail, onRequestQuote }: PartnerCardProps) {
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl card-hover shadow-sm flex flex-col overflow-hidden group">
+    <div className="bg-white border border-gray-100 rounded-xl card-hover shadow-sm flex flex-col overflow-hidden group h-full">
       {/* Photo header */}
       <div className="relative aspect-[16/9] bg-gray-100 overflow-hidden cursor-pointer" onClick={() => { ymGoal("card_open_detail", { partner: p.name }); onOpenDetail(); }}>
         {p.photos[0] && (
@@ -81,64 +81,42 @@ export default function PartnerCard({ p, inCompare, onCompare, isFavorite, onTog
       <div className="p-4 flex-1 flex flex-col">
 
         {/* Work schemes + marketplaces */}
-        <div className="flex flex-wrap gap-1 mb-2.5">
+        <div className="min-h-[44px] flex flex-wrap gap-1 mb-2 content-start">
           {p.workSchemes.map((s) => (
-            <span key={s} className="text-xs px-2 py-0.5 bg-navy-900 text-white rounded font-ibm font-medium">{s}</span>
+            <span key={s} className="text-xs px-2 py-0.5 bg-navy-900 text-white rounded font-ibm font-medium h-fit">{s}</span>
           ))}
           {p.tags.map((t) => (
-            <span key={t} className="text-xs px-2 py-0.5 bg-navy-50 text-navy-700 rounded font-ibm">{t}</span>
+            <span key={t} className="text-xs px-2 py-0.5 bg-navy-50 text-navy-700 rounded font-ibm h-fit">{t}</span>
           ))}
         </div>
 
         {/* Features */}
-        {p.features.length > 0 && (
-          <div className="mb-2">
-            <CollapsibleTags items={p.features.map((fVal) => {
-              const def = FEATURE_FILTERS.find((x) => x.key === fVal || x.label === fVal);
-              if (!def) return (
-                <span key={fVal} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded">
-                  {fVal}
-                </span>
-              );
-              return (
-                <span key={fVal} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded">
-                  <Icon name={def.icon as "Camera"} size={10} className={FEATURE_COLORS[def.key] || "text-gray-400"} />
-                  {def.label}
-                </span>
-              );
-            })} />
-          </div>
-        )}
-        {/* Packaging types */}
-        {(p.packagingTypes || []).length > 0 && (
-          <div className="mb-2">
-            <CollapsibleTags items={(p.packagingTypes || []).map((pkg) => (
-              <span key={pkg} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-purple-50 border border-purple-100 px-1.5 py-0.5 rounded">
-                <Icon name="Package" size={10} className="text-purple-400" />
-                {pkg}
+        <div className="min-h-[44px] mb-1 content-start">
+          <CollapsibleTags items={p.features.map((fVal) => {
+            const def = FEATURE_FILTERS.find((x) => x.key === fVal || x.label === fVal);
+            if (!def) return (
+              <span key={fVal} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded">
+                {fVal}
               </span>
-            ))} />
-          </div>
-        )}
-        {/* Specializations */}
-        {(p.specializations || []).length > 0 && (
-          <div className="mb-2">
-            <CollapsibleTags items={(p.specializations || []).map((sVal) => {
-              const def = SPECIALIZATION_FILTERS.find((x) => x.key === sVal || x.label === sVal);
-              if (!def) return (
-                <span key={sVal} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded">
-                  {sVal}
-                </span>
-              );
-              return (
-                <span key={sVal} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded">
-                  <Icon name={def.icon as "Boxes"} size={10} className={SPEC_COLORS[def.key] || "text-gray-400"} />
-                  {def.label}
-                </span>
-              );
-            })} />
-          </div>
-        )}
+            );
+            return (
+              <span key={fVal} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded">
+                <Icon name={def.icon as "Camera"} size={10} className={FEATURE_COLORS[def.key] || "text-gray-400"} />
+                {def.label}
+              </span>
+            );
+          })} />
+        </div>
+
+        {/* Packaging types */}
+        <div className="min-h-[36px] mb-1 content-start">
+          <CollapsibleTags items={(p.packagingTypes || []).map((pkg) => (
+            <span key={pkg} className="inline-flex items-center gap-1 text-[10px] font-ibm text-gray-600 bg-purple-50 border border-purple-100 px-1.5 py-0.5 rounded">
+              <Icon name="Package" size={10} className="text-purple-400" />
+              {pkg}
+            </span>
+          ))} />
+        </div>
 
         {/* Rates */}
         <div className="grid grid-cols-3 gap-1 bg-gray-50 rounded-lg p-2 mb-3 mt-2">
@@ -155,8 +133,6 @@ export default function PartnerCard({ p, inCompare, onCompare, isFavorite, onTog
             <div className="text-xs font-semibold text-navy-900">{p.delivery || "по запросу"}</div>
           </div>
         </div>
-
-        {/* Rating + compare */}
         <div className="flex-1" />
         <div className="flex items-center justify-between pt-2 border-t border-gray-100 mb-3 mt-3">
           <div className="flex items-center gap-1.5">
