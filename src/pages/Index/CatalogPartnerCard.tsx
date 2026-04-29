@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { StarRating, BadgeChip } from "./Navigation";
@@ -6,32 +6,13 @@ import type { Partner } from "./data";
 import { FEATURE_FILTERS, SPECIALIZATION_FILTERS } from "./data";
 import { ymGoal } from "@/lib/ym";
 
-const PREVIEW_LIMIT = 5;
-
-function CollapsibleTags({ children, total }: { children: React.ReactNode[]; total: number }) {
-  const [expanded, setExpanded] = useState(false);
-  const visible = expanded ? children : children.slice(0, PREVIEW_LIMIT);
-  const hidden = total - PREVIEW_LIMIT;
+function AllTags({ children }: { children: React.ReactNode[] }) {
   return (
     <div className="flex flex-wrap gap-1">
-      {visible}
-      {!expanded && hidden > 0 && (
-        <button onClick={(e) => { e.stopPropagation(); setExpanded(true); }}
-          className="text-[10px] font-ibm px-1.5 py-0.5 bg-gray-100 text-gray-500 hover:bg-gray-200 rounded transition-colors">
-          +{hidden}
-        </button>
-      )}
-      {expanded && hidden > 0 && (
-        <button onClick={(e) => { e.stopPropagation(); setExpanded(false); }}
-          className="text-[10px] font-ibm px-1.5 py-0.5 bg-gray-100 text-gray-500 hover:bg-gray-200 rounded transition-colors">
-          Скрыть
-        </button>
-      )}
+      {children}
     </div>
   );
 }
-
-const withRuble = (s: string) => (s && s !== "по запросу" && !s.includes("₽") ? `${s} ₽` : s);
 
 interface PartnerCardProps {
   p: Partner;
@@ -87,23 +68,21 @@ export default function PartnerCard({ p, inCompare, onCompare, isFavorite, onTog
 
       {/* Body */}
       <div className="p-4 flex-1 flex flex-col">
-        <p className="text-xs text-gray-500 font-ibm leading-relaxed mb-3 flex-1 line-clamp-3">{p.description}</p>
 
-        {/* Work schemes */}
+        {/* Work schemes + marketplaces */}
         <div className="flex flex-wrap gap-1 mb-2.5">
           {p.workSchemes.map((s) => (
             <span key={s} className="text-xs px-2 py-0.5 bg-navy-900 text-white rounded font-ibm font-medium">{s}</span>
           ))}
-          {p.tags.slice(0, 2).map((t) => (
+          {p.tags.map((t) => (
             <span key={t} className="text-xs px-2 py-0.5 bg-navy-50 text-navy-700 rounded font-ibm">{t}</span>
           ))}
-          {p.tags.length > 2 && <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded font-ibm">+{p.tags.length - 2}</span>}
         </div>
 
         {/* Features */}
         {p.features.length > 0 && (
           <div className="mb-2">
-            <CollapsibleTags total={p.features.length}>
+            <AllTags>
               {p.features.map((fKey) => {
                 const def = FEATURE_FILTERS.find((x) => x.key === fKey);
                 if (!def) return null;
@@ -114,13 +93,13 @@ export default function PartnerCard({ p, inCompare, onCompare, isFavorite, onTog
                   </span>
                 );
               }).filter(Boolean) as React.ReactNode[]}
-            </CollapsibleTags>
+            </AllTags>
           </div>
         )}
         {/* Specializations */}
         {(p.specializations || []).length > 0 && (
           <div className="mb-2">
-            <CollapsibleTags total={(p.specializations || []).length}>
+            <AllTags>
               {(p.specializations || []).map((sKey) => {
                 const def = SPECIALIZATION_FILTERS.find((x) => x.key === sKey);
                 if (!def) return null;
@@ -131,28 +110,13 @@ export default function PartnerCard({ p, inCompare, onCompare, isFavorite, onTog
                   </span>
                 );
               }).filter(Boolean) as React.ReactNode[]}
-            </CollapsibleTags>
+            </AllTags>
           </div>
         )}
 
-        {/* Rates */}
-        <div className="grid grid-cols-3 gap-1 bg-gray-50 rounded-lg p-2 mb-3">
-          <div className="text-center">
-            <div className="text-xs text-gray-400 font-ibm">Хранение</div>
-            <div className="text-xs font-semibold text-navy-900">{withRuble(p.storage)}</div>
-          </div>
-          <div className="text-center border-x border-gray-200">
-            <div className="text-xs text-gray-400 font-ibm">Сборка</div>
-            <div className="text-xs font-semibold text-navy-900">{withRuble(p.assembly)}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-xs text-gray-400 font-ibm">Доставка</div>
-            <div className="text-xs font-semibold text-navy-900">{withRuble(p.delivery)}</div>
-          </div>
-        </div>
-
         {/* Rating + compare */}
-        <div className="flex items-center justify-between pt-2 border-t border-gray-100 mb-3">
+        <div className="flex-1" />
+        <div className="flex items-center justify-between pt-2 border-t border-gray-100 mb-3 mt-3">
           <div className="flex items-center gap-1.5">
             <StarRating rating={p.rating} size={12} />
             <span className="text-sm font-semibold text-navy-900">{p.rating}</span>

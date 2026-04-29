@@ -190,6 +190,9 @@ export const api = {
   adminUpdateFulfillment: (body: Record<string, unknown>) =>
     request("fulfillment", "admin-update-fulfillment", { method: "POST", body }),
 
+  adminRefetchOg: (id?: number) =>
+    request("fulfillment", "admin-refetch-og", { method: "POST", body: id ? { id } : {} }),
+
   adminGetFulfillment: (id: number) =>
     request("fulfillment", "admin-get-fulfillment", { params: { id: String(id) } }),
 

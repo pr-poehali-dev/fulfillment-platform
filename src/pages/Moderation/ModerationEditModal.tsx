@@ -218,10 +218,33 @@ export default function ModerationEditModal({ fulfillmentId, onClose, onSaved }:
                           </a>
                         )}
                       </div>
-                      <p className="text-[11px] text-amber-700 font-ibm mt-1">
-                        OG-картинка с сайта подгрузится автоматически при сохранении и будет использована,
-                        если не загружено ни одного фото.
-                      </p>
+                      <div className="flex items-center justify-between mt-1">
+                        <p className="text-[11px] text-amber-700 font-ibm">
+                          OG-картинка подгрузится автоматически при сохранении.
+                        </p>
+                        {form.website_url && (
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              try {
+                                const res = await api.adminRefetchOg(fulfillmentId);
+                                if ((res as {updated?: number}).updated ?? 0 > 0) {
+                                  toast.success("OG-картинка обновлена");
+                                  await load();
+                                } else {
+                                  toast.error("Сайт не отдал OG-изображение");
+                                }
+                              } catch {
+                                toast.error("Ошибка при загрузке OG");
+                              }
+                            }}
+                            className="text-[11px] text-amber-800 font-ibm underline underline-offset-2 hover:text-amber-950 whitespace-nowrap ml-2 shrink-0"
+                          >
+                            Обновить OG
+                          </button>
+                        )}
+                      </div>
                       {form.og_image && (
                         <div className="mt-2 flex items-center gap-2 bg-white border border-amber-200 rounded-lg p-2">
                           <img

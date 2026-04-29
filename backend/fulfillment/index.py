@@ -1287,6 +1287,8 @@ def handler(event, context):
             return handle_admin_balance_adjust(body, token)
         if action == 'admin-update-quote-status':
             return handle_admin_update_quote_status(body, token)
+        if action == 'admin-refetch-og':
+            return handle_admin_refetch_og(body, token)
         if action == 'send-quick-contact':
             return handle_quick_contact(body)
 
@@ -1809,6 +1811,42 @@ def handle_admin_update_fulfillment(body, token):
         cur.execute("UPDATE fulfillments SET %s WHERE id = %d" % (', '.join(updates), int(fid)))
         conn.commit()
         return resp(200, {'ok': True})
+    except Exception as e:
+        conn.rollback()
+        return resp(500, {'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+
+def handle_admin_refetch_og(body, token):
+    """Спарсить og:image для одного или всех фулфилментов с website_url но без og_image"""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        user = get_user_by_token(cur, token)
+        if not user or user[2] != 'admin':
+            return resp(403, {'error': 'Доступ запрещён'})
+
+        fid = body.get('id')
+        if fid:
+            cur.execute("SELECT id, website_url FROM fulfillments WHERE id = %d" % int(fid))
+        else:
+            cur.execute("SELECT id, website_url FROM fulfillments WHERE website_url IS NOT NULL AND website_url != '' AND (og_image IS NULL OR og_image = '')")
+
+        rows = cur.fetchall()
+        updated = 0
+        failed = []
+        for row in rows:
+            rid, url = row[0], row[1]
+            img = fetch_og_image(url)
+            if img:
+                cur.execute("UPDATE fulfillments SET og_image = '%s', updated_at = NOW() WHERE id = %d" % (img.replace("'", "''"), rid))
+                updated += 1
+            else:
+                failed.append(rid)
+        conn.commit()
+        return resp(200, {'ok': True, 'updated': updated, 'failed': failed, 'total': len(rows)})
     except Exception as e:
         conn.rollback()
         return resp(500, {'error': str(e)})
