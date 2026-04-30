@@ -127,9 +127,20 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
     if (numAreaFrom > 0 && (p.warehouseArea || 0) < numAreaFrom) return false;
     if (numAreaTo > 0 && (p.warehouseArea || 0) > numAreaTo) return false;
     if (minRating > 0 && (p.rating || 0) < minRating) return false;
-    if (selectedFeatures.length && !selectedFeatures.every((f) => p.features.includes(f))) return false;
+    if (selectedFeatures.length && !selectedFeatures.every((fKey) => {
+      const def = FEATURE_FILTERS.find((x) => x.key === fKey);
+      return p.features.some((fVal) => fVal === fKey || (def && fVal === def.label));
+    })) return false;
     if (selectedSchemes.length && !selectedSchemes.some((s) => p.workSchemes.includes(s))) return false;
-    if (selectedPackaging.length && !selectedPackaging.some((pk) => p.packagingTypes.includes(pk))) return false;
+    if (selectedPackaging.length && !selectedPackaging.some((pk) => {
+      // pk может быть полным ("Воздушно-пузырьковая плёнка (ВПП)"), в БД — сокращение ("ВПП")
+      return p.packagingTypes.some((pv) => {
+        if (pv === pk) return true;
+        // извлекаем аббревиатуру из скобок: "Воздушно-пузырьковая плёнка (ВПП)" → "ВПП"
+        const abbr = pk.match(/\(([^)]+)\)$/)?.[1];
+        return abbr ? pv === abbr || pv.includes(abbr) : false;
+      });
+    })) return false;
     return true;
   }).sort((a, b) => {
     if (sortBy === "rating") return b.rating - a.rating;
