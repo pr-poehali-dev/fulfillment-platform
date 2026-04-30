@@ -4,7 +4,7 @@ declare global {
   }
 }
 
-const COUNTER_ID = 101026698;
+const COUNTER_ID = 108499124;
 
 export function ymGoal(goal: string, params?: Record<string, unknown>) {
   const loaded = typeof window.ym === "function";
