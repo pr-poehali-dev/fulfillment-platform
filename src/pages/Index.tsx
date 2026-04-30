@@ -64,6 +64,7 @@ function mapToPartner(f: ApiFulfillment): Partner {
     features: f.features || [],
     packagingTypes: f.packaging_types || [],
     workSchemes: f.work_schemes || [],
+    hasRealPhoto: !!(f.photos && f.photos.length > 0) || !!f.og_image,
     photos: (f.photos && f.photos.length > 0)
       ? f.photos
       : (f.og_image

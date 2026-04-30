@@ -11,7 +11,7 @@ const PREMIUM_BADGE = "Premium Fulfilment";
  */
 function getPriority(p: Partner): number {
   if (p.badge === PREMIUM_BADGE) return 1;
-  if (p.photos.length > 0) return 2;
+  if (p.hasRealPhoto) return 2;
   if (p.features.length >= 2) return 3;
   return 4;
 }

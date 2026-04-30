@@ -36,6 +36,7 @@ export interface Partner {
   certificates: string[];
   specializations?: string[];
   address?: string;
+  hasRealPhoto?: boolean;
 }
 
 export const PARTNERS: Partner[] = [];
