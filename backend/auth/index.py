@@ -239,7 +239,8 @@ def hash_password(pw):
 
 def check_password(pw, stored):
     salt, h = stored.split(':')
-    return hashlib.pbkdf2_hmac('sha256', pw.encode(), salt.encode(), 100000).hex() == h
+    computed = hashlib.pbkdf2_hmac('sha256', pw.encode(), salt.encode(), 100000).hex()
+    return hmac.compare_digest(computed, h)
 
 def gen_token():
     return secrets.token_urlsafe(48)
@@ -251,7 +252,46 @@ def get_user_by_token(cur, token):
     cur.execute("SELECT u.id, u.email, u.role, u.email_verified FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = '%s' AND s.expires_at > NOW()" % token.replace("'", "''"))
     return cur.fetchone()
 
-def handle_register(body):
+
+def check_rate_limit(cur, bucket, identifier, max_attempts, window_minutes):
+    """Проверяет лимит попыток. True — лимит превышен (блокировать).
+    Чистит старые записи и считает за окно window_minutes.
+    """
+    safe_bucket = (bucket or '')[:64].replace("'", "''")
+    safe_id = (identifier or 'unknown')[:255].replace("'", "''")
+    cur.execute(
+        "DELETE FROM rate_limits WHERE attempted_at < NOW() - INTERVAL '%d minutes'" % max(window_minutes * 4, 60)
+    )
+    cur.execute(
+        "SELECT COUNT(*) FROM rate_limits WHERE bucket = '%s' AND identifier = '%s' AND attempted_at > NOW() - INTERVAL '%d minutes'"
+        % (safe_bucket, safe_id, window_minutes)
+    )
+    cnt = cur.fetchone()[0]
+    return cnt >= max_attempts
+
+
+def record_attempt(cur, bucket, identifier):
+    """Записывает попытку в журнал."""
+    safe_bucket = (bucket or '')[:64].replace("'", "''")
+    safe_id = (identifier or 'unknown')[:255].replace("'", "''")
+    cur.execute(
+        "INSERT INTO rate_limits (bucket, identifier) VALUES ('%s', '%s')"
+        % (safe_bucket, safe_id)
+    )
+
+
+def get_client_ip(event):
+    """Извлекает IP клиента из event (с учётом прокси)."""
+    headers = event.get('headers') or {}
+    xff = headers.get('X-Forwarded-For') or headers.get('x-forwarded-for') or ''
+    if xff:
+        return xff.split(',')[0].strip()
+    try:
+        return event.get('requestContext', {}).get('identity', {}).get('sourceIp', '') or 'unknown'
+    except Exception:
+        return 'unknown'
+
+def handle_register(body, client_ip=''):
     email = body.get('email', '').strip().lower()
     password = body.get('password', '')
     phone = body.get('phone', '').strip()
@@ -263,6 +303,13 @@ def handle_register(body):
     conn = get_db()
     cur = conn.cursor()
     try:
+        # Rate limit: 5 регистраций с одного IP за час
+        if client_ip and check_rate_limit(cur, 'register', client_ip, 5, 60):
+            conn.commit()
+            return resp(429, {'error': 'Слишком много попыток регистрации. Попробуйте через час'})
+        record_attempt(cur, 'register', client_ip or 'unknown')
+        conn.commit()
+
         cur.execute("SELECT id FROM users WHERE email = '%s'" % email.replace("'", "''"))
         if cur.fetchone():
             return resp(409, {'error': 'Пользователь с таким email уже существует'})
@@ -321,7 +368,7 @@ def handle_register(body):
         cur.close()
         conn.close()
 
-def handle_login(body):
+def handle_login(body, client_ip=''):
     email = body.get('email', '').strip().lower()
     password = body.get('password', '')
     if not email or not password:
@@ -330,12 +377,26 @@ def handle_login(body):
     conn = get_db()
     cur = conn.cursor()
     try:
+        # Rate limit: 10 неудачных попыток с одного IP или email за 15 минут
+        if client_ip and check_rate_limit(cur, 'login_ip', client_ip, 10, 15):
+            conn.commit()
+            return resp(429, {'error': 'Слишком много попыток входа. Попробуйте через 15 минут'})
+        if check_rate_limit(cur, 'login_email', email, 10, 15):
+            conn.commit()
+            return resp(429, {'error': 'Слишком много попыток входа для этого email. Попробуйте через 15 минут'})
+
         cur.execute("SELECT id, password_hash, role, email_verified FROM users WHERE email = '%s'" % email.replace("'", "''"))
         row = cur.fetchone()
         if not row:
+            record_attempt(cur, 'login_ip', client_ip or 'unknown')
+            record_attempt(cur, 'login_email', email)
+            conn.commit()
             return resp(401, {'error': 'Неверный email или пароль'})
         user_id, pw_hash, role, verified = row
         if not pw_hash or not check_password(password, pw_hash):
+            record_attempt(cur, 'login_ip', client_ip or 'unknown')
+            record_attempt(cur, 'login_email', email)
+            conn.commit()
             return resp(401, {'error': 'Неверный email или пароль'})
 
         token = gen_token()
@@ -718,7 +779,7 @@ def handle_link_email(body, token):
         conn.close()
 
 
-def handle_forgot_password(body):
+def handle_forgot_password(body, client_ip=''):
     email = body.get('email', '').strip().lower()
     if not email:
         return resp(400, {'error': 'Email обязателен'})
@@ -726,6 +787,13 @@ def handle_forgot_password(body):
     conn = get_db()
     cur = conn.cursor()
     try:
+        # Rate limit: 3 запроса сброса пароля с одного IP за 30 минут
+        if client_ip and check_rate_limit(cur, 'forgot', client_ip, 3, 30):
+            conn.commit()
+            return resp(429, {'error': 'Слишком много запросов. Попробуйте через 30 минут'})
+        record_attempt(cur, 'forgot', client_ip or email)
+        conn.commit()
+
         cur.execute("SELECT id FROM users WHERE email = '%s'" % email.replace("'", "''"))
         row = cur.fetchone()
         if not row:
@@ -934,11 +1002,13 @@ def handler(event, context):
     if auth.startswith('Bearer '):
         token = auth[7:]
 
+    client_ip = get_client_ip(event)
+
     if method == 'POST':
         if path == 'register':
-            return handle_register(body)
+            return handle_register(body, client_ip)
         if path == 'login':
-            return handle_login(body)
+            return handle_login(body, client_ip)
         if path == 'verify-email':
             return handle_verify_email(body, token)
         if path == 'resend-code':
@@ -950,7 +1020,7 @@ def handler(event, context):
         if path == 'link-email':
             return handle_link_email(body, token)
         if path == 'forgot-password':
-            return handle_forgot_password(body)
+            return handle_forgot_password(body, client_ip)
         if path == 'reset-password':
             return handle_reset_password(body)
         if path == 'change-password':

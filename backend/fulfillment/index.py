@@ -6,10 +6,39 @@ import uuid
 import urllib.request
 import urllib.parse
 import smtplib
+import socket
+import ipaddress
+import hmac as _hmac
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import psycopg2
 import boto3
+
+
+def _is_safe_public_url(url: str) -> bool:
+    """Проверяет что URL ведёт на публичный IP — защита от SSRF.
+    Блокирует частные/локальные диапазоны: 10/8, 127/8, 169.254/16, 172.16/12, 192.168/16, IPv6 link-local и т.п.
+    """
+    try:
+        parsed = urllib.parse.urlparse(url)
+        if parsed.scheme not in ('http', 'https'):
+            return False
+        host = parsed.hostname
+        if not host:
+            return False
+        # Запрещаем localhost-имена явно
+        if host.lower() in ('localhost', 'metadata.google.internal', 'metadata'):
+            return False
+        # Резолвим все IP (A и AAAA)
+        infos = socket.getaddrinfo(host, None)
+        for info in infos:
+            ip_str = info[4][0]
+            ip = ipaddress.ip_address(ip_str)
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_reserved or ip.is_unspecified:
+                return False
+        return True
+    except Exception:
+        return False
 
 CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -33,6 +62,9 @@ def fetch_og_image(url):
     try:
         if not url.startswith(('http://', 'https://')):
             url = 'https://' + url
+        # SSRF-защита: запрещаем приватные/локальные IP
+        if not _is_safe_public_url(url):
+            return ''
         req = urllib.request.Request(
             url,
             headers={
@@ -730,7 +762,7 @@ def handle_list_approved():
 def handle_list_demo(params: dict):
     token = params.get('token', '')
     expected = os.environ.get('DEMO_ACCESS_TOKEN', '')
-    if not expected or token != expected:
+    if not expected or not _hmac.compare_digest(token, expected):
         return resp(403, {'error': 'Доступ запрещён'})
     conn = get_db()
     cur = conn.cursor()
@@ -1826,8 +1858,9 @@ def handle_admin_refetch_og(body, token):
     try:
         # Поддержка как admin-токена, так и служебного секрета
         service_secret = os.environ.get('DEMO_ACCESS_TOKEN', '')
-        request_secret = body.get('secret', '')
-        if not (service_secret and request_secret == service_secret):
+        request_secret = body.get('secret', '') or ''
+        secret_ok = bool(service_secret) and _hmac.compare_digest(request_secret, service_secret)
+        if not secret_ok:
             user = get_user_by_token(cur, token)
             if not user or user[2] != 'admin':
                 return resp(403, {'error': 'Доступ запрещён'})
