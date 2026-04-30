@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Icon from "@/components/ui/icon";
 import { FEATURE_FILTERS, SPECIALIZATION_FILTERS, type Partner } from "./data";
+import { rankPartners } from "./rankPartners";
 import CatalogFilterPanel from "./CatalogFilterPanel";
 import PartnerCard from "./CatalogPartnerCard";
 import ComparePageComponent from "./CatalogComparePage";
@@ -24,7 +25,7 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
   loading: boolean;
 }) {
   const PAGE_SIZE = 12;
-  const PARTNERS = partners;
+  const PARTNERS = useMemo(() => rankPartners(partners), [partners]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [selectedMp, setSelectedMp] = useState<string[]>([]);
