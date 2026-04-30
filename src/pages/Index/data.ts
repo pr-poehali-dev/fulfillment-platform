@@ -53,6 +53,7 @@ export const FEATURE_FILTERS = [
   { key: "shipment_prep", label: "Подготовка к отгрузке", icon: "PackageCheck" },
   { key: "barcode_check", label: "Проверка штрихкода", icon: "ScanLine" },
   { key: "cargo_receive", label: "Получение товара карго", icon: "Ship" },
+  { key: "packaging", label: "Упаковка под ключ", icon: "Box" },
 ];
 
 export const SCHEME_FILTERS = ["FBS", "FBO", "DBS", "Кросс-докинг"];
