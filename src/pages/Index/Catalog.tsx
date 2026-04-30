@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
-import { type Partner } from "./data";
+import { FEATURE_FILTERS, SPECIALIZATION_FILTERS, type Partner } from "./data";
 import CatalogFilterPanel from "./CatalogFilterPanel";
 import PartnerCard from "./CatalogPartnerCard";
 import ComparePageComponent from "./CatalogComparePage";
