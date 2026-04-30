@@ -7,10 +7,6 @@ declare global {
 const COUNTER_ID = 108499124;
 
 export function ymGoal(goal: string, params?: Record<string, unknown>) {
-  const loaded = typeof window.ym === "function";
-  if (import.meta.env.DEV) {
-    console.log(`[YM] reachGoal → "${goal}"`, params ?? "", loaded ? "✅ ym loaded" : "❌ ym NOT loaded");
-  }
   window.ym?.(COUNTER_ID, "reachGoal", goal, params);
 }
 

@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/lib/auth";
-import { ymGoal, ymTestAll, ALL_GOALS } from "@/lib/ym";
+
 import Index from "./pages/Index";
 import ForFulfillment from "./pages/ForFulfillment";
 import Admin from "./pages/Admin";
@@ -28,22 +28,6 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const YmDevPanel = () => {
-  if (!import.meta.env.DEV) return null;
-  return (
-    <div style={{ position: "fixed", bottom: 16, right: 16, zIndex: 9999, display: "flex", flexDirection: "column", gap: 6, background: "#1e1e1e", padding: 12, borderRadius: 10, fontSize: 12, color: "#fff", maxHeight: "80vh", overflowY: "auto", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
-      <div style={{ fontWeight: 700, marginBottom: 4 }}>🎯 YM Dev</div>
-      <button onClick={ymTestAll} style={{ background: "#e63737", color: "#fff", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontWeight: 600 }}>
-        Все цели разом
-      </button>
-      {ALL_GOALS.map((goal) => (
-        <button key={goal} onClick={() => ymGoal(goal, { test: true })} style={{ background: "#2d2d2d", color: "#ccc", border: "1px solid #444", borderRadius: 6, padding: "3px 8px", cursor: "pointer", textAlign: "left" }}>
-          {goal}
-        </button>
-      ))}
-    </div>
-  );
-};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -51,7 +35,6 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <YmDevPanel />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
