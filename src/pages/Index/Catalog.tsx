@@ -46,7 +46,7 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
   const [areaFrom, setAreaFrom] = useState<string>("");
   const [areaTo, setAreaTo] = useState<string>("");
   const [minRating, setMinRating] = useState<number>(0);
-  const [sortBy, setSortBy] = useState("rating");
+  const [sortBy, setSortBy] = useState("rank");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const toggleArr = <T,>(arr: T[], val: T, set: (v: T[]) => void) =>
@@ -133,6 +133,7 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
     if (selectedPackaging.length && !selectedPackaging.some((pk) => p.packagingTypes.includes(pk))) return false;
     return true;
   }).sort((a, b) => {
+    if (sortBy === "rank") return 0; // порядок из rankPartners сохраняется
     if (sortBy === "rating") return b.rating - a.rating;
     if (sortBy === "reviews") return b.reviews - a.reviews;
     if (sortBy === "price_asc") return a.storageRate - b.storageRate;

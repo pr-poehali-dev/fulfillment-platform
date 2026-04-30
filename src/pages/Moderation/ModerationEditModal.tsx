@@ -270,6 +270,36 @@ export default function ModerationEditModal({ fulfillmentId, onClose, onSaved }:
                       )}
                     </div>
 
+                    {/* Бейджик */}
+                    <div>
+                      <label className="text-xs font-semibold text-amber-900 font-ibm block mb-1.5">
+                        Бейджик карточки
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { label: "Новый партнёр", color: "blue" },
+                          { label: "Проверенный", color: "green" },
+                          { label: "Рекомендуем", color: "purple" },
+                          { label: "Топ рейтинга", color: "gold" },
+                          { label: "Premium Fulfilment", color: "gold" },
+                          { label: "", color: "blue" },
+                        ].map(({ label: bl, color }) => (
+                          <button
+                            key={bl || "none"}
+                            type="button"
+                            onClick={() => { set("badge", bl); set("badge_color", color); }}
+                            className={`px-2 py-1.5 rounded-lg border text-xs font-medium font-golos text-left transition-all ${
+                              form.badge === bl
+                                ? "border-amber-500 bg-amber-50 text-amber-900"
+                                : "border-amber-200 bg-white text-amber-700 hover:border-amber-400"
+                            }`}
+                          >
+                            {bl || <span className="text-gray-400 italic">Без бейджа</span>}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     {/* Владелец */}
                     <div>
                       <label className="text-xs font-semibold text-amber-900 font-ibm block mb-1.5">

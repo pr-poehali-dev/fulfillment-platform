@@ -74,6 +74,7 @@ export default function FilterTopBar({
       {/* Sort */}
       <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
         className="text-sm px-2.5 py-1.5 border border-gray-200 rounded-lg bg-white font-ibm focus:outline-none cursor-pointer text-gray-700">
+        <option value="rank">По релевантности</option>
         <option value="rating">По рейтингу</option>
         <option value="reviews">По отзывам</option>
         <option value="price_asc">Дешевле</option>
