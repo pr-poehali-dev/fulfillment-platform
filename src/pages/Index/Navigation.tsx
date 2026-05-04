@@ -33,11 +33,14 @@ export function CityPicker({ city, availableCities, onChange, detecting }: {
         className="flex items-center gap-1 text-white/70 hover:text-white transition-colors text-sm"
         title="Выбрать город"
       >
-        <Icon name="MapPin" size={13} className="text-gold-400 shrink-0" />
-        <span className="max-w-[140px] truncate font-medium">
+        {detecting
+          ? <Icon name="Loader2" size={13} className="text-gold-400 shrink-0 animate-spin" />
+          : <Icon name="MapPin" size={13} className="text-gold-400 shrink-0" />
+        }
+        <span className={`max-w-[140px] truncate font-medium transition-opacity ${detecting ? "opacity-50" : "opacity-100"}`}>
           {detecting ? "Определяю…" : city || "Выбрать город"}
         </span>
-        <Icon name="ChevronDown" size={12} className={`text-white/40 transition-transform ${open ? "rotate-180" : ""}`} />
+        {!detecting && <Icon name="ChevronDown" size={12} className={`text-white/40 transition-transform ${open ? "rotate-180" : ""}`} />}
       </button>
       {open && (
         <div className="absolute left-0 top-full mt-2 w-52 bg-navy-900 border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden py-1">
