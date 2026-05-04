@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {
+      "name": "GET detect city",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {"city": "string"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

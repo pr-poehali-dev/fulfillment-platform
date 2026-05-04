@@ -2,6 +2,7 @@ const URLS = {
   auth: "https://functions.poehali.dev/4af79c82-10b3-4a5a-9b91-0b6a70f754a2",
   fulfillment: "https://functions.poehali.dev/65cffefd-e88e-4f9c-a0be-769cb5345a17",
   getSubscribers: "https://functions.poehali.dev/3187f111-ddb1-43eb-adc8-e0d8a950adba",
+  detectCity: "https://functions.poehali.dev/d3a3ee7d-18ba-4e21-8c6f-a13d8a60051c",
 };
 
 function getToken(): string {
