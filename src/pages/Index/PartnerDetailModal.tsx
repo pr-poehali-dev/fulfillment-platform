@@ -18,6 +18,7 @@ const featureLabels: Record<string, string> = {
   shipment_prep: "Подготовка к отгрузке",
   barcode_check: "Проверка штрихкода",
   cargo_receive: "Получение товара карго",
+  photo: "Фотосъёмка товаров",
 };
 
 const specializationLabels: Record<string, { label: string; icon: string }> = {

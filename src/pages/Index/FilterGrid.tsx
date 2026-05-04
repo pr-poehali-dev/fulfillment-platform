@@ -178,6 +178,7 @@ export default function FilterGrid({
           items={FEATURE_FILTERS}
           selected={selectedFeatures}
           onToggle={(key) => toggleArr(selectedFeatures, key, setSelectedFeatures)}
+          maxH=""
         />
       </div>
 

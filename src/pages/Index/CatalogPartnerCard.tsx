@@ -40,6 +40,7 @@ const FEATURE_COLORS: Record<string, string> = {
   same_day: "text-amber-500", temp_control: "text-cyan-500", packaging: "text-purple-500",
   honest_mark: "text-indigo-500", defect_check: "text-green-600", seller_packaging: "text-violet-500",
   shipment_prep: "text-orange-500", barcode_check: "text-teal-500", cargo_receive: "text-sky-500",
+  photo: "text-pink-500",
 };
 const SPEC_COLORS: Record<string, string> = {
   small_goods: "text-slate-500", cosmetics: "text-pink-500", clothing: "text-rose-500",
