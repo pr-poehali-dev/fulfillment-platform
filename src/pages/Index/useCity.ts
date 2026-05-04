@@ -57,30 +57,57 @@ async function detectCityByIp(): Promise<string | null> {
   }
 }
 
-export function useCity(availableCities: string[]) {
-  const [city, setCity] = useState<string>(() => {
+function getStoredCity(): string {
+  if (typeof window === "undefined") return "";
+  try {
     return localStorage.getItem(STORAGE_KEY) || "";
-  });
+  } catch {
+    return "";
+  }
+}
+
+function saveCity(city: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY, city);
+  } catch {
+    // ignore
+  }
+}
+
+export function useCity(availableCities: string[]) {
+  const [city, setCity] = useState<string>(getStoredCity);
   const [detecting, setDetecting] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return;
-
+    if (getStoredCity()) return;
+    let cancelled = false;
     setDetecting(true);
-    detectCityByIp().then((detected) => {
-      const found = detected
-        ? availableCities.find((c) => c.toLowerCase().includes(detected.toLowerCase()) || detected.toLowerCase().includes(c.toLowerCase())) ?? null
-        : null;
-      const resolved = found || DEFAULT_CITY;
-      setCity(resolved);
-      localStorage.setItem(STORAGE_KEY, resolved);
-    }).finally(() => setDetecting(false));
+    detectCityByIp()
+      .then((detected) => {
+        if (cancelled) return;
+        const found = detected
+          ? availableCities.find(
+              (c) =>
+                c.toLowerCase().includes(detected.toLowerCase()) ||
+                detected.toLowerCase().includes(c.toLowerCase())
+            )
+          : undefined;
+        const resolved = found || DEFAULT_CITY;
+        setCity(resolved);
+        saveCity(resolved);
+      })
+      .finally(() => {
+        if (!cancelled) setDetecting(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [availableCities.length]);
 
   const changeCity = (c: string) => {
     setCity(c);
-    localStorage.setItem(STORAGE_KEY, c);
+    saveCity(c);
   };
 
   return { city, changeCity, detecting };

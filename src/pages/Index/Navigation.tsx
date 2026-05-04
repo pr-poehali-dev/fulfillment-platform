@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import AuthModal from "@/components/AuthModal";
 import { useNavigate } from "react-router-dom";

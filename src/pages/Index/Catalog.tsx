@@ -149,16 +149,16 @@ export function CatalogSection({ setActive, compareList, setCompareList, onOpenC
 
   return (
     <section id="catalog" className="bg-white">
-      {city && (
+      {city ? (
         <div className="max-w-7xl mx-auto px-4 pt-8 pb-2">
           <h2 className="text-2xl font-bold font-golos text-navy-950">
             Фулфилменты в городе <span className="text-gold-500">{city}</span>
           </h2>
           <p className="text-sm text-gray-500 mt-1 font-ibm">
-            {loading ? "Загружаем список..." : `${PARTNERS.length} ${PARTNERS.length === 1 ? "партнёр" : PARTNERS.length >= 2 && PARTNERS.length <= 4 ? "партнёра" : "партнёров"}`}
+            {loading ? "Загружаем список..." : `Найдено ${PARTNERS.length}`}
           </p>
         </div>
-      )}
+      ) : null}
       <CatalogFilterPanel
         partners={PARTNERS}
         filtered={filtered}
