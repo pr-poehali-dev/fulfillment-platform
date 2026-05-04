@@ -5,6 +5,7 @@ import { CatalogSection, ComparePage } from "./Index/Catalog";
 import { PartnerDetailModal, RequestQuoteModal } from "./Index/Modals";
 import { useFavorites } from "./Index/useFavorites";
 import { useCity } from "./Index/useCity";
+import { PRIMARY_CITIES, getCityGroup, partnerMatchesCity } from "./Index/cityGroups";
 import type { Partner } from "./Index/data";
 import api from "@/lib/api";
 
@@ -105,18 +106,25 @@ export default function Index() {
       .finally(() => setLoadingPartners(false));
   }, []);
 
-  const availableCities = useMemo(() =>
+  const dbCities = useMemo(() =>
     Array.from(new Set(partners.map((p) => p.location).filter(Boolean))).sort(),
     [partners]
   );
 
+  const availableCities = useMemo(() => {
+    const extras = dbCities.filter((c) => !PRIMARY_CITIES.includes(c));
+    return [...PRIMARY_CITIES, ...extras];
+  }, [dbCities]);
+
   const { city, changeCity, detecting } = useCity(availableCities);
 
+  const cityLabel = useMemo(() => getCityGroup(city).label, [city]);
+
   const filteredPartners = useMemo(() =>
-    city && availableCities.length > 0
-      ? partners.filter((p) => p.location === city)
+    city
+      ? partners.filter((p) => partnerMatchesCity(p.location, city))
       : partners,
-    [partners, city, availableCities]
+    [partners, city]
   );
 
   const handleSetActive = (section: string) => {
@@ -162,7 +170,7 @@ export default function Index() {
           onToggleFavoritesFilter={() => setShowFavoritesOnly((v) => !v)}
           partners={filteredPartners}
           loading={loadingPartners}
-          city={city}
+          city={cityLabel}
         />
         <Footer setActive={handleSetActive} />
       </div>
