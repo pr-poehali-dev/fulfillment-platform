@@ -135,10 +135,8 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
             </div>
             <span className="font-golos font-bold text-white text-base tracking-tight">FulfillHub</span>
           </button>
-          <div className="hidden sm:block h-4 w-px bg-white/20" />
-          <div className="hidden sm:block">
-            <CityPicker city={city} availableCities={availableCities} onChange={onChangeCity} detecting={detectingCity} />
-          </div>
+          <div className="h-4 w-px bg-white/20" />
+          <CityPicker city={city} availableCities={availableCities} onChange={onChangeCity} detecting={detectingCity} />
         </div>
         <div className="hidden md:flex items-center gap-2">
           <button onClick={onOpenFavorites}
@@ -204,9 +202,6 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
       </div>
       {mobileOpen && (
         <div className="md:hidden bg-navy-950 border-t border-white/10 px-4 py-3 flex flex-col gap-1">
-          <div className="px-3 py-2 sm:hidden">
-            <CityPicker city={city} availableCities={availableCities} onChange={(c) => { onChangeCity(c); setMobileOpen(false); }} detecting={detectingCity} />
-          </div>
           <a href="/for-fulfillment" className="px-3 py-2 rounded text-sm text-gold-400 hover:bg-gold-500/10">Разместить сервис</a>
           {isLoggedIn ? (
             <>

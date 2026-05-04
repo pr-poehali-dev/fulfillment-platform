@@ -1,4 +1,5 @@
 {
+  "fetch-og-images": "https://functions.poehali.dev/cf9d8397-f9b7-4179-8b42-a5f7ae5a7c14",
   "detect-city": "https://functions.poehali.dev/d3a3ee7d-18ba-4e21-8c6f-a13d8a60051c",
   "get-subscribers": "https://functions.poehali.dev/3187f111-ddb1-43eb-adc8-e0d8a950adba",
   "subscribe-email": "https://functions.poehali.dev/91f8b089-0115-4e67-921c-8243417a3853",

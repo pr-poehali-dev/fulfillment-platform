@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {
+      "name": "GET fetch og images",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {"results": []},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
