@@ -163,6 +163,7 @@ export default function Index() {
           onToggleFavoritesFilter={() => setShowFavoritesOnly((v) => !v)}
           partners={filteredPartners}
           loading={loadingPartners}
+          city={city}
         />
         <Footer setActive={handleSetActive} />
       </div>

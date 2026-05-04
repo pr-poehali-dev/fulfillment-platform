@@ -44,7 +44,10 @@ function normalizeCity(raw: string): string | null {
 
 async function detectCityByIp(): Promise<string | null> {
   try {
-    const res = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(4000) });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch("https://ipapi.co/json/", { signal: controller.signal });
+    clearTimeout(timer);
     if (!res.ok) return null;
     const data = await res.json();
     const cityRaw: string = data.city || data.region || "";
