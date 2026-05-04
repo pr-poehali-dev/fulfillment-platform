@@ -150,7 +150,7 @@ export default function Index() {
         favoritesCount={favorites.length}
         onOpenFavorites={handleOpenFavorites}
         city={city}
-        availableCities={availableCities}
+        availableCities={PRIMARY_CITIES}
         onChangeCity={changeCity}
         detectingCity={detecting}
       />

@@ -14,65 +14,43 @@ export function CityPicker({ city, availableCities, onChange, detecting }: {
   detecting?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false);
-        setQuery("");
       }
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const filtered = availableCities.filter((c) =>
-    c.toLowerCase().includes(query.toLowerCase())
-  );
-
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={() => { setOpen((v) => !v); setQuery(""); }}
+        onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-1 text-white/70 hover:text-white transition-colors text-sm"
         title="Выбрать город"
       >
         <Icon name="MapPin" size={13} className="text-gold-400 shrink-0" />
-        <span className="max-w-[120px] truncate font-medium">
+        <span className="max-w-[140px] truncate font-medium">
           {detecting ? "Определяю…" : city || "Выбрать город"}
         </span>
         <Icon name="ChevronDown" size={12} className={`text-white/40 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <div className="absolute left-0 top-full mt-2 w-56 bg-navy-900 border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden">
-          <div className="p-2">
-            <input
-              autoFocus
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Поиск города…"
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder-white/30 outline-none focus:border-gold-500/50"
-            />
-          </div>
-          <div className="max-h-52 overflow-y-auto">
-            {filtered.length === 0 && (
-              <div className="px-3 py-2 text-xs text-white/40">Город не найден</div>
-            )}
-            {filtered.map((c) => (
-              <button
-                key={c}
-                onClick={() => { onChange(c); setOpen(false); setQuery(""); }}
-                className={`w-full text-left px-3 py-2 text-sm transition-colors flex items-center gap-2 ${c === city ? "text-gold-400 bg-gold-500/10" : "text-white/80 hover:bg-white/10"}`}
-              >
-                {c === city && <Icon name="Check" size={12} className="text-gold-400 shrink-0" />}
-                {c !== city && <span className="w-3" />}
-                {c}
-              </button>
-            ))}
-          </div>
+        <div className="absolute left-0 top-full mt-2 w-52 bg-navy-900 border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden py-1">
+          {availableCities.map((c) => (
+            <button
+              key={c}
+              onClick={() => { onChange(c); setOpen(false); }}
+              className={`w-full text-left px-3 py-2.5 text-sm transition-colors flex items-center gap-2 ${c === city ? "text-gold-400 bg-gold-500/10" : "text-white/80 hover:bg-white/10"}`}
+            >
+              <Icon name={c === city ? "Check" : "MapPin"} size={12} className={c === city ? "text-gold-400 shrink-0" : "text-white/30 shrink-0"} />
+              {c}
+            </button>
+          ))}
         </div>
       )}
     </div>
