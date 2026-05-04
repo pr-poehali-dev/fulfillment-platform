@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import { Navbar, HeroSection, Footer } from "./Index/Navigation";
 import QuizForSellers from "./Index/QuizForSellers";
 import { CatalogSection, ComparePage } from "./Index/Catalog";
-import { ContactsSection } from "./Index/Calculator";
 import { PartnerDetailModal, RequestQuoteModal } from "./Index/Modals";
 import { useFavorites } from "./Index/useFavorites";
 import { useCity } from "./Index/useCity";
