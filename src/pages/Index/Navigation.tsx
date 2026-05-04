@@ -5,6 +5,80 @@ import { useAuth } from "@/lib/auth";
 import AuthModal from "@/components/AuthModal";
 import { useNavigate } from "react-router-dom";
 
+// ─── CITY PICKER ─────────────────────────────────────────────────────────────
+
+export function CityPicker({ city, availableCities, onChange, detecting }: {
+  city: string;
+  availableCities: string[];
+  onChange: (c: string) => void;
+  detecting?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const filtered = availableCities.filter((c) =>
+    c.toLowerCase().includes(query.toLowerCase())
+  );
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => { setOpen((v) => !v); setQuery(""); }}
+        className="flex items-center gap-1 text-white/70 hover:text-white transition-colors text-sm"
+        title="Выбрать город"
+      >
+        <Icon name="MapPin" size={13} className="text-gold-400 shrink-0" />
+        <span className="max-w-[120px] truncate font-medium">
+          {detecting ? "Определяю…" : city || "Выбрать город"}
+        </span>
+        <Icon name="ChevronDown" size={12} className={`text-white/40 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-2 w-56 bg-navy-900 border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden">
+          <div className="p-2">
+            <input
+              autoFocus
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Поиск города…"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder-white/30 outline-none focus:border-gold-500/50"
+            />
+          </div>
+          <div className="max-h-52 overflow-y-auto">
+            {filtered.length === 0 && (
+              <div className="px-3 py-2 text-xs text-white/40">Город не найден</div>
+            )}
+            {filtered.map((c) => (
+              <button
+                key={c}
+                onClick={() => { onChange(c); setOpen(false); setQuery(""); }}
+                className={`w-full text-left px-3 py-2 text-sm transition-colors flex items-center gap-2 ${c === city ? "text-gold-400 bg-gold-500/10" : "text-white/80 hover:bg-white/10"}`}
+              >
+                {c === city && <Icon name="Check" size={12} className="text-gold-400 shrink-0" />}
+                {c !== city && <span className="w-3" />}
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
 export function StarRating({ rating, size = 13 }: { rating: number; size?: number }) {
@@ -36,13 +110,17 @@ export function BadgeChip({ color, children }: { color: string; children: React.
 
 // ─── NAVBAR ──────────────────────────────────────────────────────────────────
 
-export function Navbar({ active, setActive, onOpenCompare, compareCount, favoritesCount, onOpenFavorites }: {
+export function Navbar({ active, setActive, onOpenCompare, compareCount, favoritesCount, onOpenFavorites, city, availableCities, onChangeCity, detectingCity }: {
   active: string;
   setActive: (s: string) => void;
   onOpenCompare: () => void;
   compareCount: number;
   favoritesCount: number;
   onOpenFavorites: () => void;
+  city: string;
+  availableCities: string[];
+  onChangeCity: (c: string) => void;
+  detectingCity?: boolean;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
@@ -69,12 +147,18 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
     <>
     <nav className="fixed top-0 left-0 right-0 z-50 bg-navy-950/95 backdrop-blur-md border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-14">
-        <button onClick={() => setActive("hero")} className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-gold-500 rounded flex items-center justify-center">
-            <Icon name="Package" size={14} className="text-navy-950" />
+        <div className="flex items-center gap-3">
+          <button onClick={() => setActive("hero")} className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-gold-500 rounded flex items-center justify-center">
+              <Icon name="Package" size={14} className="text-navy-950" />
+            </div>
+            <span className="font-golos font-bold text-white text-base tracking-tight">FulfillHub</span>
+          </button>
+          <div className="hidden sm:block h-4 w-px bg-white/20" />
+          <div className="hidden sm:block">
+            <CityPicker city={city} availableCities={availableCities} onChange={onChangeCity} detecting={detectingCity} />
           </div>
-          <span className="font-golos font-bold text-white text-base tracking-tight">FulfillHub</span>
-        </button>
+        </div>
         <div className="hidden md:flex items-center gap-2">
           <button onClick={onOpenFavorites}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-sm font-medium transition-all ${favoritesCount > 0 ? "text-red-300 hover:text-red-200 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20" : "text-white/60 hover:text-white hover:bg-white/10"}`}
@@ -139,6 +223,9 @@ export function Navbar({ active, setActive, onOpenCompare, compareCount, favorit
       </div>
       {mobileOpen && (
         <div className="md:hidden bg-navy-950 border-t border-white/10 px-4 py-3 flex flex-col gap-1">
+          <div className="px-3 py-2 sm:hidden">
+            <CityPicker city={city} availableCities={availableCities} onChange={(c) => { onChangeCity(c); setMobileOpen(false); }} detecting={detectingCity} />
+          </div>
           <a href="/for-fulfillment" className="px-3 py-2 rounded text-sm text-gold-400 hover:bg-gold-500/10">Разместить сервис</a>
           {isLoggedIn ? (
             <>

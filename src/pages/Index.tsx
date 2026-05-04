@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Navbar, HeroSection, Footer } from "./Index/Navigation";
 import QuizForSellers from "./Index/QuizForSellers";
 import { CatalogSection, ComparePage } from "./Index/Catalog";
 import { ContactsSection } from "./Index/Calculator";
 import { PartnerDetailModal, RequestQuoteModal } from "./Index/Modals";
 import { useFavorites } from "./Index/useFavorites";
+import { useCity } from "./Index/useCity";
 import type { Partner } from "./Index/data";
 import api from "@/lib/api";
 
@@ -105,6 +106,20 @@ export default function Index() {
       .finally(() => setLoadingPartners(false));
   }, []);
 
+  const availableCities = useMemo(() =>
+    Array.from(new Set(partners.map((p) => p.location).filter(Boolean))).sort(),
+    [partners]
+  );
+
+  const { city, changeCity, detecting } = useCity(availableCities);
+
+  const filteredPartners = useMemo(() =>
+    city && availableCities.length > 0
+      ? partners.filter((p) => p.location === city)
+      : partners,
+    [partners, city, availableCities]
+  );
+
   const handleSetActive = (section: string) => {
     setActive(section);
     setTimeout(() => {
@@ -127,6 +142,10 @@ export default function Index() {
         compareCount={compareList.length}
         favoritesCount={favorites.length}
         onOpenFavorites={handleOpenFavorites}
+        city={city}
+        availableCities={availableCities}
+        onChangeCity={changeCity}
+        detectingCity={detecting}
       />
       <div className="pt-14">
         <HeroSection setActive={handleSetActive} onOpenQuiz={() => setQuizOpen(true)} />
@@ -142,7 +161,7 @@ export default function Index() {
           onToggleFavorite={toggleFavorite}
           showFavoritesOnly={showFavoritesOnly}
           onToggleFavoritesFilter={() => setShowFavoritesOnly((v) => !v)}
-          partners={partners}
+          partners={filteredPartners}
           loading={loadingPartners}
         />
         <Footer setActive={handleSetActive} />
