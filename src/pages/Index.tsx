@@ -3,6 +3,7 @@ import { Navbar, HeroSection, Footer } from "./Index/Navigation";
 import QuizForSellers from "./Index/QuizForSellers";
 import { CatalogSection, ComparePage } from "./Index/Catalog";
 import { PartnerDetailModal, RequestQuoteModal } from "./Index/Modals";
+import WhatIsFulfillmentTeaser from "./Index/WhatIsFulfillmentTeaser";
 import { useFavorites } from "./Index/useFavorites";
 import { useCity } from "./Index/useCity";
 import { PRIMARY_CITIES, getCityGroup, partnerMatchesCity } from "./Index/cityGroups";
@@ -156,6 +157,7 @@ export default function Index() {
       />
       <div className="pt-14">
         <HeroSection setActive={handleSetActive} onOpenQuiz={() => setQuizOpen(true)} />
+        <WhatIsFulfillmentTeaser />
         <CatalogSection
           setActive={handleSetActive}
           compareList={compareList}
