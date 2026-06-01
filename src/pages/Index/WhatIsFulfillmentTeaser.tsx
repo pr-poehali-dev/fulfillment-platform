@@ -1,5 +1,8 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
+
+const STORAGE_KEY = "fulfillhub_teaser_hidden";
 
 const POINTS = [
   { icon: "Warehouse", label: "Хранение товара на складе партнёра" },
@@ -11,17 +14,48 @@ const POINTS = [
 ];
 
 export default function WhatIsFulfillmentTeaser() {
+  const [hidden, setHidden] = useState(() => localStorage.getItem(STORAGE_KEY) === "1");
+  const [isFirstVisit, setIsFirstVisit] = useState(false);
+
+  useEffect(() => {
+    const visited = localStorage.getItem("fulfillhub_visited");
+    if (!visited) {
+      localStorage.setItem("fulfillhub_visited", "1");
+      setIsFirstVisit(true);
+    }
+  }, []);
+
+  const hide = () => {
+    localStorage.setItem(STORAGE_KEY, "1");
+    setHidden(true);
+  };
+
+  if (hidden) return null;
+
   return (
     <section className="bg-white border-b border-gray-100 py-12 px-4">
       <div className="max-w-7xl mx-auto">
+        {/* Header row with dismiss button */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 border border-purple-100 rounded-full text-xs font-medium text-purple-600 font-ibm">
+            <Icon name="BookOpen" size={12} />
+            Для тех, кто только разбирается
+          </div>
+          {!isFirstVisit && (
+            <button
+              onClick={hide}
+              className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors font-ibm"
+              title="Скрыть этот блок"
+            >
+              <Icon name="X" size={13} />
+              Скрыть
+            </button>
+          )}
+        </div>
         <div className="grid md:grid-cols-2 gap-10 items-center">
 
           {/* Left: text */}
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 border border-purple-100 rounded-full text-xs font-medium text-purple-600 font-ibm mb-4">
-              <Icon name="BookOpen" size={12} />
-              Для тех, кто только разбирается
-            </div>
             <h2 className="font-golos font-bold text-2xl md:text-3xl text-navy-950 mb-3 leading-tight">
               Что такое фулфилмент<br className="hidden md:block" /> и зачем он нужен?
             </h2>
